@@ -52,7 +52,6 @@ namespace EaseClub.Api
                     c.EnableFilter();
                 });
             }
-            var logger = app.Services.GetRequiredService<ILogger<Program>>();
             
 
 
