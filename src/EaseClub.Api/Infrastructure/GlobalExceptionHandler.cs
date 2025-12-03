@@ -8,7 +8,7 @@ namespace EaseClub.Api.Infrastructure
     {
         public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
         {
-            logger.LogError(exception,"An unhandled exception has occurred while executing the request.");
+            logger.LogError(exception,"An unhandled exception has occurred while executing the request ID:{id} .",httpContext.TraceIdentifier);
             httpContext.Response.StatusCode = 500;
             httpContext.Response.ContentType = "application/problem+json";
 
