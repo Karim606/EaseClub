@@ -1,0 +1,43 @@
+name: Build and Deploy EaseClub API
+
+# Trigger only on develop branch pushes
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2️⃣ Setup .NET 9.0 SDK
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '9.0.x'
+
+      # 3️⃣ Restore NuGet packages
+      - name: Restore dependencies
+        run: dotnet restore
+
+      # 4️⃣ Build project
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      # 5️⃣ Publish project to ./publish
+      - name: Publish
+        run: dotnet publish -c Release -o publish --no-build
+
+      # 6️⃣ Deploy to deploy branch using peaceiris/actions-gh-pages
+      - name: Deploy to deploy branch
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          personal_token: ${{ secrets.GH_PAT }}  # Use your PAT secret
+          publish_dir: ./publish                  # Folder containing published API
+          publish_branch: deploy                  # Target branch
+          force_orphan: true                       # Ensures branch is clean
