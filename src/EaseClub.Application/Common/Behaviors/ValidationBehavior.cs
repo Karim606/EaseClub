@@ -10,7 +10,7 @@ using EaseClub.Domain.Common;
 
 namespace EaseClub.Application.Common.Behaviors
 {
-    public class ValidationBehavior<TRequest,TResponse>(IValidator<TRequest>? validator=null):IPipelineBehavior<TRequest,TResponse>
+    internal sealed class ValidationBehavior<TRequest,TResponse>(IValidator<TRequest>? validator=null):IPipelineBehavior<TRequest,TResponse>
         where TRequest : IRequest<TResponse>
         where TResponse: IResult
     {

@@ -31,8 +31,8 @@ namespace EaseClub.Api
 
                 var sourceToken = builder.Configuration["BETTERSTACK_SOURCE_TOKEN"];
                 var ingestHost = builder.Configuration["BETTERSTACK_INGEST_URL"];
-                loggerConfig.WriteTo.BetterStack(sourceToken: sourceToken, betterStackEndpoint: ingestHost)
-                .MinimumLevel.Information();
+                loggerConfig.WriteTo.BetterStack(sourceToken: sourceToken, betterStackEndpoint: ingestHost);
+                
                 
             });
 

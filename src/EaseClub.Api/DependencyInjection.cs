@@ -30,7 +30,7 @@ namespace EaseClub.Application
                     .AddApiVersioning()
                     .ConfigureSwagger()
                     .AddRateLimiting();
-
+            services.AddHttpContextAccessor();
             return services;
         }
 
