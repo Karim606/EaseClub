@@ -9,5 +9,6 @@ namespace EaseClub.Infrastructure.Auth.Entities
 {
     public class AuthUser:IdentityUser<Guid>
     {
+        public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     }
 }

@@ -22,7 +22,7 @@ namespace EaseClub.Infrastructure.Auth.Repositories
         public Task<RefreshToken?> GetByHashedTokenAsync(string hashedToken)
         {
             return _db.RefreshTokens
-                .FirstOrDefaultAsync(x => x.token == hashedToken);
+                .FirstOrDefaultAsync(x => x.Token == hashedToken);
         }
 
         public async Task AddAsync(RefreshToken token)
@@ -42,7 +42,7 @@ namespace EaseClub.Infrastructure.Auth.Repositories
         public async Task RevokeAllUserTokensAsync(Guid userId, RevokeReasons reason)
         {
             var tokens = await _db.RefreshTokens
-                .Where(x => x.userId == userId && x.revokedAt == null)
+                .Where(x => x.UserId == userId && x.RevokedAt == null)
                 .ToListAsync();
 
             foreach (var token in tokens)
