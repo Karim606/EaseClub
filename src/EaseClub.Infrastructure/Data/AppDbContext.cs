@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using EaseClub.Domain.User;
+using EaseClub.Application.Common.Interfaces;
+using EaseClub.Domain.Member;
 using EaseClub.Infrastructure.Auth.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -11,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EaseClub.Infrastructure.Data
 {
-    public class AppDbContext : IdentityDbContext<AuthUser, IdentityRole<Guid>, Guid>
+    public class AppDbContext : IdentityDbContext<AuthUser, IdentityRole<Guid>, Guid>,IUnitOfWork
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
@@ -31,7 +32,13 @@ namespace EaseClub.Infrastructure.Data
             builder.Entity<IdentityUserToken<Guid>>().ToTable("UserTokens");
         }
 
+        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            return await base.SaveChangesAsync();
+        }
+
         public DbSet<AuthUser> AuthUsers => Users;
+        public DbSet<MemberUser> MemberUsers { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
     }
 }

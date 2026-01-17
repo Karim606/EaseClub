@@ -1,4 +1,7 @@
-﻿using System;
+﻿using EaseClub.Application.Features.Auth.Dtos;
+using EaseClub.Domain.Common.Results;
+using MediatR;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,7 +9,5 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.Auth.Commands.Login
 {
-    internal class LoginCommand
-    {
-    }
+    public record LoginCommand(string Email, string Password) : IRequest<Result<AuthTokensDto>>;
 }

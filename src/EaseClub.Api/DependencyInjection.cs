@@ -1,4 +1,6 @@
-﻿using EaseClub.Api.Infrastructure;
+﻿using EaseClub.Api.Common;
+using EaseClub.Api.Infrastructure;
+using EaseClub.Application.Common.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.Mvc.Versioning;
@@ -25,12 +27,13 @@ namespace EaseClub.Application
         public static IServiceCollection AddPresentation(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddControllersWithJsonConfiguration()
+                    .AddIdentityInfrastructure()
                     .AddCustomProblemDetails()
                     .AddExceptionHandlers()
                     .AddApiVersioning()
                     .ConfigureSwagger()
                     .AddRateLimiting();
-            services.AddHttpContextAccessor();
+            
             return services;
         }
 
@@ -49,6 +52,14 @@ namespace EaseClub.Application
                 context.ProblemDetails.Instance = $"{context.HttpContext.Request.Method} {context.HttpContext.Request.Path}";
 
             });
+            return services;
+        }
+
+        public static IServiceCollection AddIdentityInfrastructure(this IServiceCollection services)
+        {
+            services.AddHttpContextAccessor();
+            services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddScoped<ICurrentRequestContext, CurrentRequestContext>();
             return services;
         }
 
