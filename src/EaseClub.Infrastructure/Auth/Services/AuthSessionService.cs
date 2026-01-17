@@ -1,4 +1,5 @@
 ﻿using EaseClub.Application.Common.interfaces;
+using EaseClub.Application.Features.Auth.Common.Interfaces;
 using EaseClub.Application.Features.Auth.Dtos;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
@@ -14,7 +15,9 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Infrastructure.Auth.Services
 {
-    public class AuthSessionService
+    
+
+    public class AuthSessionService : IAuthSessionService
     {
         private readonly UserManager<AuthUser> _userManager;
         private readonly IJwtService _jwtService;

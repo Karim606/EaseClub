@@ -1,5 +1,6 @@
 ﻿using EaseClub.Application.Common.interfaces;
 using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Features.Auth.Common.Interfaces;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Infrastructure.Auth.Entities;
@@ -12,7 +13,7 @@ using System.Text;
 
 namespace EaseClub.Infrastructure.Auth.Services
 {
-    public class AuthIdentityService
+    public class AuthIdentityService: IAuthIdentityService
     {
         private readonly UserManager<AuthUser> _userManager;
         private readonly IEmailService _emailService;
