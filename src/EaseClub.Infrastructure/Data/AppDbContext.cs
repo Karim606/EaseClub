@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using EaseClub.Infrastructure.Auth;
+using EaseClub.Infrastructure.Auth.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -23,5 +24,6 @@ namespace EaseClub.Infrastructure.Data
         }
 
         public DbSet<AuthUser> AuthUsers { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
     }
 }

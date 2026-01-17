@@ -1,4 +1,4 @@
-﻿using EaseClub.Infrastructure.Auth;
+﻿using EaseClub.Infrastructure.Auth.Entities;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
