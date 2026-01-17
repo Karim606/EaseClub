@@ -8,29 +8,16 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Domain.ClubAdmin
 {
-    public class ClubAdmin:AuditableEntity 
+    public class ClubAdmin:UserBase 
     {
-        public PhoneNumber PhoneNumber { get; private set; }
-        public Email Email { get; private set; }
         
-        public string FirstName { get; private set; }
-        public string LastName { get; private set; }
-
-        public void UpdateContactInfo(PhoneNumber phoneNumber, Email email)
-        {
-            PhoneNumber = phoneNumber;
-            Email = email;
-        }
-
         private ClubAdmin()
         {
         }
-        private ClubAdmin(Guid id, string firstName, string lastName, PhoneNumber phoneNumber, Email email): base(id)
+        private ClubAdmin(Guid id, string firstName, string lastName, PhoneNumber phoneNumber, Email email): base(id, firstName, lastName,
+             phoneNumber,  email)
         {
-            FirstName = firstName;
-            LastName = lastName;
-            PhoneNumber = phoneNumber;
-            Email = email;
+          
         }
         public static ClubAdmin Create(Guid id, string firstName, string lastName, PhoneNumber phoneNumber, Email email)
         {

@@ -1,14 +1,13 @@
-﻿using EaseClub.Domain.Common;
-using EaseClub.Domain.Common.ValueObjects;
+﻿using EaseClub.Domain.Common.ValueObjects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EaseClub.Domain.User
+namespace EaseClub.Domain.Common
 {
-    public class User:AuditableEntity
+    public abstract class UserBase:AuditableEntity
     {
         public PhoneNumber PhoneNumber { get; private set; }
         public Email Email { get; private set; }
@@ -16,12 +15,12 @@ namespace EaseClub.Domain.User
         public string LastName { get; private set; }
 
 
-        private User ()
+        protected UserBase()
         {
 
         }
 
-        private User (Guid id,string firstName,string lastName, PhoneNumber phoneNumber, Email email) : base(id)
+        protected UserBase(Guid id, string firstName, string lastName, PhoneNumber phoneNumber, Email email) : base(id)
         {
             FirstName = firstName;
             LastName = lastName;
@@ -29,11 +28,6 @@ namespace EaseClub.Domain.User
             Email = email;
         }
 
-        public static User Create (Guid id,string firstName,string lastName, PhoneNumber phoneNumber, Email email)
-        {
-            return new User(id,firstName,lastName,phoneNumber,email);
-        }
-
-
+      
     }
 }
