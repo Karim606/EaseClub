@@ -2,6 +2,7 @@
 using EaseClub.Api.Common.Filters;
 using EaseClub.Application.Features.Auth.Commands.Login;
 using EaseClub.Application.Features.Auth.Commands.LogOut;
+using EaseClub.Application.Features.Auth.Commands.Register;
 using EaseClub.Application.Features.Auth.Common.Dtos;
 using EaseClub.Domain.Common;
 using MediatR;
@@ -15,7 +16,7 @@ namespace EaseClub.Api.Controllers
     public class AuthController(ISender sender) : ApiController
     {
 
-
+       //-------------------------------------------------------------Login----------------------------------------------------
         [HttpPost("login")]
         [MapToApiVersion("1.0")]
         [RequireClientTypeHeader]
@@ -59,6 +60,8 @@ namespace EaseClub.Api.Controllers
                 Problem
             );
         }
+
+        //-------------------------------------------------------------Logout----------------------------------------------------
 
         [RequireClientTypeHeader] // Optional: ensures X-Client-Type is present
         [MapToApiVersion("1.0")]
@@ -113,8 +116,57 @@ namespace EaseClub.Api.Controllers
                 Problem
             );
         }
+        //-------------------------------------------------------------Register----------------------------------------------------
+        [RequireClientTypeHeader]
+        [EndpointName("Register")]
+        [MapToApiVersion("1.0")]
 
+        [ProducesResponseType(typeof(AuthTokensDto), StatusCodes.Status200OK)] // Web+Mobile
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)] // Email exists
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
 
+        [EndpointSummary("Register user ")]
+        [EndpointDescription("Register new user to system.\n\n" +
+            "Required Header: X-Client-Type: Web | Mobile\n" +
+            "If X-Client-Type is missing or invalid, returns 400 Bad Request.\n\n" +
+            "Behavior:\n" +
+            "- Web clients: receive AccessToken in response body, RefreshToken set as HttpOnly cookie.\n" +
+            "- Mobile clients: receive AccessToken + RefreshToken in response body."
+            )]
+        public async Task<IActionResult> Register([FromForm] RegisterUserDto request)
+        {
+            var result = await sender.Send(new RegisterCommand(
+                request.FirstName,
+                request.LastName,
+                request.Email,
+                request.Password,
+                request.PhoneNumber
+            ));
+
+            var clientTypeHeader = HttpContext.Items["ClientType"]?.ToString();
+
+            bool isWeb = clientTypeHeader!.Equals("Web", StringComparison.OrdinalIgnoreCase);
+
+            return result.Match(
+                 value =>
+                 {
+                     if (isWeb)
+                     {
+                         SetRefreshTokenCookie(value.RefreshToken, value.RefreshTokenExpiry.Value);
+                         return Ok(new AuthTokensDto(AccessToken: value.AccessToken, null, null));
+                     }
+
+                     return Ok(new AuthTokensDto(
+                         AccessToken: value.AccessToken,
+                         RefreshToken: value.RefreshToken,
+                         RefreshTokenExpiry: value.RefreshTokenExpiry
+                     ));
+                 },
+                 Problem
+             );
+        }
+        //-------------------------------------------------------------SetRefreshToken----------------------------------------------------
         private void SetRefreshTokenCookie(string refreshToken, DateTime expiry)
         {
             var cookieOptions = new CookieOptions
