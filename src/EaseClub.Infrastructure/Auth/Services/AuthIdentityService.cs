@@ -135,6 +135,10 @@ namespace EaseClub.Infrastructure.Auth.Services
             var resetLink = $"{_configuration["ClientSetting:ClientDomain"]}/auth/reset-password?token={encodedToken}&email={user.Email}";
 
             var result = await _emailService.SendAsync(email, "Reset-Password", $"Click here to reset your password: {resetLink}.");
+            if (result.IsError)
+            {
+                _logger.LogError("Failed to send password reset email to {Email}", email);
+            }
             _logger.LogInformation("Password reset email sent to {Email}", email);
 
             return result;

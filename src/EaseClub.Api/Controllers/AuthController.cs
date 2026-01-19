@@ -1,12 +1,11 @@
-﻿using Azure.Core;
-using EaseClub.Api.Common.Filters;
+﻿using EaseClub.Api.Common.Filters;
+using EaseClub.Application.Features.Auth.Commands.ForgotPassword;
 using EaseClub.Application.Features.Auth.Commands.Login;
 using EaseClub.Application.Features.Auth.Commands.LogOut;
 using EaseClub.Application.Features.Auth.Commands.Register;
 using EaseClub.Application.Features.Auth.Common.Dtos;
 using EaseClub.Domain.Common;
 using MediatR;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EaseClub.Api.Controllers
@@ -170,6 +169,7 @@ namespace EaseClub.Api.Controllers
                  Problem
              );
         }
+
         //-------------------------------------------------------------SetRefreshToken----------------------------------------------------
         private void SetRefreshTokenCookie(string refreshToken, DateTime expiry)
         {
@@ -185,5 +185,25 @@ namespace EaseClub.Api.Controllers
             Response.Cookies.Append("Refresh-Token", refreshToken, cookieOptions);
         }
 
+        //-------------------------------------------------------------ForgotPassword----------------------------------------------------
+        [HttpPost("forgot-password")]
+        [MapToApiVersion("1.0")]
+
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+
+        [EndpointSummary("Forgot Password")]
+        [EndpointDescription("send request to reset password by email.")]
+        [EndpointName("Forgot-Password")]
+
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgetPasswordDto model)
+        {
+
+            var result = await sender.Send(new ForgotPasswordCommand(model.Email));
+            return result.Match(
+                Success => NoContent(),
+                Problem);
+        }
     }
 }
