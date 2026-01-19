@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using EaseClub.Application.Features.Auth.Dtos;
+using EaseClub.Application.Features.Auth.Common.Dtos;
 using EaseClub.Domain.Member;
 using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Common;

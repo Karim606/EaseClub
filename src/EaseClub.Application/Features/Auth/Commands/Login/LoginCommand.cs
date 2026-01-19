@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Features.Auth.Dtos;
+﻿using EaseClub.Application.Features.Auth.Common.Dtos;
 using EaseClub.Domain.Common.Results;
 using MediatR;
 using System;

@@ -12,8 +12,6 @@ namespace EaseClub.Application.Features.Auth.Commands.Login
         public LoginCommandValidator()
         {
             RuleFor(x => x.Email).NotEmpty().EmailAddress();
-            RuleFor(x => x.Password).NotEmpty().MinimumLength(10);
-
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using EaseClub.Application.Common.interfaces;
 using EaseClub.Application.Features.Auth.Common.Interfaces;
-using EaseClub.Application.Features.Auth.Dtos;
+using EaseClub.Application.Features.Auth.Common.Dtos;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Infrastructure.Auth.Entities;
