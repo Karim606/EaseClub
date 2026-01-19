@@ -21,7 +21,14 @@ namespace EaseClub.Application.Features.Auth.Commands.Login
     {
         public async Task<Result<AuthTokensDto>> Handle(LoginCommand request, CancellationToken cancellationToken)
         {
-            var result = await authSessionService.LoginAsync(request.Email, request.Password,currentRequestContext.IpAddress,currentRequestContext.DeviceInfo);
+            var user = await memberUserRepository.GetByEmailAsync(request.Email);
+            if (user == null)
+            {
+                logger.LogWarning("Failed login attempt for non-existent user {Email}.", request.Email);
+                return Error.Unauthorized(description: "Invalid email Address or password.");
+            }
+            var result = await authSessionService.LoginAsync(request.Email,user.FirstName+' '+user.LastName,
+                request.Password,currentRequestContext.IpAddress,currentRequestContext.DeviceInfo);
             if (result.IsSuccess)
             {
                 return result;
