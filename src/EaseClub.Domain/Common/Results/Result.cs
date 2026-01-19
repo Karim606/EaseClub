@@ -20,7 +20,7 @@ namespace EaseClub.Domain.Common.Results
 
         public bool IsError => !IsSuccess;
 
-        public Error? TopError => IsError ? _Errors!.First() : null;
+        public Error TopError => IsError ? _Errors!.First() : default;
 
         public  T Value => IsSuccess ? _Value! : throw new InvalidOperationException("Cannot access Value on an error result.");
 

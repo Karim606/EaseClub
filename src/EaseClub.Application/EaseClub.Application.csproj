@@ -9,10 +9,6 @@
   <ItemGroup>
 	<ProjectReference Include="..\EaseClub.Domain\EaseClub.Domain.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Features\" />
-  </ItemGroup>
 	
 	<ItemGroup>
 		   <FrameworkReference Include="Microsoft.AspNetCore.App" />

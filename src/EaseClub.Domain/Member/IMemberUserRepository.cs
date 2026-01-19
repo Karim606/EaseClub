@@ -9,10 +9,7 @@ namespace EaseClub.Domain.Member
    
         public interface IMemberUserRepository
         {
-            Task AddAsync(MemberUser member);
-            Task<MemberUser> GetByIdAsync(Guid id);
-            Task UpdateAsync(MemberUser member);
-            Task DeleteAsync(MemberUser member);
-        }
+            Task<MemberUser> GetByEmailAsync(string email);
+    }
 
 }
