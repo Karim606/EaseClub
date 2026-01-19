@@ -6,6 +6,6 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.Auth.Dtos
 {
-    public record AuthTokensDto(string AccessToken, string RefreshToken);
+    public record AuthTokensDto(string AccessToken, string RefreshToken,DateTime RefreshTokenExpiry);
 
 }

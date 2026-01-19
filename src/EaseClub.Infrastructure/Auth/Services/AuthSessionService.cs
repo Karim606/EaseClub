@@ -62,7 +62,7 @@ namespace EaseClub.Infrastructure.Auth.Services
             await _refreshRepo.SaveChangesAsync();
 
             _logger.LogInformation("User logged in successfully: {Email}, IP: {IP}, Device: {Device}", email, ip, deviceInfo);
-            return new AuthTokensDto(accessToken, refresh.UnHashedToken);
+            return new AuthTokensDto(accessToken, refresh.UnHashedToken,refresh.ExpiresAt);
         }
 
         public async Task<Result<AuthTokensDto>> RefreshAsync(string refreshToken, string ip)
@@ -114,7 +114,7 @@ namespace EaseClub.Infrastructure.Auth.Services
             var accessToken = _jwtService.GenerateToken(user.UserName!, user.Email!, user.Id, roles).Value;
 
             _logger.LogInformation("Refresh token rotated successfully for UserId: {UserId}", user.Id);
-            return new AuthTokensDto(accessToken, newRefresh.UnHashedToken);
+            return new AuthTokensDto(accessToken, newRefresh.UnHashedToken,newRefresh.ExpiresAt);
         }
 
         public async Task<Result<Success>> LogoutAsync(string refreshToken)
