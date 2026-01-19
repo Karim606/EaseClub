@@ -5,8 +5,10 @@ using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Infrastructure.Auth.Entities;
 using EaseClub.Infrastructure.Auth.interfaces;
+using EaseClub.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Text;
@@ -18,41 +20,84 @@ namespace EaseClub.Infrastructure.Auth.Services
         private readonly UserManager<AuthUser> _userManager;
         private readonly IEmailService _emailService;
         private readonly IConfiguration _configuration;
+        private readonly AppDbContext _context;
+        private readonly IPasswordHasher<AuthUser> _passwordHasher;
         private readonly ILogger<AuthIdentityService> _logger;
 
         public AuthIdentityService(
             UserManager<AuthUser> userManager,
             IEmailService emailService,
             IConfiguration configuration,
+            AppDbContext context,
+            IPasswordHasher<AuthUser> passwordHasher,
             ILogger<AuthIdentityService> logger)
         {
             _userManager = userManager;
             _emailService = emailService;
             _configuration = configuration;
+            _context = context;
+            _passwordHasher = passwordHasher;
             _logger = logger;
+        }
+
+        public async Task DeleteUserAsync(Guid userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user != null)
+            {
+                var result = await _userManager.DeleteAsync(user);
+                if (result.Succeeded)
+                {
+                    _logger.LogInformation("User deleted successfully: {UserId}", userId);
+                }
+                else
+                {
+                    _logger.LogError("Failed to delete user {UserId}. Errors: {Errors}", userId, result.Errors);
+                }
+            }
+            else
+            {
+                _logger.LogWarning("Delete attempt failed. User not found: {UserId}", userId);
+            }
         }
 
         public async Task<Result<Guid>> RegisterUserAsync(string email, string password)
         {
-            var existing = await _userManager.FindByEmailAsync(email);
-            if (existing != null)
-            {
-                _logger.LogWarning("Register attempt failed. Email already exists: {Email}", email);
+            var normalizedEmail = email.ToUpperInvariant();
+
+            if (await _context.Users.AnyAsync(u => u.NormalizedEmail == normalizedEmail))
                 return Error.Conflict("Email already exists");
-            }
 
-            var user = new AuthUser { UserName = email, Email = email };
-            var result = await _userManager.CreateAsync(user, password);
-
-            if (!result.Succeeded)
+            var user = new AuthUser
             {
-                _logger.LogError("Failed to create user {Email}. Errors: {Errors}", email, result.Errors);
-                return Error.Failure("User creation failed");
+                Id = Guid.NewGuid(),
+                Email = email,
+                NormalizedEmail = normalizedEmail,
+                UserName = email,
+                NormalizedUserName = normalizedEmail,
+                SecurityStamp = Guid.NewGuid().ToString(),
+                ConcurrencyStamp = Guid.NewGuid().ToString(),
+                EmailConfirmed = false
+            };
+
+            user.PasswordHash = _passwordHasher.HashPassword(user, password);
+
+            await _context.Users.AddAsync(user);
+
+            var roleId = await _context.Roles
+                .Where(r => r.Name == "User")
+                .Select(r => r.Id)
+                .FirstOrDefaultAsync();
+
+            if (roleId != Guid.Empty)
+            {
+                await _context.UserRoles.AddAsync(new IdentityUserRole<Guid>
+                {
+                    UserId = user.Id,
+                    RoleId = roleId
+                });
             }
-
-            await _userManager.AddToRoleAsync(user, "User");
-            _logger.LogInformation("User registered successfully: {Email}", email);
-
+            
             return user.Id;
         }
 

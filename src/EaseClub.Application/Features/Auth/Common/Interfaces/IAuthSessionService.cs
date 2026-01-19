@@ -10,8 +10,10 @@ namespace EaseClub.Application.Features.Auth.Common.Interfaces
 {
     public interface IAuthSessionService
     {
-        Task<Result<AuthTokensDto>> LoginAsync(string email, string password, string ip, string deviceInfo);
+        Task<Result<AuthTokensDto>> LoginAsync(string email,string name, string password, string ip, string deviceInfo);
         Task<Result<Success>> LogoutAsync(string refreshToken);
-        Task<Result<AuthTokensDto>> RefreshAsync(string refreshToken, string ip);
+        Task<Result<AuthTokensDto>> RefreshAsync(string refreshToken, string ip, string deviceInfo);
+
+        Task<Result<AuthTokensDto>> GenerateAuthTokens(Guid userId,string name,string email,string ip, string deviceInfo);
     }
 }

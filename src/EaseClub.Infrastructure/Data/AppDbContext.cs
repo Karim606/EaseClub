@@ -1,14 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using EaseClub.Application.Common.Interfaces;
+﻿using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Member;
 using EaseClub.Infrastructure.Auth.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace EaseClub.Infrastructure.Data
 {
@@ -30,6 +31,16 @@ namespace EaseClub.Infrastructure.Data
             builder.Entity<IdentityUserLogin<Guid>>().ToTable("UserLogins");
             builder.Entity<IdentityRoleClaim<Guid>>().ToTable("RoleClaims");
             builder.Entity<IdentityUserToken<Guid>>().ToTable("UserTokens");
+        }
+
+        public async Task<IDbContextTransaction> BeginTransactionAsync(
+        CancellationToken cancellationToken = default)
+        {
+            // Prevent accidental nested transactions
+            if (Database.CurrentTransaction != null)
+                return Database.CurrentTransaction;
+
+            return await Database.BeginTransactionAsync(cancellationToken);
         }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

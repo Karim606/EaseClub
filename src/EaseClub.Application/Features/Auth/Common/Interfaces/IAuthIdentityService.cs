@@ -11,6 +11,7 @@ namespace EaseClub.Application.Features.Auth.Common.Interfaces
     {
         Task<Result<Success>> ChangePasswordAsync(string email, string currentPassword, string newPassword);
         Task<Result<Guid>> RegisterUserAsync(string email, string password);
+        Task DeleteUserAsync(Guid userId);
         Task<Result<Success>> RequestResetPasswordAsync(string email);
         Task<Result<Success>> ResetPasswordAsync(string email, string token, string newPassword);
     }
