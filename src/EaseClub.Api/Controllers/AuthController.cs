@@ -1,11 +1,15 @@
-﻿using EaseClub.Api.Common.Filters;
+﻿using Azure.Core;
+using EaseClub.Api.Common.Filters;
 using EaseClub.Application.Features.Auth.Commands.ForgotPassword;
 using EaseClub.Application.Features.Auth.Commands.Login;
 using EaseClub.Application.Features.Auth.Commands.LogOut;
+using EaseClub.Application.Features.Auth.Commands.RefreshToken;
 using EaseClub.Application.Features.Auth.Commands.Register;
+using EaseClub.Application.Features.Auth.Commands.ResetPassword;
 using EaseClub.Application.Features.Auth.Common.Dtos;
 using EaseClub.Domain.Common;
 using MediatR;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EaseClub.Api.Controllers
@@ -119,6 +123,7 @@ namespace EaseClub.Api.Controllers
             );
         }
         //-------------------------------------------------------------Register----------------------------------------------------
+
         [HttpPost("register")]
         [MapToApiVersion("1.0")]
         [RequireClientTypeHeader]
@@ -170,6 +175,56 @@ namespace EaseClub.Api.Controllers
              );
         }
 
+        //-------------------------------------------------------------Refresh------------------------------------------------------
+
+        [HttpPost("refresh")]
+        [MapToApiVersion("1.0")]
+        [RequireClientTypeHeader]
+
+        [ProducesResponseType(typeof(AuthTokensDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+
+        [EndpointName("Refresh Token")]
+        [EndpointSummary("Refresh your old token.")]
+        [EndpointDescription("Refresh you tokens.\n\n" +
+            "Required Header: X-Client-Type: Web | Mobile\n" +
+            "If X-Client-Type is missing or invalid, returns 400 Bad Request.\n\n" +
+            "Behavior:\n" +
+            "- Web clients: receive AccessToken in response body, RefreshToken set as HttpOnly cookie.\n" +
+            "- Mobile clients: receive AccessToken + RefreshToken in response body."
+            )]
+        public async Task<IActionResult> Refresh([FromBody] RefreshRequestDto? request=null)
+        {
+            var clientTypeHeader = HttpContext.Items["ClientType"]?.ToString();
+
+            bool isWeb = clientTypeHeader!.Equals("Web", StringComparison.OrdinalIgnoreCase);
+
+
+            var result = await sender.Send(new RefreshTokenCommand(request.RefreshToken));
+
+
+            return result.Match(
+                 value =>
+                 {
+                     if (isWeb)
+                     {
+                         SetRefreshTokenCookie(value.RefreshToken, value.RefreshTokenExpiry.Value);
+                         return Ok(new AuthTokensDto(AccessToken: value.AccessToken, null, null));
+                     }
+
+                     return Ok(new AuthTokensDto(
+                         AccessToken: value.AccessToken,
+                         RefreshToken: value.RefreshToken,
+                         RefreshTokenExpiry: value.RefreshTokenExpiry
+                     ));
+                 },
+                 Problem
+             );
+
+        }
+
         //-------------------------------------------------------------SetRefreshToken----------------------------------------------------
         private void SetRefreshTokenCookie(string refreshToken, DateTime expiry)
         {
@@ -186,6 +241,7 @@ namespace EaseClub.Api.Controllers
         }
 
         //-------------------------------------------------------------ForgotPassword----------------------------------------------------
+      
         [HttpPost("forgot-password")]
         [MapToApiVersion("1.0")]
 
@@ -193,10 +249,9 @@ namespace EaseClub.Api.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
 
+        [EndpointName("Forgot-Password")]
         [EndpointSummary("Forgot Password")]
         [EndpointDescription("send request to reset password by email.")]
-        [EndpointName("Forgot-Password")]
-
         public async Task<IActionResult> ForgotPassword([FromBody] ForgetPasswordDto model)
         {
 
@@ -204,6 +259,28 @@ namespace EaseClub.Api.Controllers
             return result.Match(
                 Success => NoContent(),
                 Problem);
+        }
+
+        //-------------------------------------------------------------ResetPassword----------------------------------------------------
+      
+        [HttpPost("reset-password")]
+        [MapToApiVersion("1.0")]
+
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+
+        [EndpointName("reset-password")]
+        [EndpointSummary("reset your password")]
+        [EndpointDescription("reset your password by sending new one with token ")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto model)
+        {
+            var result = await sender.Send(new ResetPasswordCommand(model));
+
+            return result.Match(
+                 Success => Ok(),
+                 Problem
+                 );
         }
     }
 }
