@@ -26,6 +26,7 @@ namespace EaseClub.Api.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
 
+        [EndpointName("Login")]
         [EndpointSummary("Login")]
         [EndpointDescription("Authenticates a user.\n\n" +
             "Required Header: X-Client-Type: Web | Mobile\n" +
@@ -63,14 +64,16 @@ namespace EaseClub.Api.Controllers
 
         //-------------------------------------------------------------Logout----------------------------------------------------
 
-        [RequireClientTypeHeader] // Optional: ensures X-Client-Type is present
+        [HttpPost("logout")]
         [MapToApiVersion("1.0")]
+        [RequireClientTypeHeader] // Optional: ensures X-Client-Type is present
 
         [ProducesResponseType(StatusCodes.Status204NoContent)] // Success
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)] // Missing header or token
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
 
+        [EndpointName("Logout")]
         [EndpointSummary("Logout")]
         [EndpointDescription(
             "Logs out the user.\n\n" +
@@ -117,15 +120,16 @@ namespace EaseClub.Api.Controllers
             );
         }
         //-------------------------------------------------------------Register----------------------------------------------------
-        [RequireClientTypeHeader]
-        [EndpointName("Register")]
+        [HttpPost("register")]
         [MapToApiVersion("1.0")]
+        [RequireClientTypeHeader]
 
         [ProducesResponseType(typeof(AuthTokensDto), StatusCodes.Status200OK)] // Web+Mobile
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)] // Email exists
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
 
+        [EndpointName("Register")]
         [EndpointSummary("Register user ")]
         [EndpointDescription("Register new user to system.\n\n" +
             "Required Header: X-Client-Type: Web | Mobile\n" +
