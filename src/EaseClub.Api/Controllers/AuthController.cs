@@ -1,7 +1,9 @@
 ﻿using Azure.Core;
 using EaseClub.Api.Common.Filters;
 using EaseClub.Application.Features.Auth.Commands.Login;
+using EaseClub.Application.Features.Auth.Commands.LogOut;
 using EaseClub.Application.Features.Auth.Common.Dtos;
+using EaseClub.Domain.Common;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -54,6 +56,60 @@ namespace EaseClub.Api.Controllers
                         RefreshTokenExpiry: value.RefreshTokenExpiry
                     ));
                 },
+                Problem
+            );
+        }
+
+        [RequireClientTypeHeader] // Optional: ensures X-Client-Type is present
+        [MapToApiVersion("1.0")]
+
+        [ProducesResponseType(StatusCodes.Status204NoContent)] // Success
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)] // Missing header or token
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+
+        [EndpointSummary("Logout")]
+        [EndpointDescription(
+            "Logs out the user.\n\n" +
+            "Web clients: refresh token is read from cookie and cleared.\n" +
+            "Mobile clients: refresh token must be provided in request body.\n" +
+            "Returns 204 No Content on success."
+            )]
+        public async Task<IActionResult> Logout([FromBody] LogoutRequestDto? request = null)
+        {
+            var clientTypeHeader = HttpContext.Items["ClientType"]?.ToString();
+            
+
+            bool isWeb = clientTypeHeader!.Equals("Web", StringComparison.OrdinalIgnoreCase);
+
+            string? refreshToken = null;
+
+            if (isWeb)
+            {
+                // Web: read refresh token from cookie
+                Request.Cookies.TryGetValue("refreshToken", out refreshToken);
+
+                // Clear the cookie
+                SetRefreshTokenCookie("", DateTime.UtcNow.AddDays(-1));
+            }
+            else
+            {
+                // Mobile: token comes in request body
+                if (request == null || string.IsNullOrEmpty(request.RefreshToken))
+                {
+                    return Problem(new List<Error>
+                    {
+                        Error.Validation("RefreshTokenMissing", "Refresh token is required for mobile logout.")
+                     });
+                }
+                refreshToken = request.RefreshToken;
+            }
+
+            var command = new LogOutCommand(refreshToken!);
+            var result = await sender.Send(command);
+
+            return result.Match(
+                Success => NoContent(),
                 Problem
             );
         }
