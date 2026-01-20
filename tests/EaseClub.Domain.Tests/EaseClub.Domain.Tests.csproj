@@ -23,9 +23,5 @@
     <ProjectReference Include="..\..\src\EaseClub.Domain\EaseClub.Domain.csproj" />
   </ItemGroup>
 	
-  <ItemGroup>
-    <Folder Include="Entities\" />
-  </ItemGroup>
-	
 
 </Project>

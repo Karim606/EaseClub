@@ -39,7 +39,8 @@ namespace EaseClub.Application.Features.Auth.Commands.Register
                 var userId = identityResult.Value;
 
                 // 3. Call Member Repo (Only adds to Change Tracker)
-                var member = MemberUser.Create(userId, request.FirstName, request.LastName,new PhoneNumber(request.PhoneNumber),new Email(request.Email));
+                var member = MemberUser.Create(userId, request.FirstName, request.LastName,
+                             PhoneNumber.Create(request.PhoneNumber).Value, Email.Create(request.Email).Value);
                 await memberUserRepo.AddAsync(member);
 
                 var tokens = await sessionService.GenerateAuthTokens(
