@@ -1,11 +1,13 @@
 ﻿using EaseClub.Application.Common.interfaces;
 using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Features.Auth.Common.Interfaces;
+using EaseClub.Domain.Member;
 using EaseClub.Infrastructure.Auth.Entities;
 using EaseClub.Infrastructure.Auth.interfaces;
 using EaseClub.Infrastructure.Auth.Repositories;
 using EaseClub.Infrastructure.Auth.Services;
 using EaseClub.Infrastructure.Data;
+using EaseClub.Infrastructure.Data.Repositories;
 using EaseClub.Infrastructure.Services;
 using EaseClub.Infrastructure.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -96,8 +98,10 @@ namespace EaseClub.Application
         }
         private static IServiceCollection AddRepositories(this IServiceCollection Services)
         {
-       
+            
+            Services.AddScoped<IUnitOfWork,AppDbContext>();
             Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+            Services.AddScoped<IMemberUserRepository, MemberUserRepository>();
             return Services;
         }
         public static IServiceCollection AddConfigurations(this IServiceCollection services, IConfiguration configuration)

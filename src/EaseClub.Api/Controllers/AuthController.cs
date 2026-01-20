@@ -70,7 +70,7 @@ namespace EaseClub.Api.Controllers
 
         [HttpPost("logout")]
         [MapToApiVersion("1.0")]
-        [RequireClientTypeHeader] // Optional: ensures X-Client-Type is present
+        [RequireClientTypeHeader] 
 
         [ProducesResponseType(StatusCodes.Status204NoContent)] // Success
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)] // Missing header or token
@@ -81,9 +81,12 @@ namespace EaseClub.Api.Controllers
         [EndpointSummary("Logout")]
         [EndpointDescription(
             "Logs out the user.\n\n" +
-            "Web clients: refresh token is read from cookie and cleared.\n" +
-            "Mobile clients: refresh token must be provided in request body.\n" +
-            "Returns 204 No Content on success."
+            "Required Header: X-Client-Type: Web | Mobile\n" +
+            "If X-Client-Type is missing or invalid, returns 400 Bad Request.\n\n" +
+            "Behavior:\n" +
+            "- Web clients: refresh token is read from cookie and cleared.\n\n" +
+            "- Mobile clients: refresh token must be provided in request body.\n\n" +
+            "- Returns 204 No Content on success."
             )]
         public async Task<IActionResult> Logout([FromBody] LogoutRequestDto? request = null)
         {
