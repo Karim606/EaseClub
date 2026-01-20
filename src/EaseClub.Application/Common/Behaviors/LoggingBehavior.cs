@@ -11,12 +11,12 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Common.Behaviors
 {
-    internal sealed class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+    public sealed class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
         where TRequest : notnull 
         where TResponse : IResult
     {
         private readonly ILogger<LoggingBehavior<TRequest, TResponse>> _logger;
-        private LoggingBehavior(ILogger<LoggingBehavior<TRequest, TResponse>> logger)
+        public LoggingBehavior(ILogger<LoggingBehavior<TRequest, TResponse>> logger)
         {
             _logger = logger;
         }

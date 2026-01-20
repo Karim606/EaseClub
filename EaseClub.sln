@@ -22,6 +22,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{CF473EFB-108C-4016-BFE5-8630AA7CF1BB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EaseClub.Application.Tests", "tests\EaseClub.Application.Tests\EaseClub.Application.Tests.csproj", "{E674E3BD-CC93-4824-91C7-4476F2B23CA3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{41CD6DC1-3310-4302-B256-8E5859789E04} = {41CD6DC1-3310-4302-B256-8E5859789E04}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EaseClub.Domain.Tests", "tests\EaseClub.Domain.Tests\EaseClub.Domain.Tests.csproj", "{0CC01624-3C79-B10C-22A7-99084587BADC}"
 	ProjectSection(ProjectDependencies) = postProject

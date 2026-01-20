@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using EaseClub.Domain.Common;
+using FluentAssertions;
 
 
 namespace EaseClub.Domain.Tests.Common
@@ -22,7 +23,7 @@ namespace EaseClub.Domain.Tests.Common
             // Arrange & Act
             var entity = new TestEntity();
             // Assert
-            Assert.NotEqual(Guid.Empty, entity.Id);
+            entity.Id.Should().NotBe(Guid.Empty);
         }
 
         [Fact]
@@ -33,7 +34,7 @@ namespace EaseClub.Domain.Tests.Common
             // Act
             var entity = new TestEntity(expectedId);
             // Assert
-            Assert.Equal(expectedId, entity.Id);
+            entity.Id.Should().Be(expectedId);
         }
     }
 }

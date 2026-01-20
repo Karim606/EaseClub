@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using EaseClub.Domain.Common;
+using FluentAssertions;
 
 namespace EaseClub.Domain.Tests.Common
 {
@@ -25,8 +26,9 @@ namespace EaseClub.Domain.Tests.Common
             // Act
             auditableEntity.SetCreated(userId);
             // Assert
-            Assert.NotEqual(default(DateTime), auditableEntity.CreatedAt);
-            Assert.Equal(userId, auditableEntity.CreatedBy);
+            auditableEntity.CreatedBy.Should().Be(userId);
+            auditableEntity.CreatedAt.Should().NotBe(default(DateTime));
+
         }
     
 
@@ -39,8 +41,9 @@ namespace EaseClub.Domain.Tests.Common
             // Act
             auditableEntity.SetUpdated(userId);
             // Assert
-            Assert.NotNull(auditableEntity.UpdatedAt);
-            Assert.Equal(userId, auditableEntity.UpdatedBy);
+            auditableEntity.UpdatedAt.Should().NotBeNull();
+            auditableEntity.UpdatedBy.Should().Be(userId);
+            ;
         }
     }
  }
