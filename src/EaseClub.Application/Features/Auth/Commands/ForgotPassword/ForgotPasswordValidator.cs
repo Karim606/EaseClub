@@ -11,7 +11,7 @@ namespace EaseClub.Application.Features.Auth.Commands.ForgotPassword
     {
         public ForgotPasswordCommandValidator()
         {
-            RuleFor(c => c.Email).EmailAddress().NotNull().NotEmpty();
+            RuleFor(c => c.Email).EmailAddress().NotEmpty();
         }
     }
 }

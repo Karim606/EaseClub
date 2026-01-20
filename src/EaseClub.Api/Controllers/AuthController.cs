@@ -144,9 +144,15 @@ namespace EaseClub.Api.Controllers
             "If X-Client-Type is missing or invalid, returns 400 Bad Request.\n\n" +
             "Behavior:\n" +
             "- Web clients: receive AccessToken in response body, RefreshToken set as HttpOnly cookie.\n" +
-            "- Mobile clients: receive AccessToken + RefreshToken in response body."
+            "- Mobile clients: receive AccessToken + RefreshToken in response body.\n\n" +
+            "Password requirements:\n" +
+            "- Minimum length is 10 characters\n" +
+            "- At least one uppercase letter\n" +
+            "- At least one lowercase letter\n" +
+            "- At least one number\n\n" +
+            "If password does not meet these requirements, a 400 Bad Request is returned."
             )]
-        public async Task<IActionResult> Register([FromForm] RegisterUserDto request)
+        public async Task<IActionResult> Register([FromBody] RegisterUserDto request)
         {
             var result = await sender.Send(new RegisterCommand(
                 request.FirstName,
