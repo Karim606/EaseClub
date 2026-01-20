@@ -18,8 +18,9 @@ namespace EaseClub.Api.Controllers
     [ApiController]
     public class AuthController(ISender sender) : ApiController
     {
+        private const string RefreshTokenCookieName = "Refresh-Token";
 
-       //-------------------------------------------------------------Login----------------------------------------------------
+        //-------------------------------------------------------------Login----------------------------------------------------
         [HttpPost("login")]
         [MapToApiVersion("1.0")]
         [RequireClientTypeHeader]
@@ -96,7 +97,7 @@ namespace EaseClub.Api.Controllers
             if (isWeb)
             {
                 // Web: read refresh token from cookie
-                Request.Cookies.TryGetValue("refreshToken", out refreshToken);
+                Request.Cookies.TryGetValue(RefreshTokenCookieName, out refreshToken);
 
                 // Clear the cookie
                 SetRefreshTokenCookie("", DateTime.UtcNow.AddDays(-1));
@@ -200,9 +201,28 @@ namespace EaseClub.Api.Controllers
             var clientTypeHeader = HttpContext.Items["ClientType"]?.ToString();
 
             bool isWeb = clientTypeHeader!.Equals("Web", StringComparison.OrdinalIgnoreCase);
+            string? refreshToken;
 
+            if (isWeb)
+            {
+                // Web → read from cookie
+                 Request.Cookies.TryGetValue(RefreshTokenCookieName, out refreshToken);
+            }
+            else
+            {
+                // Mobile → read from body
+                refreshToken = request?.RefreshToken;
+            }
 
-            var result = await sender.Send(new RefreshTokenCommand(request.RefreshToken));
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                return Problem(new List<Error>
+                    {
+                    Error.Validation("RefreshTokenMissing", "Refresh token is required.")
+                    });
+            }
+
+            var result = await sender.Send(new RefreshTokenCommand(refreshToken));
 
 
             return result.Match(
@@ -237,12 +257,12 @@ namespace EaseClub.Api.Controllers
                 Path = "/"
             };
 
-            Response.Cookies.Append("Refresh-Token", refreshToken, cookieOptions);
+            Response.Cookies.Append(RefreshTokenCookieName, refreshToken, cookieOptions);
         }
 
         //-------------------------------------------------------------ForgotPassword----------------------------------------------------
       
-        [HttpPost("forgot-password")]
+        [HttpPost("forgot-password")] // Client-type agnostic endpoint (Web & Mobile)
         [MapToApiVersion("1.0")]
 
         [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -263,7 +283,7 @@ namespace EaseClub.Api.Controllers
 
         //-------------------------------------------------------------ResetPassword----------------------------------------------------
       
-        [HttpPost("reset-password")]
+        [HttpPost("reset-password")] // Client-type agnostic endpoint (Web & Mobile)
         [MapToApiVersion("1.0")]
 
         [ProducesResponseType(StatusCodes.Status200OK)]
