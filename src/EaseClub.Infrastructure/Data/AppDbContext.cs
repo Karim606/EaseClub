@@ -1,10 +1,13 @@
 ﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Domain.ClubAdmin;
 using EaseClub.Domain.Member;
 using EaseClub.Infrastructure.Auth.Entities;
+
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -50,6 +53,7 @@ namespace EaseClub.Infrastructure.Data
 
         public DbSet<AuthUser> AuthUsers => Users;
         public DbSet<MemberUser> MemberUsers { get; set; }
+        public DbSet<ClubAdminUser> ClubAdminUsers { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
     }
 }

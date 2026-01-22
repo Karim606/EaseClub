@@ -54,7 +54,7 @@ namespace EaseClub.Application
                 options.SignIn.RequireConfirmedAccount = false;
             }).AddEntityFrameworkStores<AppDbContext>().AddDefaultTokenProviders();
 
-            services.AddScoped<DbIntialiser>();
+            services.AddScoped<DbInitializer>();
 
             return services;
         }

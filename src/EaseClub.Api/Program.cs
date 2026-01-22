@@ -6,12 +6,13 @@ using Microsoft.OpenApi;
 using Serilog.Core;
 using System.Text.Json;
 using System.Text;
+using EaseClub.Infrastructure.Data;
 namespace EaseClub.Api
 {
     public class Program
     {
         
-        public  static void Main(string[] args)
+        public async static Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -52,7 +53,7 @@ namespace EaseClub.Api
                     c.EnableFilter();
                 });
             }
-            
+
 
 
             app.UseCoreMiddlewares(builder.Configuration);
