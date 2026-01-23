@@ -14,6 +14,16 @@ namespace EaseClub.Infrastructure.Data.Repositories
         {
         }
 
+        public async Task<bool> PhoneExistsAsync(string phoneNumber)
+        {
+            return await  _context.MemberUsers.AnyAsync(mu => mu.PhoneNumber.Value == phoneNumber);
+        }
+
+        public async Task<bool> EmailExistsAsync(string email)
+        {
+            return await _context.MemberUsers.AnyAsync(mu => mu.Email.Value == email);
+        }
+
         public async Task<MemberUser> GetByEmailAsync(string email)
         {
            return await  _context.MemberUsers.FirstOrDefaultAsync(mu => mu.Email.Value == email);

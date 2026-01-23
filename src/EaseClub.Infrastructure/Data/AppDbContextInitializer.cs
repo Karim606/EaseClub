@@ -201,8 +201,8 @@ namespace EaseClub.Infrastructure.Data
             PhoneNumber phone = PhoneNumber.Create(phoneNumber).Value;
             Email userEmail = Email.Create(email).Value;
 
-            var notExist =  appDbContext.ClubAdminUsers.Any(CA => CA.Email.Value == email );
-            if (notExist)
+            var Exist =  appDbContext.ClubAdminUsers.Any(CA => CA.Email.Value == email );
+            if (!Exist)
             {
                 var clubAdminUser = ClubAdminUser.Create(id, firstName, lastName, phone, userEmail);
                 
@@ -224,7 +224,7 @@ namespace EaseClub.Infrastructure.Data
             MemberUser.Create(id, firstName, lastName, phone, userEmail);
 
             var exist = appDbContext.MemberUsers.Any(CA => CA.Email.Value == email);
-            if (exist)
+            if (!exist)
             {
                 var memberUser = MemberUser.Create(id, firstName, lastName, phone, userEmail);
                 await appDbContext.MemberUsers.AddAsync(memberUser);

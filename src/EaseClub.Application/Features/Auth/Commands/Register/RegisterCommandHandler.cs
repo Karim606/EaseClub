@@ -1,19 +1,19 @@
-﻿using EaseClub.Application.Features.Auth.Common.Dtos;
+﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Features.Auth.Common.Dtos;
 using EaseClub.Application.Features.Auth.Common.Interfaces;
+using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
-using EaseClub.Domain.Member;
 using EaseClub.Domain.Common.ValueObjects;
-
+using EaseClub.Domain.Member;
 using MediatR;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using EaseClub.Application.Common.Interfaces;
-using EaseClub.Domain.Common;
-using Microsoft.Extensions.Logging;
 
 namespace EaseClub.Application.Features.Auth.Commands.Register
 {
@@ -26,6 +26,16 @@ namespace EaseClub.Application.Features.Auth.Commands.Register
 
         public async Task<Result<AuthTokensDto>> Handle(RegisterCommand request, CancellationToken cancellationToken)
         {
+            
+            var phoneExists = await memberUserRepo.PhoneExistsAsync(request.PhoneNumber);
+           
+            var emailExists = await memberUserRepo.EmailExistsAsync(request.Email);
+
+            if (emailExists||phoneExists) {
+                logger.LogWarning("Registration conflict: EmailExists={EmailExists}, PhoneExists={PhoneExists}", emailExists.ToString(),
+                    phoneExists.ToString());
+                return Error.Conflict(description:"Unable to complete registration with provided credentials");
+            }
 
             // 1. Start Transaction
             using var transaction = await unitOfWork.BeginTransactionAsync(cancellationToken);
@@ -38,9 +48,23 @@ namespace EaseClub.Application.Features.Auth.Commands.Register
 
                 var userId = identityResult.Value;
 
+                var phoneResult = PhoneNumber.Create(request.PhoneNumber);
+                if (phoneResult.IsError)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return phoneResult.TopError;
+                }
+
+                var emailResult = Email.Create(request.Email);
+                if (emailResult.IsError)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return emailResult.TopError;
+                }
+
                 // 3. Call Member Repo (Only adds to Change Tracker)
                 var member = MemberUser.Create(userId, request.FirstName, request.LastName,
-                             PhoneNumber.Create(request.PhoneNumber).Value, Email.Create(request.Email).Value);
+                             phoneResult.Value, emailResult.Value);
                 await memberUserRepo.AddAsync(member);
 
                 var tokens = await sessionService.GenerateAuthTokens(

@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -59,7 +60,7 @@ namespace EaseClub.Infrastructure.Auth.Services
             
             var tokens = await GenerateAuthTokens(user.Id,name,user.Email, ip, deviceInfo);
 
-            _logger.LogInformation("User logged in successfully: {Email}, IP: {IP}, Device: {Device}", email, ip, deviceInfo);
+   
             return tokens;
         }
         
@@ -80,12 +81,16 @@ namespace EaseClub.Infrastructure.Auth.Services
             var refreshToken = RefreshToken.Create(Guid.Empty, userId, hashed, refresh.ExpiresAt, ip, deviceInfo);
 
             await _refreshRepo.AddAsync(refreshToken);
+            await _refreshRepo.SaveChangesAsync();
+
+            _logger.LogInformation("Auth tokens generated successfully: {Email}, IP: {IP}, Device: {Device}", email, ip, deviceInfo);
             return new AuthTokensDto(accessToken, refresh.UnHashedToken, refresh.ExpiresAt);
         }
 
         public async Task<Result<AuthTokensDto>> RefreshAsync(string refreshToken, string ip,string deviceInfo)
         {
-            var hashed = _jwtService.HashToken(refreshToken);
+            var decodedToken = WebUtility.UrlDecode(refreshToken);
+            var hashed = _jwtService.HashToken(decodedToken);
             var storedToken = await _refreshRepo.GetByHashedTokenAsync(hashed);
 
             if (storedToken == null)
@@ -137,7 +142,8 @@ namespace EaseClub.Infrastructure.Auth.Services
 
         public async Task<Result<Success>> LogoutAsync(string refreshToken)
         {
-            var hashed = _jwtService.HashToken(refreshToken);
+            var decodedToken = WebUtility.UrlDecode(refreshToken);
+            var hashed = _jwtService.HashToken(decodedToken);
             var token = await _refreshRepo.GetByHashedTokenAsync(hashed);
 
             if (token == null)

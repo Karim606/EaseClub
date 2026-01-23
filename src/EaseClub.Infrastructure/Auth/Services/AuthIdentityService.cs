@@ -65,7 +65,7 @@ namespace EaseClub.Infrastructure.Auth.Services
         {
             var normalizedEmail = email.ToUpperInvariant();
 
-            if (await _context.Users.AnyAsync(u => u.NormalizedEmail == normalizedEmail))
+            if (await _context.AuthUsers.AnyAsync(u => u.NormalizedEmail == normalizedEmail))
                 return Error.Conflict("Email already exists");
 
             var user = new AuthUser
@@ -82,10 +82,10 @@ namespace EaseClub.Infrastructure.Auth.Services
 
             user.PasswordHash = _passwordHasher.HashPassword(user, password);
 
-            await _context.Users.AddAsync(user);
+            await _context.AuthUsers.AddAsync(user);
 
             var roleId = await _context.Roles
-                .Where(r => r.Name == "User")
+                .Where(r => r.Name == "Member")
                 .Select(r => r.Id)
                 .FirstOrDefaultAsync();
 

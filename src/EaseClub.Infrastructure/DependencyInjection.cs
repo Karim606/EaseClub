@@ -41,13 +41,12 @@ namespace EaseClub.Application
 
         private static IServiceCollection AddDatabase(this IServiceCollection services,IConfiguration configuration)
         {
-            var sp = services.BuildServiceProvider();
-            var env = sp.GetRequiredService<IHostEnvironment>();
-
-            string typeOfDB = env.IsDevelopment() ? "Dev" : "Prod";
+            var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+    string typeOfDB = (env == "Development") ? "Dev" : "Prod";
 
             var ConnectionString = configuration.GetConnectionString(typeOfDB);
             services.AddDbContext<AppDbContext>(options => options.UseSqlServer(ConnectionString));
+            services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<AppDbContext>());
             services.AddIdentity<AuthUser, IdentityRole<Guid>>(options =>
             {
                 options.Password.RequireDigit = true;
@@ -105,7 +104,7 @@ namespace EaseClub.Application
         private static IServiceCollection AddRepositories(this IServiceCollection Services)
         {
             
-            Services.AddScoped<IUnitOfWork,AppDbContext>();
+            //Services.AddScoped<IUnitOfWork,AppDbContext>();
             Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             Services.AddScoped<IMemberUserRepository, MemberUserRepository>();
             return Services;
