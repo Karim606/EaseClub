@@ -54,7 +54,7 @@ namespace EaseClub.Api
                 });
             }
 
-
+            await app.Init();
 
             app.UseCoreMiddlewares(builder.Configuration);
 

@@ -117,26 +117,12 @@ namespace EaseClub.Infrastructure.Data
             await AddRole("ClubAdmin");
             await AddRole("Member");
 
-            // 2. Add users (IdentityAppUser)
-            await AddAuthUser(
-                Email: "admin@example.com",
-                Password: "Admin@123456",
-                phoneNumber: "1234567890",
-                role: "ClubAdmin"
-            );
-
-            await AddAuthUser(
-                Email: "user@example.com",
-                Password:"User@123456",
-                phoneNumber: "0987654321",
-                role: "Member"
-            );
-            // 3. Add domain-specific users
+            // 2. Add domain-specific users
             await AddClubAdminUser(
                 id: Guid.NewGuid(),
                 firstName: "Alex",
                 lastName: "ClubAdmin",
-                phoneNumber: "1234567890",
+                phoneNumber: "01012345676",
                 email: "admin@example.com"
                 );
 
@@ -152,38 +138,36 @@ namespace EaseClub.Infrastructure.Data
         }
 
 
-        private async Task AddAuthUser(string Email,string Password,string phoneNumber,string role)
+        private async Task AddAuthUser(Guid id,string Email,string Password,string role)
         {
-            bool NotExist = userManager.Users.All(u => u.Email != Email)&&Email!=null;
-            if (NotExist) {
-                var User = new AuthUser()
-                {
-                    Id = new Guid(),
-                    Email=Email,
-                    UserName=Email,
-                    NormalizedEmail=Email,
-                    PhoneNumber=phoneNumber,
-                    
-                };
-                var result  = await userManager.CreateAsync(User,Password);
-                if (result.Succeeded) {
-                    Logger.LogInformation("User with Email {Email} created successfully", Email);
-                   var added = await userManager.AddToRoleAsync(User, role);
-                    if(added.Succeeded)
-                    {
-                        Logger.LogInformation("User with Email {Email} added to role {Role} successfully", Email,role);
-                    }
-                    else
-                    {
-                        Logger.LogWarning("Failed to add user with Email {Email} to role {Role}. Errors: {Errors}", Email, role, string.Join(", ", added.Errors.Select(e => e.Description)));
-                    }
-                }
-            }
-            else 
-            {
-                Logger.LogInformation("User with Email {Email} already exists", Email);
-            }
+            var existing = await userManager.FindByEmailAsync(Email);
 
+                if (existing != null)
+                {
+                    if (existing.Id != id)
+                        throw new InvalidOperationException(
+                            $"AuthUser with email {Email} exists with different Id.");
+
+                    // Same user already exists → OK
+                    return;
+                }
+
+            var user = new AuthUser
+            {
+                Id = id,
+                Email = Email,
+                UserName = Email,
+                NormalizedEmail = Email.ToUpperInvariant(),
+                NormalizedUserName = Email.ToUpperInvariant()
+            };
+
+            var result = await userManager.CreateAsync(user, Password);
+            if (!result.Succeeded)
+                throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));
+
+            var roleResult = await userManager.AddToRoleAsync(user, role);
+            if (!roleResult.Succeeded)
+                throw new Exception(string.Join(", ", roleResult.Errors.Select(e => e.Description)));
         }
 
         private async Task AddRole(string roleName)
@@ -192,7 +176,7 @@ namespace EaseClub.Infrastructure.Data
             {
                 var role = new IdentityRole<Guid>()
                 {
-                    Id = new Guid(),
+                    Id =  Guid.NewGuid(),
                     Name = roleName
                 };
                 var result = await roleManager.CreateAsync(role);
@@ -207,7 +191,7 @@ namespace EaseClub.Infrastructure.Data
             }
             else
             {
-                               Logger.LogInformation("Role {RoleName} already exists", roleName);
+                    Logger.LogInformation("Role {RoleName} already exists", roleName);
             }
 
         }
@@ -216,13 +200,15 @@ namespace EaseClub.Infrastructure.Data
         {
             PhoneNumber phone = PhoneNumber.Create(phoneNumber).Value;
             Email userEmail = Email.Create(email).Value;
-            ClubAdminUser.Create(id, firstName, lastName, phone, userEmail);
 
-          var exist =  appDbContext.ClubAdminUsers.All(CA => CA.Email.Value != email );
-            if (exist)
+            var notExist =  appDbContext.ClubAdminUsers.Any(CA => CA.Email.Value == email );
+            if (notExist)
             {
                 var clubAdminUser = ClubAdminUser.Create(id, firstName, lastName, phone, userEmail);
+                
                 await appDbContext.ClubAdminUsers.AddAsync(clubAdminUser);
+                await AddAuthUser(id, email, "Admin123456", "ClubAdmin");
+
                 Logger.LogInformation("ClubAdminUser with Email {Email} added successfully", email);
             }
             else
@@ -237,11 +223,13 @@ namespace EaseClub.Infrastructure.Data
             Email userEmail = Email.Create(email).Value;
             MemberUser.Create(id, firstName, lastName, phone, userEmail);
 
-            var exist = appDbContext.MemberUsers.All(CA => CA.Email.Value != email);
+            var exist = appDbContext.MemberUsers.Any(CA => CA.Email.Value == email);
             if (exist)
             {
                 var memberUser = MemberUser.Create(id, firstName, lastName, phone, userEmail);
                 await appDbContext.MemberUsers.AddAsync(memberUser);
+                await AddAuthUser(id,email, "User123456", "Member");
+
                 Logger.LogInformation("memberUser with Email {Email} added successfully", email);
             }
             else

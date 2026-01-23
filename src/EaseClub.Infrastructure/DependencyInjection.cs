@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
@@ -40,7 +41,12 @@ namespace EaseClub.Application
 
         private static IServiceCollection AddDatabase(this IServiceCollection services,IConfiguration configuration)
         {
-            var ConnectionString = configuration.GetConnectionString("Default");
+            var sp = services.BuildServiceProvider();
+            var env = sp.GetRequiredService<IHostEnvironment>();
+
+            string typeOfDB = env.IsDevelopment() ? "Dev" : "Prod";
+
+            var ConnectionString = configuration.GetConnectionString(typeOfDB);
             services.AddDbContext<AppDbContext>(options => options.UseSqlServer(ConnectionString));
             services.AddIdentity<AuthUser, IdentityRole<Guid>>(options =>
             {

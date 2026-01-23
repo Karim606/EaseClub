@@ -1,4 +1,5 @@
 ﻿using Azure.Core;
+
 using EaseClub.Api.Common.Filters;
 using EaseClub.Application.Features.Auth.Commands.ForgotPassword;
 using EaseClub.Application.Features.Auth.Commands.Login;
@@ -8,14 +9,16 @@ using EaseClub.Application.Features.Auth.Commands.Register;
 using EaseClub.Application.Features.Auth.Commands.ResetPassword;
 using EaseClub.Application.Features.Auth.Common.Dtos;
 using EaseClub.Domain.Common;
+
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EaseClub.Api.Controllers
 {
     [Route("api/v{version:ApiVersion}/auth")]
-    [ApiController]
+    [AllowAnonymous]
     public class AuthController(ISender sender) : ApiController
     {
         private const string RefreshTokenCookieName = "Refresh-Token";

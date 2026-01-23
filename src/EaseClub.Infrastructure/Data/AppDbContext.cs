@@ -1,5 +1,6 @@
 ﻿using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.ClubAdmin;
+using EaseClub.Domain.Common;
 using EaseClub.Domain.Member;
 using EaseClub.Infrastructure.Auth.Entities;
 
@@ -11,6 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -34,6 +36,20 @@ namespace EaseClub.Infrastructure.Data
             builder.Entity<IdentityUserLogin<Guid>>().ToTable("UserLogins");
             builder.Entity<IdentityRoleClaim<Guid>>().ToTable("RoleClaims");
             builder.Entity<IdentityUserToken<Guid>>().ToTable("UserTokens");
+
+            builder.Entity<UserBase>()
+            .ToTable("Users")       // base table
+            .HasKey(u => u.Id);
+
+            // MemberUser table
+            builder.Entity<MemberUser>()
+            .ToTable("MemberUsers")
+            .HasBaseType<UserBase>();
+
+            // ClubAdminUser table
+            builder.Entity<ClubAdminUser>()
+            .ToTable("ClubAdminUsers")
+            .HasBaseType<UserBase>();
         }
 
         public async Task<IDbContextTransaction> BeginTransactionAsync(
