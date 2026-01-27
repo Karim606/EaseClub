@@ -154,6 +154,14 @@ namespace EaseClub.Application
                           .AllowAnyMethod()
                           .AllowCredentials();
                 });
+
+                options.AddPolicy("DevCors", policy =>
+                {
+                    policy.SetIsOriginAllowed(origin => true)
+                          .AllowAnyHeader()
+                          .AllowAnyMethod()
+                          .AllowCredentials();
+                });
             });
             return services;
         }
@@ -162,7 +170,7 @@ namespace EaseClub.Application
         {
             app.UseExceptionHandler()
                .UseStatusCodePages()
-               .UseCors("DefaultCors")
+               .UseCors("DevCors")
                .UseHttpsRedirection()
                .UseMiddleware<RequestLogContextMiddleware>()
                .UseSerilogRequestLogging()
