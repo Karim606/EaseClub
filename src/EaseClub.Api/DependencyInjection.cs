@@ -29,6 +29,7 @@ namespace EaseClub.Application
             services.AddControllersWithJsonConfiguration()
                     .AddIdentityInfrastructure()
                     .AddCustomProblemDetails()
+                    .AddCors(configuration)
                     .AddExceptionHandlers()
                     .AddApiVersioning()
                     .ConfigureSwagger()
@@ -140,11 +141,28 @@ namespace EaseClub.Application
             });
             return services;
         }
+        private static IServiceCollection AddCors (this IServiceCollection services, IConfiguration configuration)
+        {
+            var corsOrigins = configuration["CORS_ORIGINS"]?.Split(",", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            
+            services.AddCors (options =>
+            {
+                options.AddPolicy("DefaultCors", policy =>
+                {
+                    policy.WithOrigins(corsOrigins ?? Array.Empty<string>())
+                          .AllowAnyHeader()
+                          .AllowAnyMethod()
+                          .AllowCredentials();
+                });
+            });
+            return services;
+        }
 
         public static IApplicationBuilder UseCoreMiddlewares(this IApplicationBuilder app, IConfiguration configuration)
         {
             app.UseExceptionHandler()
                .UseStatusCodePages()
+               .UseCors("DefaultCors")
                .UseHttpsRedirection()
                .UseMiddleware<RequestLogContextMiddleware>()
                .UseSerilogRequestLogging()
