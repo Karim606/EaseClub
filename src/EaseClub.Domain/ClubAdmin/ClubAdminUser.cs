@@ -1,4 +1,5 @@
-﻿using EaseClub.Domain.Common;
+﻿using EaseClub.Domain.Clubs;
+using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.ValueObjects;
 using System;
 using System.Collections.Generic;
@@ -10,18 +11,20 @@ namespace EaseClub.Domain.ClubAdmin
 {
     public class ClubAdminUser:UserBase 
     {
-        
+        public Guid ClubId { get; private set; }
+        public Club Club { get; private set; }
         private ClubAdminUser()
         {
         }
-        private ClubAdminUser(Guid id, string firstName, string lastName, PhoneNumber phoneNumber, Email email): base(id, firstName, lastName,
+        private ClubAdminUser(Guid id,Guid clubId, string firstName, string lastName, PhoneNumber phoneNumber, Email email):
+            base(id, firstName, lastName,
              phoneNumber,  email)
         {
-          
+            ClubId = clubId;
         }
-        public static ClubAdminUser Create(Guid id, string firstName, string lastName, PhoneNumber phoneNumber, Email email)
+        public static ClubAdminUser Create(Guid id,Guid clubId, string firstName, string lastName, PhoneNumber phoneNumber, Email email)
         {
-            return new ClubAdminUser(id, firstName,lastName, phoneNumber, email);
+            return new ClubAdminUser(id,clubId, firstName,lastName, phoneNumber, email);
         }
 
     }

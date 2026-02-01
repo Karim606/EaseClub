@@ -26,6 +26,13 @@ namespace EaseClub.Infrastructure.Data.Configurations
                  .OnDelete(DeleteBehavior.NoAction);
 
             builder.Navigation(c => c.Branches).HasField("_Branches").UsePropertyAccessMode(PropertyAccessMode.Field);
+
+            builder.HasMany(c => c.ClubAdmins)
+                   .WithOne(ca => ca.Club)
+                   .HasForeignKey(ca => ca. ClubId)
+                   .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Navigation(c => c.ClubAdmins).HasField("_ClubAdmins").UsePropertyAccessMode(PropertyAccessMode.Field);
         }
     }
 }

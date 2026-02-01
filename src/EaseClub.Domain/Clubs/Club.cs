@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using EaseClub.Domain.ClubAdmin;
 
 namespace EaseClub.Domain.Clubs
 {
@@ -26,6 +27,9 @@ namespace EaseClub.Domain.Clubs
 
         private readonly List<Branch> _Branches = new List<Branch>();
         public IReadOnlyList<Branch> Branches => _Branches.AsReadOnly();
+
+        private readonly List<ClubAdminUser> _ClubAdmins = new List<ClubAdminUser>();
+        public IReadOnlyList<ClubAdminUser> ClubAdmins => _ClubAdmins.AsReadOnly();
 
         public static Result<Club> Create(Guid id, string name)
         {
