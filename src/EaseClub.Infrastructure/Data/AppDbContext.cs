@@ -3,6 +3,8 @@ using EaseClub.Domain.ClubAdmin;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Member;
 using EaseClub.Infrastructure.Auth.Entities;
+using EaseClub.Domain.Clubs;
+using EaseClub.Domain.Branches;
 
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -18,7 +20,7 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Infrastructure.Data
 {
-    public class AppDbContext : IdentityDbContext<AuthUser, IdentityRole<Guid>, Guid>,IUnitOfWork
+    public class AppDbContext : IdentityDbContext<AuthUser, IdentityRole<Guid>, Guid>, IUnitOfWork
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
@@ -71,5 +73,11 @@ namespace EaseClub.Infrastructure.Data
         public DbSet<MemberUser> MemberUsers { get; set; }
         public DbSet<ClubAdminUser> ClubAdminUsers { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+
+        public DbSet<Club> Clubs { get; set; }
+        public DbSet<Branch> Branches
+        {
+            get; set;
+        }
     }
 }
