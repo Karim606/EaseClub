@@ -1,6 +1,7 @@
 ﻿using EaseClub.Application.Common.interfaces;
 using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Features.Auth.Common.Interfaces;
+using EaseClub.Domain.Branches;
 using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Member;
 using EaseClub.Infrastructure.Auth.Entities;
@@ -109,6 +110,7 @@ namespace EaseClub.Application
             Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             Services.AddScoped<IMemberUserRepository, MemberUserRepository>();
             Services.AddScoped<IClubRepository, ClubRepository>();
+            Services.AddScoped<IBranchRepository, BranchRepository>();
 
             return Services;
         }
