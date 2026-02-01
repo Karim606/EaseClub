@@ -2,6 +2,7 @@
 using EaseClub.Application.Features.Branches.Queries.GetBranchesByClub;
 using EaseClub.Application.Features.Clubs.Queries.GetClubById;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -29,5 +30,25 @@ namespace EaseClub.Api.Controllers
                 Problem);
         }
 
+        [Authorize(Roles = "ClubAdmin")]
+        [HttpPost]
+        [MapToApiVersion("1.0")]
+
+        [ProducesResponseType(typeof(Guid),StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ProblemDetails),StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails),StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails),StatusCodes.Status500InternalServerError)]
+
+        [EndpointName("CreateBranch")]
+        [EndpointSummary("Creates a new branch for a specific club.")]
+
+        public async Task<IActionResult> Create(Guid clubId, [FromBody] CreateBranchRequest request)
+        {
+            var result = await sender.Send(new CreateBranchCommand(clubId,request.Name));
+
+           return result.Match(
+                (id) =>{return CreatedAtAction(nameof(GetByClub), new { version = "1.0", clubId }, id);},
+                Problem);
+        }
     }
 }
