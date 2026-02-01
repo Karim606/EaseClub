@@ -24,6 +24,9 @@ namespace EaseClub.Infrastructure.Data.Repositories
         public async Task AddAsync(T entity) =>
             await _context.Set<T>().AddAsync(entity);
 
+        public async Task<bool> IsExistAsync(Guid id) =>
+            await _context.Set<T>().AnyAsync(x => x.Id == id);
+
         public Task UpdateAsync(T entity)
         {
             _context.Set<T>().Update(entity);

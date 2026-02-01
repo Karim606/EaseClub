@@ -10,6 +10,7 @@ namespace EaseClub.Domain.Common.Interfaces
     {
         Task<T> GetByIdAsync(Guid id);
         Task AddAsync(T entity);
+        Task<bool> IsExistAsync(Guid id);
         Task UpdateAsync(T entity);
         Task DeleteAsync(T entity);
     }

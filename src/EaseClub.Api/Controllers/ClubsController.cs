@@ -11,9 +11,12 @@ namespace EaseClub.Api.Controllers
     {
 
         [HttpGet("{id}")]
+        [MapToApiVersion("1.0")]
+
         [ProducesResponseType(typeof(ClubResponse),StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails),StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+
         [EndpointName("GetClubById")]
         [EndpointSummary("Gets a club by its unique identifier")]
         public async Task<IActionResult> GetById(Guid id)
