@@ -1,9 +1,10 @@
 ﻿using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.ClubAdmin;
 using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.Common.Interfaces;
 
 using MediatR;
-using Microsoft.AspNetCore.Http;
+
 
 using System;
 using System.Collections.Generic;
@@ -17,7 +18,7 @@ using Microsoft.Extensions.Logging;
 namespace EaseClub.Application.Common.Behaviors
 {
     public class AuthorizationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
-        where TRequest : notnull
+        where TRequest : notnull,IAuthorizeRequest
         where TResponse : IResult
     {
         private readonly IClubAdminUserRepository _clubAdminUserRepository;

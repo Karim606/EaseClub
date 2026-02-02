@@ -6,8 +6,7 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Common.Interfaces
 {
-    public interface IRequireClubAdmin:IAuthorizeRequest
+    public interface IAuthorizeRequest
     {
-        Guid ClubId { get; }
     }
 }
