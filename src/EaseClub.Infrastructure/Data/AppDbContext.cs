@@ -70,6 +70,8 @@ namespace EaseClub.Infrastructure.Data
         }
 
         public DbSet<AuthUser> AuthUsers => Users;
+
+        public DbSet<UserBase> UsersBase { get; set; }
         public DbSet<MemberUser> MemberUsers { get; set; }
         public DbSet<ClubAdminUser> ClubAdminUsers { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }

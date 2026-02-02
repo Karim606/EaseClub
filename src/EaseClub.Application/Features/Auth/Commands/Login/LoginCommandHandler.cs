@@ -15,13 +15,13 @@ using EaseClub.Domain.Common;
 
 namespace EaseClub.Application.Features.Auth.Commands.Login
 {
-    public class LoginCommandHandler( IMemberUserRepository memberUserRepository,IAuthSessionService authSessionService,
+    public class LoginCommandHandler( IUserBaseRepository userBaseRepository,IAuthSessionService authSessionService,
                   ICurrentRequestContext currentRequestContext, ILogger<LoginCommandHandler> logger) : IRequestHandler<LoginCommand, Result<AuthTokensDto>>
 
     {
         public async Task<Result<AuthTokensDto>> Handle(LoginCommand request, CancellationToken cancellationToken)
         {
-            var user = await memberUserRepository.GetByEmailAsync(request.Email);
+            var user = await userBaseRepository.GetByEmailAsync(request.Email);
             if (user == null)
             {
                 logger.LogWarning("Failed login attempt for non-existent user {Email}.", request.Email);
