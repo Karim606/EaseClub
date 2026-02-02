@@ -28,6 +28,14 @@ namespace EaseClub.Application.Features.Branches.Commands.CreateBranch
                 return Error.NotFound(description: $"Club with Id {request.ClubId} not found");
             }
 
+            var isBranchExist = await branchRepository.IsExistByName(request.ClubId,request.Name);
+
+            if(isBranchExist) {
+                logger.LogWarning("Branch with name {BranchName} already exists for Club with Id {ClubId}",
+                    request.Name,request.ClubId);
+                return Error.Conflict(description: $"Branch with name {request.Name} already exists for the club.");
+            }
+
             var result = Branch.Create(Guid.NewGuid(),request.ClubId,request.Name);
             
             if(result.IsSuccess)

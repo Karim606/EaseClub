@@ -124,5 +124,41 @@ namespace EaseClub.Application.Tests.Features.Branches.Commands
                 Times.Once
             );
         }
+
+        [Fact]
+        public async Task Handle_Should_Return_Conflict_When_Branch_Name_Already_Exists()
+        {
+            // Arrange
+            var command = new CreateBranchCommand(Guid.NewGuid(), "Main Branch");
+
+            _clubRepository
+                .Setup(x => x.IsExistAsync(command.ClubId))
+                .ReturnsAsync(true);
+
+            _branchRepository
+                .Setup(x => x.IsExistByName(command.ClubId, command.Name))
+                .ReturnsAsync(true); // branch already exists
+
+            var handler = CreateHandler();
+
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.IsError.Should().BeTrue();
+            result.TopError.Type.Should().Be(ErrorKind.Conflict);
+            result.TopError.Description.Should().Contain(command.Name);
+
+            _branchRepository.Verify(
+                x => x.AddAsync(It.IsAny<Branch>()),
+                Times.Never
+            );
+
+            _unitOfWork.Verify(
+                x => x.SaveChangesAsync(It.IsAny<CancellationToken>()),
+                Times.Never
+            );
+        }
+
     }
 }

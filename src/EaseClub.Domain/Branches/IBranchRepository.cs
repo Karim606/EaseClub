@@ -10,5 +10,6 @@ namespace EaseClub.Domain.Branches
     public interface IBranchRepository:IRepository<Branch>
     {
         public Task<List<Branch>> GetBranchesByClubIdAsync(Guid clubId);
+        public Task<bool> IsExistByName(Guid clubId,string name);
     }
 }

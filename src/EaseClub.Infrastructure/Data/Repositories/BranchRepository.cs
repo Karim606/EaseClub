@@ -18,5 +18,10 @@ namespace EaseClub.Infrastructure.Data.Repositories
         {
             return await _context.Branches.Where(b => b.ClubId == clubId).AsNoTracking().ToListAsync();
         }
+
+        public async Task<bool> IsExistByName(Guid clubId, string name)
+        {
+            return await _context.Branches.AnyAsync(b => b.ClubId == clubId && b.Name == name);
+        }
     }
 }

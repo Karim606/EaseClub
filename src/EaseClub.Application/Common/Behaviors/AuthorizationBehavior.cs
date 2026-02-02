@@ -50,11 +50,11 @@ namespace EaseClub.Application.Common.Behaviors
                     errorResult = Error.Unauthorized(description:"User is not a Club Admin");
                 }
 
-                if(clubAdminRequest.ClubId != Guid.Empty && clubAdmin.ClubId != clubAdminRequest.ClubId)
+                if(clubAdminRequest.ClubId != Guid.Empty && clubAdmin?.ClubId != clubAdminRequest.ClubId)
                 {
                     _logger.LogWarning("User with Id {UserId} attempted to access Club data for ClubId {ClubId}" +
                         "but is only authorized for ClubId {AuthorizedClubId}",
-                        userGuid, clubAdminRequest.ClubId, clubAdmin.ClubId);
+                        userGuid, clubAdminRequest.ClubId, clubAdmin?.ClubId);
                     errorResult = Error.Forbidden(description: "User is not authorized to access this Club's data");
                 }
                 
