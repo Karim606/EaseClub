@@ -1,4 +1,6 @@
-﻿using EaseClub.Domain.ClubAdmin;
+﻿using EaseClub.Domain.Branches;
+using EaseClub.Domain.ClubAdmin;
+using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Common.ValueObjects;
 using EaseClub.Domain.Member;
 using EaseClub.Infrastructure.Auth.Entities;
@@ -43,7 +45,7 @@ namespace EaseClub.Infrastructure.Data
     }
 
 
-    public class DbInitializer(AppDbContext appDbContext,ILogger<DbInitializer>Logger
+    public class DbInitializer(AppDbContext appDbContext,ILogger<DbInitializer>logger
         ,UserManager<AuthUser>userManager,RoleManager<IdentityRole<Guid>>roleManager)
     {
 
@@ -55,14 +57,14 @@ namespace EaseClub.Infrastructure.Data
         {
             try
             {
-                Logger.LogInformation("DEV: Dropping and recreating database...");
+                logger.LogInformation("DEV: Dropping and recreating database...");
                 await appDbContext.Database.EnsureDeletedAsync();
                 await appDbContext.Database.EnsureCreatedAsync();
-                Logger.LogInformation("DEV: Database recreated successfully.");
+                logger.LogInformation("DEV: Database recreated successfully.");
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Error during dev database initialization.");
+                logger.LogError(ex, "Error during dev database initialization.");
                 throw;
             }
         }
@@ -74,13 +76,13 @@ namespace EaseClub.Infrastructure.Data
         {
             try
             {
-                Logger.LogInformation("PROD: Applying pending migrations...");
+                logger.LogInformation("PROD: Applying pending migrations...");
                 await appDbContext.Database.MigrateAsync();
-                Logger.LogInformation("PROD: Migrations applied successfully.");
+                logger.LogInformation("PROD: Migrations applied successfully.");
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Error during production database migration.");
+                logger.LogError(ex, "Error during production database migration.");
                 throw;
             }
         }
@@ -88,6 +90,8 @@ namespace EaseClub.Infrastructure.Data
         #endregion
 
         #region Seeding
+        private static readonly Guid SeedClubId =
+        Guid.Parse("9f3a8b6e-2a7d-4b5c-9d9c-1e8c4c2f7a31");
 
         public async Task SeedAsync()
         {
@@ -96,21 +100,25 @@ namespace EaseClub.Infrastructure.Data
             {
                 
                 await TrySeeding();
+                await appDbContext.SaveChangesAsync();
                 await transaction.CommitAsync();
             }
             catch (Exception ex) { 
                 await transaction.RollbackAsync();
-                Logger.LogError(ex, "An error occurred while seeding database.");
+                logger.LogError(ex, "An error occurred while seeding database.");
                 throw;
             }
         }
 
         private async Task TrySeeding()
         {
+            await SeedClubsAndBranches();
             await SeedRolesAndUsers();
+            
         }
 
-       
+        #region SeedUserAndRoles
+        //--------------------------------Seed Roles and Domain-Specific Users------------------------------------------
         private async Task SeedRolesAndUsers()
         {
             // 1. Add roles
@@ -120,6 +128,7 @@ namespace EaseClub.Infrastructure.Data
             // 2. Add domain-specific users
             await AddClubAdminUser(
                 id: Guid.NewGuid(),
+                clubId:SeedClubId,
                 firstName: "Alex",
                 lastName: "ClubAdmin",
                 phoneNumber: "01012345676",
@@ -172,7 +181,7 @@ namespace EaseClub.Infrastructure.Data
 
         private async Task AddRole(string roleName)
         {
-            if (roleManager.Roles.All(r => r.Name != roleName) && roleName != null)
+            if (!await roleManager.RoleExistsAsync(roleName))
             {
                 var role = new IdentityRole<Guid>()
                 {
@@ -182,21 +191,21 @@ namespace EaseClub.Infrastructure.Data
                 var result = await roleManager.CreateAsync(role);
                 if (result.Succeeded)
                 {
-                    Logger.LogInformation("Role {RoleName} created successfully", roleName);
+                    logger.LogInformation("Role {RoleName} created successfully", roleName);
                 }
                 else
                 {
-                    Logger.LogWarning("Failed to create role {RoleName}. Errors: {Errors}", roleName, string.Join(", ", result.Errors.Select(e => e.Description)));
+                    logger.LogWarning("Failed to create role {RoleName}. Errors: {Errors}", roleName, string.Join(", ", result.Errors.Select(e => e.Description)));
                 }
             }
             else
             {
-                    Logger.LogInformation("Role {RoleName} already exists", roleName);
+                    logger.LogInformation("Role {RoleName} already exists", roleName);
             }
 
         }
 
-        private async Task AddClubAdminUser(Guid id,string firstName,string lastName,string phoneNumber,string email)
+        private async Task AddClubAdminUser(Guid id,Guid clubId,string firstName,string lastName,string phoneNumber,string email)
         {
             PhoneNumber phone = PhoneNumber.Create(phoneNumber).Value;
             Email userEmail = Email.Create(email).Value;
@@ -204,16 +213,16 @@ namespace EaseClub.Infrastructure.Data
             var Exist =  appDbContext.ClubAdminUsers.Any(CA => CA.Email.Value == email );
             if (!Exist)
             {
-                var clubAdminUser = ClubAdminUser.Create(id, firstName, lastName, phone, userEmail);
+                var clubAdminUser = ClubAdminUser.Create(id,clubId, firstName, lastName, phone, userEmail);
                 
                 await appDbContext.ClubAdminUsers.AddAsync(clubAdminUser);
                 await AddAuthUser(id, email, "Admin123456", "ClubAdmin");
 
-                Logger.LogInformation("ClubAdminUser with Email {Email} added successfully", email);
+                logger.LogInformation("ClubAdminUser with Email {Email} added successfully", email);
             }
             else
             {
-                Logger.LogInformation("ClubAdminUser with Email {Email} already exists", email);
+                logger.LogInformation("ClubAdminUser with Email {Email} already exists", email);
             }
         }
 
@@ -221,7 +230,6 @@ namespace EaseClub.Infrastructure.Data
         {
             PhoneNumber phone = PhoneNumber.Create(phoneNumber).Value;
             Email userEmail = Email.Create(email).Value;
-            MemberUser.Create(id, firstName, lastName, phone, userEmail);
 
             var exist = appDbContext.MemberUsers.Any(CA => CA.Email.Value == email);
             if (!exist)
@@ -230,13 +238,73 @@ namespace EaseClub.Infrastructure.Data
                 await appDbContext.MemberUsers.AddAsync(memberUser);
                 await AddAuthUser(id,email, "User123456", "Member");
 
-                Logger.LogInformation("memberUser with Email {Email} added successfully", email);
+                logger.LogInformation("memberUser with Email {Email} added successfully", email);
             }
             else
             {
-                Logger.LogInformation("memberUser with Email {Email} already exists", email);
+                logger.LogInformation("memberUser with Email {Email} already exists", email);
             }
         }
+        #endregion SeedUserAndRoles
+
+        #region SeedClubsAndBranches
+        private async Task SeedClubsAndBranches()
+        {
+            // Example club
+            var club = await EnsureClubExists(
+                clubId: SeedClubId,
+                name: "Ease Club"
+            );
+
+            // Branches for that club
+            await EnsureBranchExists(club.Id, "Main Branch");
+            await EnsureBranchExists(club.Id, "Downtown Branch");
+        }
+        private async Task<Club> EnsureClubExists(Guid clubId,string name)
+        {
+            var existingClub = appDbContext.Clubs
+                .FirstOrDefault(c => c.Id == clubId);
+
+            if (existingClub != null)
+            {
+                logger.LogInformation("Club {ClubId} already exists", clubId);
+                return existingClub;
+            }
+
+            var club = Club.Create(clubId,name).Value;
+
+            await appDbContext.Clubs.AddAsync(club);
+            logger.LogInformation("Club {ClubName} created successfully", name);
+
+            return club;
+        }
+
+        private async Task EnsureBranchExists(Guid clubId, string branchName)
+        {
+            var exists = appDbContext.Branches
+                .Any(b => b.ClubId == clubId && b.Name == branchName);
+
+            if (exists)
+            {
+                logger.LogInformation(
+                    "Branch {BranchName} already exists for Club {ClubId}",
+                    branchName,
+                    clubId
+                );
+                return;
+            }
+
+            var branch = Branch.Create(Guid.NewGuid(), clubId, branchName).Value;
+
+            await appDbContext.Branches.AddAsync(branch);
+
+            logger.LogInformation(
+                "Branch {BranchName} added to Club {ClubId}",
+                branchName,
+                clubId
+            );
+        }
+        #endregion SeedClubsAndBranches
 
         #endregion
 
