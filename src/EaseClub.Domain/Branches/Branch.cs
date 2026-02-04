@@ -1,7 +1,7 @@
 ﻿using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
-
+using EaseClub.Domain.MembershipTypes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,7 +23,10 @@ namespace EaseClub.Domain.Branches
         public Guid ClubId { get; private set; }
         public string Name { get; private set; }
         public bool IsActive { get; private set; } = true;
-        public Club Club { get; private set; } 
+        public Club Club { get; private set; }
+
+        private readonly List<MembershipTypeBranch> _MembershipTypeBranches = new();
+        public IReadOnlyList<MembershipTypeBranch> MembershipTypeBranchesList => _MembershipTypeBranches.AsReadOnly();
 
         public static Result<Branch> Create(Guid id, Guid clubId, string name)
         {
