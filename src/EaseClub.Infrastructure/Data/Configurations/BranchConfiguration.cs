@@ -22,6 +22,8 @@ namespace EaseClub.Infrastructure.Data.Configurations
             .HasDatabaseName("IX_Branch_Name_ClubId") 
             .IsUnique()
             .IsClustered(false);
+
+            builder.Navigation(b=> b.MembershipTypeBranchesList).HasField("_MembershipTypeBranches").UsePropertyAccessMode(PropertyAccessMode.Field);
         }
     }
 }

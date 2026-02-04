@@ -17,6 +17,7 @@ using System.Linq;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
+using EaseClub.Domain.MembershipTypes;
 
 namespace EaseClub.Infrastructure.Data
 {
@@ -70,16 +71,15 @@ namespace EaseClub.Infrastructure.Data
         }
 
         public DbSet<AuthUser> AuthUsers => Users;
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         public DbSet<UserBase> UsersBase { get; set; }
         public DbSet<MemberUser> MemberUsers { get; set; }
         public DbSet<ClubAdminUser> ClubAdminUsers { get; set; }
-        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
+        public DbSet<MembershipType> MembershipTypes { get; set; }
+        public DbSet<MembershipTypeBranch> MembershipTypeBranches { get; set; }
         public DbSet<Club> Clubs { get; set; }
-        public DbSet<Branch> Branches
-        {
-            get; set;
-        }
+        public DbSet<Branch> Branches { get; set; }
     }
 }
