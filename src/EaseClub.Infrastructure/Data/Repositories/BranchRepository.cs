@@ -19,6 +19,11 @@ namespace EaseClub.Infrastructure.Data.Repositories
             return await _context.Branches.Where(b => b.ClubId == clubId).AsNoTracking().ToListAsync();
         }
 
+        public async Task<HashSet<Guid>> GetExistingBranchIdsAsync(IEnumerable<Guid> ids)
+        {
+          return await _context.Branches.Where(b => ids.Contains(b.Id)).Select(b => b.Id).ToHashSetAsync();
+        }
+
         public async Task<bool> IsExistByName(Guid clubId, string name)
         {
             return await _context.Branches.AnyAsync(b => b.ClubId == clubId && b.Name == name);

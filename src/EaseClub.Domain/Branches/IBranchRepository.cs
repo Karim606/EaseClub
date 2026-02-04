@@ -11,5 +11,6 @@ namespace EaseClub.Domain.Branches
     {
         public Task<List<Branch>> GetBranchesByClubIdAsync(Guid clubId);
         public Task<bool> IsExistByName(Guid clubId,string name);
+        public Task<HashSet<Guid>> GetExistingBranchIdsAsync(IEnumerable<Guid> ids);
     }
 }

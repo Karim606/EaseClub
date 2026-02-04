@@ -11,6 +11,29 @@ namespace EaseClub.Api.Controllers
     public class MembershipTypesController(ISender sender) : ApiController
     {
 
+        [Authorize(Roles = "ClubAdmin")]
+        [HttpPost]
+        [MapToApiVersion("1.0")]
+
+        [ProducesResponseType(typeof(Guid),StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+
+        [EndpointName("CreateMembershipType")]
+        [EndpointSummary("Creates a new membership type for the specified club.")]
+
+        public async Task<IActionResult> Create(Guid clubId, CreateMembershipTypeCommand cmd)
+        {
+            var result = await sender.Send(cmd with { ClubId = clubId });
+
+           return result.Match(
+                (id) => Ok(id),
+                Problem);
+        }
 
         [HttpGet]
         [MapToApiVersion("1.0")]
