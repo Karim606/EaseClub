@@ -6,6 +6,7 @@ using EaseClub.Domain.ClubAdmin;
 using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Member;
+using EaseClub.Domain.MembershipTypes;
 using EaseClub.Infrastructure.Auth.Entities;
 using EaseClub.Infrastructure.Auth.interfaces;
 using EaseClub.Infrastructure.Auth.Repositories;
@@ -115,6 +116,7 @@ namespace EaseClub.Application
             Services.AddScoped<IBranchRepository, BranchRepository>();
             Services.AddScoped<IClubAdminUserRepository,ClubAdminUserRepository>();
             Services.AddScoped<IUserBaseRepository,UserBaseRepository>();
+            Services.AddScoped<IMembershipTypeRepository, MembershipTypeRepository>();
 
             return Services;
         }
