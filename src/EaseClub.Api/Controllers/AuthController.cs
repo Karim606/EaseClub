@@ -26,6 +26,7 @@ namespace EaseClub.Api.Controllers
         //-------------------------------------------------------------Login----------------------------------------------------
         [HttpPost("login")]
         [MapToApiVersion("1.0")]
+        [RequireClientType]
         [RequireClientTypeHeader]
 
         [ProducesResponseType(typeof(AuthTokensDto), StatusCodes.Status200OK)] 
@@ -73,6 +74,7 @@ namespace EaseClub.Api.Controllers
 
         [HttpPost("logout")]
         [MapToApiVersion("1.0")]
+        [RequireClientType]
         [RequireClientTypeHeader] 
 
         [ProducesResponseType(StatusCodes.Status204NoContent)] // Success
@@ -133,6 +135,7 @@ namespace EaseClub.Api.Controllers
 
         [HttpPost("register")]
         [MapToApiVersion("1.0")]
+        [RequireClientType]
         [RequireClientTypeHeader]
 
         [ProducesResponseType(typeof(AuthTokensDto), StatusCodes.Status200OK)] // Web+Mobile
@@ -192,6 +195,7 @@ namespace EaseClub.Api.Controllers
 
         [HttpPost("refresh")]
         [MapToApiVersion("1.0")]
+        [RequireClientType]
         [RequireClientTypeHeader]
 
         [ProducesResponseType(typeof(AuthTokensDto), StatusCodes.Status200OK)]

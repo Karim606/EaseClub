@@ -1,4 +1,5 @@
 ﻿using EaseClub.Api.Common;
+using EaseClub.Api.Common.Filters;
 using EaseClub.Api.Infrastructure;
 using EaseClub.Application.Common.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -90,7 +91,9 @@ namespace EaseClub.Application
             {
                 var provider = services.BuildServiceProvider()
                                    .GetRequiredService<IApiVersionDescriptionProvider>();
-
+                
+                options.OperationFilter<ClientTypeHeaderFilter>();
+                
                 foreach (var description in provider.ApiVersionDescriptions)
                 {
                     options.SwaggerDoc(description.GroupName, new Microsoft.OpenApi.Models.OpenApiInfo
