@@ -23,7 +23,7 @@ namespace EaseClub.Application.Features.Branches.Queries.GetBranchesByClub
                 logger.LogWarning("No branches found for Club with Id {ClubId}", request.ClubId);
                 return Error.NotFound(description: $"No branches found for Club with Id {request.ClubId}");
             }
-            var response = branches.Select(b => new BranchResponse(b.Id,b.Name)).ToList();
+            var response = branches.Select(b => new BranchResponse(b.Id,b.ClubId,b.Name)).ToList();
             return response;
         }
     }
