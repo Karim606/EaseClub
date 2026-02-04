@@ -93,6 +93,9 @@ namespace EaseClub.Infrastructure.Data
         private static readonly Guid SeedClubId =
         Guid.Parse("9f3a8b6e-2a7d-4b5c-9d9c-1e8c4c2f7a31");
 
+        private static readonly Guid SeedClubAdminId =
+        Guid.Parse("9f3a7b4e-2a7d-4b5c-9d9c-1e8c4c2f7a31");
+
         public async Task SeedAsync()
         {
             using var transaction = await appDbContext.Database.BeginTransactionAsync();
@@ -127,7 +130,7 @@ namespace EaseClub.Infrastructure.Data
 
             // 2. Add domain-specific users
             await AddClubAdminUser(
-                id: Guid.NewGuid(),
+                id: SeedClubAdminId,
                 clubId:SeedClubId,
                 firstName: "Alex",
                 lastName: "ClubAdmin",
