@@ -18,6 +18,7 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using EaseClub.Domain.MembershipTypes;
+using EaseClub.Domain.MembershipPlans;
 
 namespace EaseClub.Infrastructure.Data
 {
@@ -81,5 +82,10 @@ namespace EaseClub.Infrastructure.Data
         public DbSet<MembershipTypeBranch> MembershipTypeBranches { get; set; }
         public DbSet<Club> Clubs { get; set; }
         public DbSet<Branch> Branches { get; set; }
-    }
+
+        public DbSet<MembershipPlan> MembershipPlans { get; set; }
+        public DbSet<InstallmentTemplate> InstallmentTemplates { get; set; }
+        public DbSet<PlanInstallmentTemplate> PlanInstallmentTemplates { get; set; }
+        public DbSet<MembershipInstallment> MembershipInstallments { get; set; }
+        }
 }

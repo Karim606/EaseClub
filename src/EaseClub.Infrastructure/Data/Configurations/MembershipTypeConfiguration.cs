@@ -26,7 +26,7 @@ namespace EaseClub.Infrastructure.Data.Configurations
                    .OnDelete(DeleteBehavior.Cascade);
 
             builder.Navigation(x => x.PermittedBranches).HasField("_PermittedBranches").UsePropertyAccessMode(PropertyAccessMode.Field);
-
+            builder.Navigation(x => x.Plans).HasField("_Plans").UsePropertyAccessMode(PropertyAccessMode.Field);
 
             builder.HasIndex(x => new { x.ClubId, x.IsActive });
 
