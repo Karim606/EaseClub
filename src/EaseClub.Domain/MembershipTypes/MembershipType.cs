@@ -1,5 +1,6 @@
 ﻿using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.MembershipPlans;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,6 +24,19 @@ namespace EaseClub.Domain.MembershipTypes
 
         private readonly List<MembershipTypeBranch> _PermittedBranches = new();
         public IReadOnlyList<MembershipTypeBranch> PermittedBranches => _PermittedBranches.AsReadOnly();
+
+        private readonly List<MembershipPlan> _Plans = new();
+        public IReadOnlyList<MembershipPlan> Plans => _Plans.AsReadOnly();
+
+        public void AddPlan(MembershipPlan plan)
+        {
+            _Plans.Add(plan);
+        }
+
+        public void RemovePlan(MembershipPlan plan)
+        {
+            _Plans.Remove(plan);
+        }
 
         private MembershipType() { } 
 
