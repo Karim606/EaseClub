@@ -19,6 +19,8 @@ namespace EaseClub.Domain.Tests.Entities.MembershipPlan
 
             return InstallmentTemplate.Create(
                 Guid.NewGuid(),
+                Guid.NewGuid(),
+                "abc",
                 null,
                 null,
                 installments

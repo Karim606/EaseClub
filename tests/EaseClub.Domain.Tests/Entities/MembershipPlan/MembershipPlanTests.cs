@@ -129,6 +129,8 @@ namespace EaseClub.Domain.Tests.Entities.MembershipPlan
 
             var template = InstallmentTemplate.Create(
                 Guid.NewGuid(),
+                Guid.NewGuid(),
+                "abc",
                 null,
                 null,
                 new List<Installment>

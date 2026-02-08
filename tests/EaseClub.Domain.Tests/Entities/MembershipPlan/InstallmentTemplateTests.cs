@@ -21,7 +21,7 @@ public class InstallmentTemplateTests
         };
 
         // Act
-        var result = InstallmentTemplate.Create(_validId, null, null, installments);
+        var result = InstallmentTemplate.Create(_validId,Guid.NewGuid(),"abc", null, null, installments);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -40,7 +40,7 @@ public class InstallmentTemplateTests
         };
 
         // Act
-        var result = InstallmentTemplate.Create(_validId, null, null, installments);
+        var result = InstallmentTemplate.Create(_validId, Guid.NewGuid(),"abc", null, null, installments);
 
         // Assert
         result.IsError.Should().BeTrue();
@@ -57,7 +57,7 @@ public class InstallmentTemplateTests
     public void Create_WithAutoGeneration_ShouldSucceed_AndNormalizePercentages(int count, int duration)
     {
         // Act
-        var result = InstallmentTemplate.Create(_validId, count, duration, null);
+        var result = InstallmentTemplate.Create(_validId, Guid.NewGuid(),"abc", count, duration, null);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -78,7 +78,7 @@ public class InstallmentTemplateTests
         int duration = 30;
 
         // Act
-        var result = InstallmentTemplate.Create(_validId, count, duration, null);
+        var result = InstallmentTemplate.Create(_validId, Guid.NewGuid(), "", count, duration, null);
 
         // Assert
         var list = result.Value.Installments;
@@ -96,7 +96,7 @@ public class InstallmentTemplateTests
     public void Create_ShouldFail_WhenNoInputsProvided()
     {
         // Act
-        var result = InstallmentTemplate.Create(_validId, null, null, null);
+        var result = InstallmentTemplate.Create(_validId, Guid.NewGuid(), "abc", null, null, null);
 
         // Assert
         result.IsError.Should().BeTrue();
@@ -107,7 +107,7 @@ public class InstallmentTemplateTests
     public void Create_WithAutoGeneration_ShouldFail_WhenDurationIsMissing()
     {
         // Act: Providing count but missing duration
-        var result = InstallmentTemplate.Create(_validId, 5, null, null);
+        var result = InstallmentTemplate.Create(_validId, Guid.NewGuid(), "abc", 5, null, null);
 
         // Assert
         result.IsError.Should().BeTrue();

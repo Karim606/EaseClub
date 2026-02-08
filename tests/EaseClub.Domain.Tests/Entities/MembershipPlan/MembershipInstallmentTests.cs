@@ -18,7 +18,7 @@ public class MembershipInstallmentTests
     public void Create_ShouldSucceed_WhenDataIsValid()
     {
         // Act
-        var result = MembershipInstallment.Create(_validMembershipId, _validOrder, _validAmount, _futureDueDate);
+        var result = MembershipInstallment.Create(_validMembershipId,Guid.NewGuid(),_validOrder, _validAmount, _futureDueDate);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -30,7 +30,7 @@ public class MembershipInstallmentTests
     public void Create_ShouldFail_WhenAmountIsZeroOrNegative()
     {
         // Act
-        var result = MembershipInstallment.Create(_validMembershipId, _validOrder, 0, _futureDueDate);
+        var result = MembershipInstallment.Create(_validMembershipId, Guid.NewGuid(), _validOrder, 0, _futureDueDate);
 
         // Assert
         result.IsError.Should().BeTrue();
@@ -44,7 +44,7 @@ public class MembershipInstallmentTests
         var pastDate = DateTime.UtcNow.AddMinutes(-1);
 
         // Act
-        var result = MembershipInstallment.Create(_validMembershipId, _validOrder, _validAmount, pastDate);
+        var result = MembershipInstallment.Create(_validMembershipId, Guid.NewGuid(), _validOrder, _validAmount, pastDate);
 
         // Assert
         result.IsError.Should().BeTrue();
@@ -59,7 +59,7 @@ public class MembershipInstallmentTests
     public void MarkPaid_ShouldSucceed_WhenStatusIsPending()
     {
         // Arrange
-        var installment = MembershipInstallment.Create(_validMembershipId, _validOrder, _validAmount, _futureDueDate).Value;
+        var installment = MembershipInstallment.Create(_validMembershipId, Guid.NewGuid(), _validOrder, _validAmount, _futureDueDate).Value;
         var invoiceId = Guid.NewGuid();
 
         // Act
@@ -75,7 +75,7 @@ public class MembershipInstallmentTests
     public void MarkPaid_ShouldFail_WhenAlreadyPaid()
     {
         // Arrange
-        var installment = MembershipInstallment.Create(_validMembershipId, _validOrder, _validAmount, _futureDueDate).Value;
+        var installment = MembershipInstallment.Create(_validMembershipId, Guid.NewGuid(), _validOrder, _validAmount, _futureDueDate).Value;
         installment.MarkPaid(Guid.NewGuid());
 
         // Act
@@ -95,7 +95,7 @@ public class MembershipInstallmentTests
     {
         // Arrange
         // Note: Creation allows future dates. MarkOverdue checks if we have reached that date.
-        var installment = MembershipInstallment.Create(_validMembershipId, _validOrder, _validAmount, _futureDueDate).Value;
+        var installment = MembershipInstallment.Create(_validMembershipId, Guid.NewGuid(), _validOrder, _validAmount, _futureDueDate).Value;
 
         // Act
         var result = installment.MarkOverdue();
@@ -114,7 +114,7 @@ public class MembershipInstallmentTests
         // We bypass the Factory 'Future' check by using the constructor directly (if public/internal)
         // or simulating time. 
         var dueDateInPast = DateTime.UtcNow.AddDays(-1);
-        var installment = new MembershipInstallment(_validMembershipId, _validOrder, _validAmount, dueDateInPast);
+        var installment = new MembershipInstallment(_validMembershipId, Guid.NewGuid(), _validOrder, _validAmount, dueDateInPast);
 
         // Act
         var result = installment.MarkOverdue();
