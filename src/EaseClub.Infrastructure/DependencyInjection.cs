@@ -6,6 +6,7 @@ using EaseClub.Domain.ClubAdmin;
 using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Member;
+using EaseClub.Domain.MembershipPlans.Repositories;
 using EaseClub.Domain.MembershipTypes;
 using EaseClub.Infrastructure.Auth.Entities;
 using EaseClub.Infrastructure.Auth.interfaces;
@@ -47,7 +48,7 @@ namespace EaseClub.Application
         private static IServiceCollection AddDatabase(this IServiceCollection services,IConfiguration configuration)
         {
             var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-    string typeOfDB = (env == "Development") ? "Dev" : "Prod";
+            string typeOfDB = (env == "Development") ? "Dev" : "Prod";
 
             var ConnectionString = configuration.GetConnectionString(typeOfDB);
             services.AddDbContext<AppDbContext>(options => options.UseSqlServer(ConnectionString));
@@ -117,6 +118,8 @@ namespace EaseClub.Application
             Services.AddScoped<IClubAdminUserRepository,ClubAdminUserRepository>();
             Services.AddScoped<IUserBaseRepository,UserBaseRepository>();
             Services.AddScoped<IMembershipTypeRepository, MembershipTypeRepository>();
+            Services.AddScoped<IMembershipPlanRepository, MembershipPlanRepository>();
+            Services.AddScoped<IInstallmentsTemplatesRepository, InstallmentsRepository>();
 
             return Services;
         }
