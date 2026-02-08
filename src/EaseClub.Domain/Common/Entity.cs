@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EaseClub.Domain.Common.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
@@ -7,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Domain.Common
 {
-    public class Entity
+    public class Entity:IEntity
     {
         public Guid Id { get; }
 

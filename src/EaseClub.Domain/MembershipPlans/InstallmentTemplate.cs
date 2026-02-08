@@ -1,4 +1,6 @@
-﻿using EaseClub.Domain.Common;
+﻿using EaseClub.Domain.Clubs;
+using EaseClub.Domain.Common;
+using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
 using System;
 using System.Collections.Generic;
@@ -9,9 +11,12 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Domain.MembershipPlans
 {
-    public class InstallmentTemplate : AuditableEntity
+    public class InstallmentTemplate : AuditableEntity,IHaveClub
     {
-       
+        public string Name { get; private set; }
+        public Guid ClubId { get; private set; }
+        public Club Club { get; private set; }
+
         private readonly List<Installment>_Installments = new();
         public  IReadOnlyList<Installment> Installments => _Installments.AsReadOnly();
 
@@ -20,14 +25,15 @@ namespace EaseClub.Domain.MembershipPlans
 
         private InstallmentTemplate() { }
 
-        private InstallmentTemplate(Guid id ,List<Installment> installments):base(id)
+        private InstallmentTemplate(Guid id,Guid clubId, string name, List<Installment> installments):base(id)
         {
 
             _Installments = installments;
-
+            Name = name;
+            ClubId = clubId;
         }
 
-        public static Result<InstallmentTemplate>Create(Guid id,int? numOfInstallments,int? durationInDays,
+        public static Result<InstallmentTemplate>Create(Guid id,Guid clubId,string name,int? numOfInstallments,int? durationInDays,
             List<Installment>? installments)
         {
 
@@ -62,7 +68,7 @@ namespace EaseClub.Domain.MembershipPlans
                 return InstallmentTemplateErrors.EitherNumOfInstallmentsOrListOfInstallmentsMustBeProvided;
             }
 
-            var template = new InstallmentTemplate(id,generatedInstallments);
+            var template = new InstallmentTemplate(id,clubId,name,generatedInstallments);
             
             return template;
         }

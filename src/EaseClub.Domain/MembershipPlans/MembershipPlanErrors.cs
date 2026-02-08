@@ -53,5 +53,13 @@ namespace EaseClub.Domain.MembershipPlans
         public static Error InstallmentTemplateNotFoundInThisPlan =Error.Validation(
                 code: "MembershipPlan.InstallmentTemplate.Not.Found.In.This.Plan",
                 description: "The specified installment template was not found in this membership plan.");
+
+        public static Error NameAlreadyExistsInClub = Error.Conflict(
+                code: "MembershipPlan.Name.Already.Exists.In.Club",
+                description: "A membership plan with the same name already exists in the specified club.");
+
+        public static Error NotFound = Error.NotFound(
+                code: "MembershipPlan.Not.Found",
+                description: "The specified membership plan was not found.");
     }
 }

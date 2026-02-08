@@ -1,4 +1,6 @@
-﻿using EaseClub.Domain.Common;
+﻿using EaseClub.Domain.Clubs;
+using EaseClub.Domain.Common;
+using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
 using System;
 using System.Collections.Generic;
@@ -8,9 +10,11 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Domain.MembershipPlans
 {
-    public class MembershipInstallment : AuditableEntity
+    public class MembershipInstallment : AuditableEntity,IHaveClub
     {
         public Guid MembershipId { get; private set; }
+        public Guid ClubId { get; private set; }
+        public Club Club { get; private set; }
         public int Order { get; private set; }
         public decimal Amount { get; private set; }
         public DateTime DueDate { get; private set; }
@@ -19,9 +23,10 @@ namespace EaseClub.Domain.MembershipPlans
 
         private MembershipInstallment() { }
 
-        public MembershipInstallment(Guid membershipId, int order, decimal amount, DateTime dueDate)
+        public MembershipInstallment(Guid membershipId,Guid clubId, int order, decimal amount, DateTime dueDate)
         {
             MembershipId = membershipId;
+            ClubId = clubId;
             Order = order;
             Amount = amount;
             DueDate = dueDate;
@@ -52,10 +57,13 @@ namespace EaseClub.Domain.MembershipPlans
 
         }
 
-        public static Result<MembershipInstallment> Create(Guid membershipId, int order, decimal amount, DateTime dueDate)
+        public static Result<MembershipInstallment> Create(Guid membershipId,Guid clubId, int order, decimal amount, DateTime dueDate)
         {
             if (membershipId == Guid.Empty)
                return MembershipInstallmentErrors.MembershipIdMustBeProvided;
+
+            if (clubId == Guid.Empty)
+                return OwnedByClubErrors.ClubIdIsRequired;
 
             if(order < 0)
                 return MembershipInstallmentErrors.InstallmentOrderMustBeNonNegative;
@@ -66,7 +74,7 @@ namespace EaseClub.Domain.MembershipPlans
             if (dueDate <= DateTime.UtcNow)
                 return MembershipInstallmentErrors.InstallmentDueDateMustBeInTheFuture;
 
-            return new MembershipInstallment(membershipId, order, amount, dueDate);
+            return new MembershipInstallment(membershipId,clubId, order, amount, dueDate);
         }
     }
 }

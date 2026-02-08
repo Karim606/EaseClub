@@ -1,4 +1,5 @@
 ﻿using EaseClub.Domain.Common;
+using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipPlans;
 using System;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Domain.MembershipTypes
 {
-    public class MembershipType:AuditableEntity
+    public class MembershipType:AuditableEntity,IHaveClub
     {
         public Guid ClubId { get; private set; }
 

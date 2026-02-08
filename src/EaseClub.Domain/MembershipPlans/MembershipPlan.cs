@@ -1,4 +1,5 @@
 ﻿using EaseClub.Domain.Common;
+using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
 using System;
 using System.Collections.Generic;
@@ -8,17 +9,17 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Domain.MembershipPlans
 {
-    public class MembershipPlan : AuditableEntity
+    public class MembershipPlan : AuditableEntity,IHaveClub
     {
         public Guid ClubId { get; private set; }
         public Guid MembershipTypeId { get; private set; }
 
         public string Name { get; private set; }
-        public string Description { get; private set; }
+        public string? Description { get; private set; }
 
         public decimal TotalPrice { get; private set; }
         public int DurationInDays { get; private set; }
-        public bool IsActive { get; private set; }
+        public bool IsActive { get; private set; } = true;
 
         private readonly List<PlanInstallmentTemplate> _InstallmentTemplates = new();
         public IReadOnlyList<PlanInstallmentTemplate> InstallmentTemplates => _InstallmentTemplates.AsReadOnly();
@@ -105,6 +106,7 @@ namespace EaseClub.Domain.MembershipPlans
 
                 var membershipInstallment = new MembershipInstallment(
                     membershipId,
+                    ClubId,
                     item.OrderIndex,
                     installmentAmount,
                     DateTime.UtcNow.AddDays(item.DueAfterDays)
