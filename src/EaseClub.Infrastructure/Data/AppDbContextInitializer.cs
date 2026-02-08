@@ -3,6 +3,8 @@ using EaseClub.Domain.ClubAdmin;
 using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Common.ValueObjects;
 using EaseClub.Domain.Member;
+using EaseClub.Domain.MembershipPlans;
+using EaseClub.Domain.MembershipTypes;
 using EaseClub.Infrastructure.Auth.Entities;
 
 using Microsoft.AspNetCore.Builder;
@@ -96,6 +98,12 @@ namespace EaseClub.Infrastructure.Data
         private static readonly Guid SeedClubAdminId =
         Guid.Parse("9f3a7b4e-2a7d-4b5c-9d9c-1e8c4c2f7a31");
 
+        private static readonly Guid SeedMembershipTypeId = Guid.Parse("a1e8b6f2-4f6c-4c4a-9d0f-2a8b7e3c1d94");
+
+        private static readonly Guid SeedMembershipPlanId = Guid.Parse("7c2d4a8e-1b9f-4e2a-8f3c-5b6d9a1e0c47");
+
+        private static readonly Guid SeedInstallmentTemplateId = Guid.Parse("7c2d4a8e-1b9f-4e2a-8f3c-5b6d9a1e0c47");
+
         public async Task SeedAsync()
         {
             using var transaction = await appDbContext.Database.BeginTransactionAsync();
@@ -117,6 +125,7 @@ namespace EaseClub.Infrastructure.Data
         {
             await SeedClubsAndBranches();
             await SeedRolesAndUsers();
+            await SeedMembershipType_Plan_InstallmentTemplate();
             
         }
 
@@ -310,6 +319,21 @@ namespace EaseClub.Infrastructure.Data
         #endregion SeedClubsAndBranches
 
         #endregion
+
+        public async Task SeedMembershipType_Plan_InstallmentTemplate()
+        {
+            var membershipType = MembershipType.Create(SeedMembershipTypeId, SeedClubId, "pro");
+
+            await appDbContext.MembershipTypes.AddAsync(membershipType.Value);
+
+            var membershipPlan = MembershipPlan.Create(SeedMembershipPlanId, SeedClubId, SeedMembershipTypeId, "ca", 2000, 60);
+
+            await appDbContext.MembershipPlans.AddAsync(membershipPlan.Value);
+
+            var installmentTemplate = InstallmentTemplate.Create(SeedInstallmentTemplateId, SeedClubId, "se",4,60,null);
+
+            await appDbContext.InstallmentTemplates.AddAsync(installmentTemplate.Value);
+        }
 
     }
 }
