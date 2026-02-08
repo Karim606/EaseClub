@@ -1,19 +1,19 @@
 ﻿using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.ClubAdmin;
-using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Interfaces;
-
+using EaseClub.Domain.Common.Results;
 using MediatR;
-
-
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Logging;
+using Serilog.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
-using EaseClub.Domain.Common;
-using Microsoft.Extensions.Logging;
 
 namespace EaseClub.Application.Common.Behaviors
 {
@@ -21,15 +21,15 @@ namespace EaseClub.Application.Common.Behaviors
         where TRequest : notnull,IAuthorizeRequest
         where TResponse : IResult
     {
-        private readonly IClubAdminUserRepository _clubAdminUserRepository;
+        private readonly IClubAuthorizationService _clubAuthorizationService;
         private readonly ICurrentUserService _currentUserService;
         private readonly ILogger<AuthorizationBehavior<TRequest, TResponse>> _logger;
-        public AuthorizationBehavior(IClubAdminUserRepository clubAdminUserRepository,
+        public AuthorizationBehavior(IClubAuthorizationService clubAuthorizationService,
                                      ICurrentUserService currentUserService,
                                      ILogger<AuthorizationBehavior<TRequest,TResponse>>logger)
         {
-            _clubAdminUserRepository = clubAdminUserRepository;
             _currentUserService = currentUserService;
+            _clubAuthorizationService = clubAuthorizationService;
             _logger = logger;
         }
 
@@ -40,28 +40,38 @@ namespace EaseClub.Application.Common.Behaviors
             {
                 var userId = _currentUserService.GetId();
                 Guid.TryParse(userId, out Guid userGuid);
-                var clubAdmin = await _clubAdminUserRepository.GetByIdAsync(userGuid);
-                Error? errorResult=null;
 
-                if(clubAdmin == null)
-                {
-                    _logger.LogWarning("User with Id {UserId} is not a Club Admin and attempted to access Club Admin data",
-                        userGuid);
-                    errorResult = Error.Unauthorized(description:"User is not a Club Admin");
+                var isUserAdminOfClub = await _clubAuthorizationService.IsUserAdminOfClubAsync(userGuid, clubAdminRequest.ClubId);
+                
+                if (!isUserAdminOfClub) {
+                    _logger.LogWarning("User {UserId} is NOT an admin for club {ClubId}", userGuid, clubAdminRequest.ClubId);
+                    return (dynamic)Error.Forbidden(description: "You aren't allowed to manage this club's resources.");
+                    
                 }
 
-                if(clubAdminRequest.ClubId != Guid.Empty && clubAdmin?.ClubId != clubAdminRequest.ClubId)
+                
+                if(request is IRequireClubOwnershipValidation ownershipRequest)
                 {
-                    _logger.LogWarning("User with Id {UserId} attempted to access Club data for ClubId {ClubId}" +
-                        "but is only authorized for ClubId {AuthorizedClubId}",
-                        userGuid, clubAdminRequest.ClubId, clubAdmin?.ClubId);
-                    errorResult = Error.Forbidden(description: "User is not authorized to access this Club's data");
+                    foreach (var rule in ownershipRequest.Rules())
+                    {
+                        var allowed = await rule.Check(_clubAuthorizationService);
+                        
+                        if (!allowed)
+                        {
+                            _logger.LogWarning(
+                            "Authorization Failed: Resource {ResourceName} with ID {ResourceId} does not belong to Club {ClubId}. User: {UserId}",
+                            rule.ResourceName,
+                            rule.ResourceId,
+                            clubAdminRequest.ClubId,
+                            userGuid);
+
+                            return (dynamic)Error.Forbidden(
+                                description: $"The {rule.ResourceName} you are trying to access does not belong to your club.");
+                        }
+                    }
                 }
                 
-                if(errorResult.HasValue)
-                {
-                    return (dynamic)errorResult.Value;
-                }
+
             }
 
             return await next();

@@ -103,6 +103,7 @@ namespace EaseClub.Application
             //Auth Services
             services.AddScoped<IAuthIdentityService,AuthIdentityService>();
             services.AddScoped<IAuthSessionService,AuthSessionService>();
+            services.AddScoped<IClubAuthorizationService, ClubAuthorizationService>();
 
             services.AddScoped<IEmailService, TurboEmailService>();
             return services;
