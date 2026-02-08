@@ -23,6 +23,8 @@ namespace EaseClub.Infrastructure.Data.Configurations
                    .HasMaxLength(20);
 
             builder.HasIndex(x => x.MembershipId);
+
+            builder.HasOne(x=>x.Club).WithMany().HasForeignKey(x => x.ClubId).OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

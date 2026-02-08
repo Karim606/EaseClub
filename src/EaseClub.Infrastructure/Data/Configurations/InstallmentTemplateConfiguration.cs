@@ -14,6 +14,7 @@ namespace EaseClub.Infrastructure.Data.Configurations
         public void Configure(EntityTypeBuilder<InstallmentTemplate> builder)
         {
             builder.HasKey(x => x.Id);
+            builder.HasIndex(x => new { x.ClubId, x.Name });
 
             // Map the List<Installment> as an Owned Collection
             builder.OwnsMany(x => x.Installments, a =>
@@ -27,6 +28,9 @@ namespace EaseClub.Infrastructure.Data.Configurations
                 a.Property(x => x.DueAfterDays).IsRequired();
                 a.Property(x => x.OrderIndex).IsRequired();
             });
+
+            builder.Property(x => x.Name).HasMaxLength(100).IsRequired();
+            builder.HasOne(x => x.Club).WithMany().HasForeignKey(x => x.ClubId).OnDelete(DeleteBehavior.Cascade);
 
             builder.Navigation(x => x.Installments).HasField("_Installments").UsePropertyAccessMode(PropertyAccessMode.Field);
         }
