@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace EaseClub.Api.Controllers
 {
     [Route("api/{version:ApiVersion}/clubs/{clubId}/installment-templates")]
-    public class InstallmentTemplates(ISender sender) : ApiController
+    public class InstallmentTemplatesController(ISender sender) : ApiController
     {
 
         [Authorize(Roles = "ClubAdmin")]
