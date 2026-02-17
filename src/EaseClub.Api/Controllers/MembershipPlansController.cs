@@ -1,4 +1,5 @@
-﻿using EaseClub.Application.Features.MembershipPlans.Command.AddTemplateToPlan;
+﻿using EaseClub.Application.Common.Pagination.Parameters;
+using EaseClub.Application.Features.MembershipPlans.Command.AddTemplateToPlan;
 using EaseClub.Application.Features.MembershipPlans.Command.CreatePlan;
 using EaseClub.Application.Features.MembershipPlans.Command.RemoveInstallmentTemplateFromPlan;
 using EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPlansByClub;
@@ -19,10 +20,11 @@ namespace EaseClub.Api.Controllers
         [MapToApiVersion("1.0")]
         [ProducesResponseType(typeof(List<MembershipPlanDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetByClub(Guid clubId, CancellationToken ct)
+        public async Task<IActionResult> GetByClub(Guid clubId,[FromQuery]OffsetPaginationParameters paginationParameters,
+            CancellationToken ct)
         {
             // The ClubId is pulled from the URL route
-            var query = new GetMembershipPlansByClubQuery(clubId);
+            var query = new GetMembershipPlansByClubQuery(clubId,paginationParameters);
 
             var result = await sender.Send(query, ct);
 

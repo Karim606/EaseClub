@@ -1,6 +1,7 @@
 ﻿using EaseClub.Application.Common.interfaces;
 using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Features.Auth.Common.Interfaces;
+using EaseClub.Application.Features.MembershipPlans.Queries;
 using EaseClub.Domain.Branches;
 using EaseClub.Domain.ClubAdmin;
 using EaseClub.Domain.Clubs;
@@ -15,6 +16,7 @@ using EaseClub.Infrastructure.Auth.Services;
 using EaseClub.Infrastructure.Data;
 using EaseClub.Infrastructure.Data.Repositories;
 using EaseClub.Infrastructure.Services;
+using EaseClub.Infrastructure.Services.QueryServices;
 using EaseClub.Infrastructure.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -40,6 +42,7 @@ namespace EaseClub.Application
                     .AddDatabase(configuration)
                     .AddJwtService(configuration)
                     .AddRepositories()
+                    .AddQueryServices()
                     .AddServices();
 
             return services;
@@ -106,6 +109,12 @@ namespace EaseClub.Application
             services.AddScoped<IClubAuthorizationService, ClubAuthorizationService>();
 
             services.AddScoped<IEmailService, TurboEmailService>();
+            return services;
+        }
+
+        private static IServiceCollection AddQueryServices(this IServiceCollection services)
+        {
+            services.AddScoped<IMembershipPlanQueryService, MembershipPlanQueryService>();
             return services;
         }
         private static IServiceCollection AddRepositories(this IServiceCollection Services)
