@@ -16,16 +16,23 @@ namespace EaseClub.Api
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            var EnvName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "production";
-            Env.Load("../../.env." + EnvName.ToLower());
-            // Add services to the container.
+            var envName = builder.Environment.EnvironmentName.ToLower();
+
+            // This finds the folder where the .sln usually sits
+            var projectRoot = Directory.GetParent(AppContext.BaseDirectory)?.Parent?.Parent?.Parent?.Parent?.Parent?.FullName;
+            var envPath = Path.Combine(projectRoot ?? "", ".env." + envName.ToLower());
+
+            if (File.Exists(envPath))
+            {
+                Env.Load(envPath);
+            }
 
             builder.Configuration.AddEnvironmentVariables();
 
 
             builder.Services.AddPresentation(builder.Configuration)
                             .AddApplication()
-                            .AddInfrastructure(builder.Configuration);
+                            .AddInfrastructure(builder.Configuration,builder.Environment);
 
             builder.Host.UseSerilog((context, loggerConfig) => {
                 loggerConfig.ReadFrom.Configuration(context.Configuration);
@@ -53,7 +60,8 @@ namespace EaseClub.Api
                     c.EnableFilter();
                 });
             }
-
+          
+            if(!app.Environment.IsEnvironment("testing"))
             await app.Init();
 
             app.UseCoreMiddlewares(builder.Configuration);
