@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Collections.Specialized.BitVector32;
 
 namespace EaseClub.Domain.ApplicationTemplates
 {
@@ -32,6 +33,7 @@ namespace EaseClub.Domain.ApplicationTemplates
         }
 
         public Guid StepId { get; private set; }
+        public ApplicationStepDefinition Step {  get; private set; }
         public string Title { get; private set; } = null!;
         public int Order { get; internal set; }
         public RepeatRule? RepeatRule { get; private set; }
@@ -51,7 +53,6 @@ namespace EaseClub.Domain.ApplicationTemplates
         {
             if (stepId == Guid.Empty) return ApplicationSectionDefinitionErrors.StepIdRequired;
             if (string.IsNullOrWhiteSpace(title)) return ApplicationSectionDefinitionErrors.TitleRequired;
-            if (order < 0) return ApplicationSectionDefinitionErrors.InvalidOrder;
 
             return new ApplicationSectionDefinition(id, stepId, title, order, repeatRule);
         }
@@ -62,14 +63,14 @@ namespace EaseClub.Domain.ApplicationTemplates
             FieldType type,
             ValidationRuleSet validationRules,
             ConditionExpression? visibilityCondition,
-            bool affectsPricing,
             bool persistToMembership,
-            Guid? parentFieldId = null,
             int order = 0)
         {
             // Domain Rule: Uniqueness of 'Key' within this section
             if (_Fields.Any(f => f.Key == key))
                 return ApplicationSectionDefinitionErrors.DuplicateFieldKey;
+
+            if (order < 0 || order > _Fields.Count) return ApplicationSectionDefinitionErrors.InvalidFieldOrder;
 
             var fieldResult = ApplicationFieldDefinition.Create(
                 Guid.NewGuid(),
@@ -78,16 +79,35 @@ namespace EaseClub.Domain.ApplicationTemplates
                 type,
                 validationRules,
                 visibilityCondition,
-                affectsPricing,
                 persistToMembership,
-                parentFieldId,
                 order
             );
 
             if (fieldResult.IsError) return fieldResult.TopError;
 
+            // 3. SHIFTING LOGIC: Move existing fields forward
+            foreach (var existingField in _Fields.Where(f => f.Order >= order))
+            {
+                existingField.UpdateOrder(existingField.Order + 1);
+            }
+
             _Fields.Add(fieldResult.Value);
+
+
             return fieldResult.Value;
+        }
+
+        public Result<Success> Update(string title,RepeatRule? rule=null)
+        {
+            if (string.IsNullOrWhiteSpace(title)) return ApplicationSectionDefinitionErrors.TitleRequired;
+
+            Title = title;
+            RepeatRule = rule;
+            return Result.Success;
+        }
+        internal void UpdateOrder(int order)
+        {
+            Order = order;
         }
 
         public Result<Success> RemoveField(Guid fieldId)
@@ -96,8 +116,17 @@ namespace EaseClub.Domain.ApplicationTemplates
 
             if (existingField == null)
                 return ApplicationSectionDefinitionErrors.FieldDoesntExist;
+            
+            var removedOrder = existingField.Order;
 
             _Fields.Remove(existingField);
+
+            // 3. SHIFTING LOGIC: Close the gap
+            foreach (var remainingField in _Fields.Where(s => s.Order > removedOrder))
+            {
+                remainingField.UpdateOrder(remainingField.Order - 1);
+            }
+
             return Result.Success;
         }
 

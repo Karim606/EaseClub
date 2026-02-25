@@ -26,6 +26,7 @@ namespace EaseClub.Domain.ApplicationTemplates
         }
 
         public Guid TemplateId { get; private set; }
+        public ApplicationTemplateDefinition Template {  get; private set; }
         public string Category { get; private set; } // e.g., "IDENTITY", "DOCUMENTS"
         public string Title { get; private set; }
         public int Order { get; internal set; }
@@ -44,9 +45,22 @@ namespace EaseClub.Domain.ApplicationTemplates
             if (templateId == Guid.Empty) return ApplicationStepErrors.TemplateIdRequired;
             if (string.IsNullOrEmpty(title)) return ApplicationStepErrors.TitleRequired;
             if (string.IsNullOrEmpty(category)) return ApplicationStepErrors.CategoryRequired;
-            if (order <= 0) return ApplicationStepErrors.InvalidOrder;
 
             return new ApplicationStepDefinition(id, templateId, category, title, order);
+        }
+
+        public Result<Success>Update(string category, string title)
+        {
+            if (string.IsNullOrEmpty(title)) return ApplicationStepErrors.TitleRequired;
+            if (string.IsNullOrEmpty(category)) return ApplicationStepErrors.CategoryRequired;
+
+            Category = category;
+            Title = title;
+            return Result.Success;
+        }
+        internal void UpdateOrder(int order)
+        {
+            Order = order;
         }
 
         // 4. Factory Method for Child (Section)
@@ -55,6 +69,8 @@ namespace EaseClub.Domain.ApplicationTemplates
             // Business Rule: Ensure section title isn't duplicated within this specific step
             if (_Sections.Any(s => s.Title.Equals(title, StringComparison.OrdinalIgnoreCase)))
                 return ApplicationStepErrors.DuplicateSectionTitle;
+
+            if (order < 0 || order > _Sections.Count) return ApplicationStepErrors.InvalidSectionOrder;
 
             var sectionResult = ApplicationSectionDefinition.Create(
                 Guid.NewGuid(),
@@ -66,7 +82,14 @@ namespace EaseClub.Domain.ApplicationTemplates
 
             if (sectionResult.IsError) return sectionResult.TopError;
 
+            // 3. SHIFTING LOGIC: Move existing sections forward
+            foreach (var existingSection in _Sections.Where(s => s.Order >= order))
+            {
+                existingSection.UpdateOrder(existingSection.Order + 1);
+            }
+
             _Sections.Add(sectionResult.Value);
+     
             return sectionResult.Value;
         }
 
@@ -76,8 +99,14 @@ namespace EaseClub.Domain.ApplicationTemplates
 
             if (existingSection == null)
                 return ApplicationStepErrors.SectionDoesntExist;
-
+            
+            var removedOrder = existingSection.Order;
             _Sections.Remove(existingSection);
+
+            foreach (var remainingSection in _Sections.Where(s => s.Order > removedOrder))
+            {
+                remainingSection.UpdateOrder(remainingSection.Order - 1);
+            }
             return Result.Success;
         }
     }

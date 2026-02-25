@@ -21,9 +21,6 @@ namespace EaseClub.Domain.ApplicationTemplates.Errors
             code: "ApplicationTemplateDefinition.TemplateStepsRequired",
             description: "At least one step is required to create a template.");
 
-        public static Error InvalidPreviousTemplateId => Error.Validation(
-            code: "ApplicationTemplateDefinition.InvalidPreviousTemplateId",
-            description: "Previous template ID cannot be the same as new template ID.");
 
         public static Error StepCantBeNull => Error.Validation(
             code: "ApplicationTemplateDefinition.Step.Cant.Be.Null",
@@ -53,6 +50,9 @@ namespace EaseClub.Domain.ApplicationTemplates.Errors
             code: "ApplicationTemplateDefinition.Duplicate.Step.Title",
             description: "Another step exists with same title within template.");
 
+        public static Error InvalidStepOrder = Error.Validation(
+           code: "ApplicationTemplateDefinition.Step.Order.Invalid",
+           description: "Invalid Step order.");
 
     }
 }

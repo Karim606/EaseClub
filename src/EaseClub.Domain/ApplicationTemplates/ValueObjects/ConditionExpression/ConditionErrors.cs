@@ -9,9 +9,9 @@ namespace EaseClub.Domain.ApplicationTemplates.ValueObjects.ConditionExpression
 {
     public static class ConditionErrors
     {
-        public static Error FieldCodeRequired =
-            Error.Validation(code: "Condition.FieldCode.Required",
-                description: "The field code that this condition depends on must be provided.");
+        public static Error FieldKeyRequired =
+            Error.Validation(code: "Condition.FieldKey.Required",
+                description: "The field key that this condition depends on must be provided.");
 
         public static Error ExpectedValueRequired =
             Error.Validation(code: "Condition.ExpectedValue.Required",

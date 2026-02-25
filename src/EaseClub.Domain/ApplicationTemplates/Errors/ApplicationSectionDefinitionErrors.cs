@@ -30,12 +30,12 @@ namespace EaseClub.Domain.ApplicationTemplates.Errors
             Error.Validation("ApplicationSection.TitleRequired",
                 "Section title is required.");
 
-        public static Error InvalidOrder =>
-            Error.Validation("ApplicationSection.InvalidOrder",
-                "Section order cannot be negative.");
-
         public static Error DuplicateFieldKey => Error.Validation(
             code: "ApplicationSection.Duplicate.Key",
             description: "Another field with same key exists within section.");
+
+        public static Error InvalidFieldOrder => Error.Validation(
+            code: "ApplicationSection.InvalidFieldOrder",
+            description: "Field order is invalid.");
     }
 }

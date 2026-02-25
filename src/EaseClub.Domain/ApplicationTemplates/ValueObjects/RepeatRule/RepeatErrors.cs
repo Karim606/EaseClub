@@ -9,10 +9,10 @@ namespace EaseClub.Domain.ApplicationTemplates.ValueObjects.RepeatRule
 {
     public static class RepeatErrors
     {
-        public static Error FieldCodeRequired =>
+        public static Error FieldKeyRequired =>
             Error.Validation(
-                code: "Repeat.FieldCode.Required",
-                description: "Repeat rule requires a dependent field code."
+                code: "Repeat.FieldKey.Required",
+                description: "Repeat rule requires a dependent field key."
             );
 
         public static Error InvalidMode =>

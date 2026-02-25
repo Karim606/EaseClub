@@ -9,21 +9,22 @@ namespace EaseClub.Domain.ApplicationTemplates.ValueObjects.RepeatRule
 {
     public record RepeatRule
     {
-        public string DependsOnFieldCode { get; init; }
+        public string DependsOnFieldKey { get; init; }
         public RepeatMode Mode { get; init; }
 
-        private RepeatRule(string fieldCode, RepeatMode mode)
+        private RepeatRule() { }
+        private RepeatRule(string fieldKey, RepeatMode mode)
         {
-            DependsOnFieldCode = fieldCode;
+            DependsOnFieldKey = fieldKey;
             Mode = mode;
         }
 
-        public static Result<RepeatRule> Create(string fieldCode, RepeatMode mode)
+        public static Result<RepeatRule> Create(string fieldKey, RepeatMode mode)
         {
-            if (string.IsNullOrWhiteSpace(fieldCode))
-                return RepeatErrors.FieldCodeRequired;
+            if (string.IsNullOrWhiteSpace(fieldKey))
+                return RepeatErrors.FieldKeyRequired;
 
-            return new RepeatRule(fieldCode, mode);
+            return new RepeatRule(fieldKey, mode);
         }
 
         public int Evaluate(string? actualValue)

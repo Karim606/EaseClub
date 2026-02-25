@@ -37,10 +37,6 @@ namespace EaseClub.Domain.ApplicationTemplates.Errors
             code: "ApplicationStepDefinition.TemplateId.Required",
             description: "The template association is required.");
 
-        public static Error InvalidOrder = Error.Validation(
-           code: "ApplicationStepDefinition.Order.Invalid",
-           description: "Step order must be a positive integer.");
-
         public static Error SectionDoesntExist = Error.Validation(
             code: "ApplicationStepDefinition.Section.Doesnt.Exist",
             description: "Section doesn't exist within step.");
@@ -48,5 +44,9 @@ namespace EaseClub.Domain.ApplicationTemplates.Errors
         public static Error DuplicateSectionTitle = Error.Validation(
             code: "ApplicationStepDefinition.Duplicate.Section.Title",
             description: "Another section exists with same title within step.");
+
+        public static Error InvalidSectionOrder =>
+            Error.Validation("ApplicationStepDefintion.InvalidSectionOrder",
+                "Section order is not valid.");
     }
 }

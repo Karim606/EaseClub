@@ -26,7 +26,7 @@ namespace EaseClub.Domain.ApplicationTemplates.ValueObjects.ValidationRulesSet
         }
 
         public static Result<ValidationRuleSet> Create(
-            bool isRequired,
+            bool isRequired = true,
             int? minLength = null,
             int? maxLength = null,
             string? regex = null,

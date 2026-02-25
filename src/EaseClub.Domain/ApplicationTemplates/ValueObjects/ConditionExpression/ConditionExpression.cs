@@ -9,23 +9,24 @@ namespace EaseClub.Domain.ApplicationTemplates.ValueObjects.ConditionExpression
 {
     public record ConditionExpression
     {
-        public string DependsOnFieldCode { get; init; }
+        public string DependsOnFieldKey { get; init; }
         public ComparisonOperator Operator { get; init; }
         public string ExpectedValue { get; init; }
 
-        private ConditionExpression(string fieldCode, ComparisonOperator op, string value)
+        private ConditionExpression() { }
+        private ConditionExpression(string fieldKey, ComparisonOperator op, string value)
         {
-            DependsOnFieldCode = fieldCode;
+            DependsOnFieldKey = fieldKey;
             Operator = op;
             ExpectedValue = value;
         }
 
-        public static Result<ConditionExpression> Create(string fieldCode, ComparisonOperator op, string value)
+        public static Result<ConditionExpression> Create(string fieldKey, ComparisonOperator op, string value)
         {
-            if (string.IsNullOrWhiteSpace(fieldCode)) return ConditionErrors.FieldCodeRequired;
+            if (string.IsNullOrWhiteSpace(fieldKey)) return ConditionErrors.FieldKeyRequired;
             if (string.IsNullOrWhiteSpace(value)) return ConditionErrors.ExpectedValueRequired;
 
-            return new ConditionExpression(fieldCode, op, value);
+            return new ConditionExpression(fieldKey, op, value);
         }
 
         public bool IsSatisfiedBy(string? actualValue)

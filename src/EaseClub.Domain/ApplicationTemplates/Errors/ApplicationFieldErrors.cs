@@ -21,10 +21,6 @@ namespace EaseClub.Domain.ApplicationTemplates.Errors
             code: "ApplicationField.KeyRequired",
             description: "Field key must not be empty.");
 
-        public static Error InvalidOrder => Error.Validation(
-            code: "ApplicationField.InvalidOrder",
-            description: "Order must be greater than or equal to 0.");
-
         public static Error ValidationRulesRequired => Error.Validation(
             code: "ApplicationField.ValidationRulesRequired",
             description: "Validation rules must be provided.");
