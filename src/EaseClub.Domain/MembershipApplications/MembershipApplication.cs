@@ -164,47 +164,52 @@ namespace EaseClub.Domain.MembershipApplications
         }
         public void RemoveSectionInstance(Guid sectionId, int instanceIndex)
         {
-            // 1. We identify which fields belong to this section from the Snapshot
+            if (Status != ApplicationStatus.Draft) return;
+
+            // 1. Identify which fields belong to this section from the Snapshot
             var fieldsInSection = GetFieldsForSectionFromSnapshot(sectionId);
 
-            // 2. We remove all answers where the FieldId is in that list AND the index matches
+            // 2. Remove all answers for the specific instance index
             _Answers.RemoveAll(a =>
                 fieldsInSection.Contains(a.FieldDefinitionId) &&
                 a.InstanceIndex == instanceIndex);
 
-            // 3. Optional: Re-indexing
-            // If you delete index 1 of 3, you might want to shift index 2 to index 1 
-            // to keep the sequence clean.
+            // 3. RE-INDEXING LOGIC: Close the gap
+            // If we deleted index 1, shift index 2 -> 1, 3 -> 2, etc.
+            var answersToShift = _Answers
+                .Where(a => fieldsInSection.Contains(a.FieldDefinitionId) && a.InstanceIndex > instanceIndex)
+                .ToList();
+
+            foreach (var answer in answersToShift)
+            {
+                // We need an internal method in ApplicationAnswer to update the index
+                answer.UpdateInstanceIndex(answer.InstanceIndex - 1);
+            }
         }
 
         private List<Guid> GetFieldsForSectionFromSnapshot(Guid sectionId)
         {
             var fieldIds = new List<Guid>();
 
-            using (JsonDocument doc = JsonDocument.Parse(TemplateSnapshot))
-            {
-                // We look for the section inside the Steps array
-                var steps = doc.RootElement.GetProperty("Steps");
+            // Performance optimization: Using 'using' locally is fine, 
+            // but if this is called in a loop, consider passing the parsed JsonElement in.
+            using var doc = JsonDocument.Parse(TemplateSnapshot);
+            var steps = doc.RootElement.GetProperty("Steps");
 
-                foreach (var step in steps.EnumerateArray())
+            foreach (var step in steps.EnumerateArray())
+            {
+                foreach (var section in step.GetProperty("Sections").EnumerateArray())
                 {
-                    var sections = step.GetProperty("Sections");
-                    foreach (var section in sections.EnumerateArray())
+                    if (section.GetProperty("Id").GetGuid() == sectionId)
                     {
-                        // Check if this is the section we are looking for
-                        if (section.GetProperty("Id").GetGuid() == sectionId)
+                        foreach (var field in section.GetProperty("Fields").EnumerateArray())
                         {
-                            var fields = section.GetProperty("Fields");
-                            foreach (var field in fields.EnumerateArray())
-                            {
-                                fieldIds.Add(field.GetProperty("Id").GetGuid());
-                            }
-                            return fieldIds; // Found it, stop searching
+                            fieldIds.Add(field.GetProperty("Id").GetGuid());
                         }
+                        return fieldIds;
                     }
                 }
             }
-
             return fieldIds;
         }
         #endregion

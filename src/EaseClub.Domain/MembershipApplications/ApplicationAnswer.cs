@@ -69,6 +69,11 @@ namespace EaseClub.Domain.MembershipApplications
             Value = newValue;
         }
 
+        internal void UpdateInstanceIndex(int newIndex)
+        {
+            InstanceIndex = newIndex;
+        }
+
         #endregion
     }
 }
