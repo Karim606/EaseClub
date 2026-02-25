@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace EaseClub.Domain.MembershipApplications
@@ -17,6 +18,7 @@ namespace EaseClub.Domain.MembershipApplications
         private MembershipApplication(
             Guid id,
             string trackingNumber,
+            string templateSnapshot,
             Guid userId,
             Guid clubId,
             Guid membershipTypeId,
@@ -26,6 +28,7 @@ namespace EaseClub.Domain.MembershipApplications
             : base(id)
         {
             TrackingNumber = trackingNumber;
+            TemplateSnapshot = templateSnapshot;
             UserId = userId;
             ClubId = clubId;
             MembershipTypeId = membershipTypeId;
@@ -38,6 +41,12 @@ namespace EaseClub.Domain.MembershipApplications
             CreatedAt = DateTime.UtcNow;
         }
         public string TrackingNumber { get; private set; }
+        public string TemplateSnapshot { get; private set; }
+
+        // Navigation property to the Answer table
+        private readonly List<ApplicationAnswer> _Answers = new List<ApplicationAnswer>();
+        public IReadOnlyList<ApplicationAnswer> Answers => _Answers.AsReadOnly();
+
         public Guid UserId { get; private set; }
         public Guid ClubId { get; private set; }
         public Guid MembershipTypeId { get; private set; }
@@ -50,8 +59,6 @@ namespace EaseClub.Domain.MembershipApplications
         public DateTime CreatedAt { get; private set; }
         public DateTime? SubmittedAt { get; private set; }
 
-        private readonly List<ApplicationStepInstance> _Steps = new();
-        public IReadOnlyList<ApplicationStepInstance> Steps => _Steps.AsReadOnly();
 
         // =========================
         // Factory
@@ -60,6 +67,7 @@ namespace EaseClub.Domain.MembershipApplications
         public static Result<MembershipApplication> Create(
             Guid id,
             string trackingNumber,
+            string templateSnapshot,
             Guid userId,
             Guid clubId,
             Guid membershipTypeId,
@@ -82,6 +90,7 @@ namespace EaseClub.Domain.MembershipApplications
             return new MembershipApplication(
                 id,
                 trackingNumber,
+                templateSnapshot,
                 userId,
                 clubId,
                 membershipTypeId,
@@ -94,22 +103,111 @@ namespace EaseClub.Domain.MembershipApplications
         // Business Methods
         // =========================
 
-        public Result<ApplicationStepInstance> AddNewStepInstance(Guid templateStepId)
+        #region Answer Management Logic
+
+        /// <summary>
+        /// Adds or Updates an answer for a specific field.
+        /// In a snapshot/key-value model, "Add" and "Update" are often the same operation.
+        /// </summary>
+        public Result<Success> SetAnswer(string fieldKey,Guid fieldDefintionId, string value, int instanceIndex = 0)
         {
             if (Status != ApplicationStatus.Draft)
-                return MembershipApplicationErrors.CantModifyNonDraft;
+                return Error.Validation("Application.NotEditable", "Cannot modify answers after submission.");
 
-            if (_Steps.Any(s => s.TemplateStepId == templateStepId))
-                return MembershipApplicationErrors.StepAlreadyExists;
+            var existing = _Answers.FirstOrDefault(a =>
+                a.FieldDefinitionId == fieldDefintionId &&
+                a.InstanceIndex == instanceIndex);
 
-            // Call internal factory
-            var stepResult = ApplicationStepInstance.Create(Guid.NewGuid(), this.Id, templateStepId);
+            if (existing != null)
+            {
+                existing.UpdateValue(value);
+            }
+            else
+            {
+                var answerResult = ApplicationAnswer.Create(Id,fieldDefintionId, fieldKey, value, instanceIndex);
+                if (answerResult.IsError) return answerResult.TopError;
 
-            if (stepResult.IsError) return stepResult.TopError;
+                _Answers.Add(answerResult.Value);
+            }
 
-            _Steps.Add(stepResult.Value);
-            return stepResult.Value;
+            return Result.Success;
         }
+
+        /// <summary>
+        /// Removes a specific answer. 
+        /// Useful if a user clears a field or deletes a repeatable section instance.
+        /// </summary>
+        public Result<Success> RemoveAnswer(Guid fieldDefintionId, int instanceIndex = 0)
+        {
+            if (Status != ApplicationStatus.Draft)
+                return Error.Validation("Application.NotEditable", "Cannot modify answers after submission.");
+
+            var answer = _Answers.FirstOrDefault(a =>
+                a.FieldDefinitionId == fieldDefintionId &&
+                a.InstanceIndex == instanceIndex);
+
+            if (answer != null)
+            {
+                _Answers.Remove(answer);
+            }
+
+            return Result.Success;
+        }
+
+        /// <summary>
+        /// Removes all answers associated with a specific index.
+        /// Used when a user deletes an entire "Repeatable Section" instance (e.g., Delete Child #2).
+        /// </summary>
+        public void RemoveAllAnswersForIndex(int instanceIndex)
+        {
+            _Answers.RemoveAll(a => a.InstanceIndex == instanceIndex);
+        }
+        public void RemoveSectionInstance(Guid sectionId, int instanceIndex)
+        {
+            // 1. We identify which fields belong to this section from the Snapshot
+            var fieldsInSection = GetFieldsForSectionFromSnapshot(sectionId);
+
+            // 2. We remove all answers where the FieldId is in that list AND the index matches
+            _Answers.RemoveAll(a =>
+                fieldsInSection.Contains(a.FieldDefinitionId) &&
+                a.InstanceIndex == instanceIndex);
+
+            // 3. Optional: Re-indexing
+            // If you delete index 1 of 3, you might want to shift index 2 to index 1 
+            // to keep the sequence clean.
+        }
+
+        private List<Guid> GetFieldsForSectionFromSnapshot(Guid sectionId)
+        {
+            var fieldIds = new List<Guid>();
+
+            using (JsonDocument doc = JsonDocument.Parse(TemplateSnapshot))
+            {
+                // We look for the section inside the Steps array
+                var steps = doc.RootElement.GetProperty("Steps");
+
+                foreach (var step in steps.EnumerateArray())
+                {
+                    var sections = step.GetProperty("Sections");
+                    foreach (var section in sections.EnumerateArray())
+                    {
+                        // Check if this is the section we are looking for
+                        if (section.GetProperty("Id").GetGuid() == sectionId)
+                        {
+                            var fields = section.GetProperty("Fields");
+                            foreach (var field in fields.EnumerateArray())
+                            {
+                                fieldIds.Add(field.GetProperty("Id").GetGuid());
+                            }
+                            return fieldIds; // Found it, stop searching
+                        }
+                    }
+                }
+            }
+
+            return fieldIds;
+        }
+        #endregion
 
         public Result<Success> Submit()
         {
