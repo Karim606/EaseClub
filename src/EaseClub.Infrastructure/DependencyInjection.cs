@@ -1,12 +1,15 @@
 ﻿using EaseClub.Application.Common.interfaces;
 using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Features.ApplicationTemplates.Queries;
 using EaseClub.Application.Features.Auth.Common.Interfaces;
 using EaseClub.Application.Features.MembershipPlans.Queries;
+using EaseClub.Domain.ApplicationTemplates.Repositories;
 using EaseClub.Domain.Branches;
 using EaseClub.Domain.ClubAdmin;
 using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Member;
+using EaseClub.Domain.MembershipApplications.Repositories;
 using EaseClub.Domain.MembershipPlans.Repositories;
 using EaseClub.Domain.MembershipTypes;
 using EaseClub.Infrastructure.Auth.Entities;
@@ -36,10 +39,11 @@ namespace EaseClub.Application
 {
     public static class DependencyInjection
     {
-        public static IServiceCollection AddInfrastructure(this IServiceCollection services,IConfiguration configuration)
+        public static IServiceCollection AddInfrastructure(this IServiceCollection services,IConfiguration configuration,
+            IHostEnvironment env)
         {
             services.AddConfigurations(configuration)
-                    .AddDatabase(configuration)
+                    .AddDatabase(configuration,env)
                     .AddJwtService(configuration)
                     .AddRepositories()
                     .AddQueryServices()
@@ -48,13 +52,23 @@ namespace EaseClub.Application
             return services;
         }
 
-        private static IServiceCollection AddDatabase(this IServiceCollection services,IConfiguration configuration)
+        private static IServiceCollection AddDatabase(this IServiceCollection services,IConfiguration configuration,
+            IHostEnvironment env)
         {
-            var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-            string typeOfDB = (env == "Development") ? "Dev" : "Prod";
+            if (env.IsEnvironment("testing"))
+            {
+                    services.AddDbContext<AppDbContext>(options =>
+                    options.UseInMemoryDatabase("IntegrationTestDb"));
+            }
+            else
+            {
+                var typeOfDB = env.IsDevelopment() ? "Dev" : "Prod";
+                var connectionString = configuration.GetConnectionString(typeOfDB);
 
-            var ConnectionString = configuration.GetConnectionString(typeOfDB);
-            services.AddDbContext<AppDbContext>(options => options.UseSqlServer(ConnectionString));
+                services.AddDbContext<AppDbContext>(options =>
+                    options.UseSqlServer(connectionString));
+            }
+
             services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<AppDbContext>());
             services.AddIdentity<AuthUser, IdentityRole<Guid>>(options =>
             {
@@ -115,6 +129,7 @@ namespace EaseClub.Application
         private static IServiceCollection AddQueryServices(this IServiceCollection services)
         {
             services.AddScoped<IMembershipPlanQueryService, MembershipPlanQueryService>();
+            services.AddScoped<IApplicationTemplateQueryService, ApplicationTemplateQueryService>();
             return services;
         }
         private static IServiceCollection AddRepositories(this IServiceCollection Services)
@@ -130,6 +145,11 @@ namespace EaseClub.Application
             Services.AddScoped<IMembershipTypeRepository, MembershipTypeRepository>();
             Services.AddScoped<IMembershipPlanRepository, MembershipPlanRepository>();
             Services.AddScoped<IInstallmentsTemplatesRepository, InstallmentsRepository>();
+            Services.AddScoped<IApplicationTemplateRepository, ApplicationTemplateRepository>();
+            Services.AddScoped<IApplicationStepRepository, ApplicationStepRepository>();
+            Services.AddScoped<IApplicationSectionRepository, ApplicationSectionRepository>();
+            Services.AddScoped<IMembershipApplicationRepository,MembershipApplicationsRepository>();
+            Services.AddScoped<IApplicationFieldRepository, ApplicationFieldRepository>();
 
             return Services;
         }

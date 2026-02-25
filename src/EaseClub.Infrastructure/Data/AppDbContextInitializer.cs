@@ -13,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 
 using System;
 using System.Collections.Generic;
@@ -106,6 +107,12 @@ namespace EaseClub.Infrastructure.Data
 
         public async Task SeedAsync()
         {
+            if (appDbContext.Database.IsInMemory())
+            {
+                await TrySeeding();
+                await appDbContext.SaveChangesAsync();
+                return;
+            }
             using var transaction = await appDbContext.Database.BeginTransactionAsync();
             try
             {
@@ -322,17 +329,30 @@ namespace EaseClub.Infrastructure.Data
 
         public async Task SeedMembershipType_Plan_InstallmentTemplate()
         {
-            var membershipType = MembershipType.Create(SeedMembershipTypeId, SeedClubId, "pro");
+            // Check MembershipType
+            if (!await appDbContext.MembershipTypes.AnyAsync(x => x.Id == SeedMembershipTypeId))
+            {
+                var membershipType = MembershipType.Create(SeedMembershipTypeId, SeedClubId, "pro").Value;
+                await appDbContext.MembershipTypes.AddAsync(membershipType);
+            }
 
-            await appDbContext.MembershipTypes.AddAsync(membershipType.Value);
+            // Check MembershipPlan
+            if (!await appDbContext.MembershipPlans.AnyAsync(x => x.Id == SeedMembershipPlanId))
+            {
+                var membershipPlan = MembershipPlan.Create(
+                    SeedMembershipPlanId, SeedClubId, SeedMembershipTypeId, "ca", 2000, 60
+                ).Value;
+                await appDbContext.MembershipPlans.AddAsync(membershipPlan);
+            }
 
-            var membershipPlan = MembershipPlan.Create(SeedMembershipPlanId, SeedClubId, SeedMembershipTypeId, "ca", 2000, 60);
-
-            await appDbContext.MembershipPlans.AddAsync(membershipPlan.Value);
-
-            var installmentTemplate = InstallmentTemplate.Create(SeedInstallmentTemplateId, SeedClubId, "se",4,60,null);
-
-            await appDbContext.InstallmentTemplates.AddAsync(installmentTemplate.Value);
+            // Check InstallmentTemplate
+            if (!await appDbContext.InstallmentTemplates.AnyAsync(x => x.Id == SeedInstallmentTemplateId))
+            {
+                var installmentTemplate = InstallmentTemplate.Create(
+                    SeedInstallmentTemplateId, SeedClubId, "se", 4, 60, null
+                ).Value;
+                await appDbContext.InstallmentTemplates.AddAsync(installmentTemplate);
+            }
         }
 
     }
