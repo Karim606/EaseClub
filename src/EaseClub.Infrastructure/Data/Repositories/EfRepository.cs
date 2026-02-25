@@ -18,22 +18,22 @@ namespace EaseClub.Infrastructure.Data.Repositories
             _context = context;
         }
 
-        public async Task<T> GetByIdAsync(Guid id) =>
+        public async Task<T> GetByIdAsync(Guid id,CancellationToken ct = default) =>
             await _context.Set<T>().FirstOrDefaultAsync(x => x.Id==id);
 
-        public async Task AddAsync(T entity) =>
-            await _context.Set<T>().AddAsync(entity);
+        public async Task AddAsync(T entity, CancellationToken ct = default) =>
+            await _context.Set<T>().AddAsync(entity,ct);
 
-        public async Task<bool> IsExistAsync(Guid id) =>
-            await _context.Set<T>().AnyAsync(x => x.Id == id);
+        public async Task<bool> IsExistAsync(Guid id, CancellationToken ct = default) =>
+            await _context.Set<T>().AnyAsync(x => x.Id == id,ct);
 
-        public Task UpdateAsync(T entity)
+        public Task UpdateAsync(T entity, CancellationToken ct = default)
         {
             _context.Set<T>().Update(entity);
             return Task.CompletedTask;
         }
 
-        public Task DeleteAsync(T entity)
+        public Task DeleteAsync(T entity, CancellationToken ct = default)
         {
             _context.Set<T>().Remove(entity);
             return Task.CompletedTask;

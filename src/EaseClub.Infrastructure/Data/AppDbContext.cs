@@ -19,6 +19,8 @@ using System.Text;
 using System.Threading.Tasks;
 using EaseClub.Domain.MembershipTypes;
 using EaseClub.Domain.MembershipPlans;
+using EaseClub.Domain.ApplicationTemplates;
+using EaseClub.Domain.MembershipApplications;
 
 namespace EaseClub.Infrastructure.Data
 {
@@ -87,5 +89,17 @@ namespace EaseClub.Infrastructure.Data
         public DbSet<InstallmentTemplate> InstallmentTemplates { get; set; }
         public DbSet<PlanInstallmentTemplate> PlanInstallmentTemplates { get; set; }
         public DbSet<MembershipInstallment> MembershipInstallments { get; set; }
-        }
+
+        public DbSet<ApplicationTemplateDefinition>ApplicationTemplateDefinitions { get; set; }
+        public DbSet<ApplicationStepDefinition> ApplicationStepDefinitions { get; set; }
+        public DbSet<ApplicationSectionDefinition> ApplicationSectionDefinitions { get; set; }
+        public DbSet<ApplicationFieldDefinition> ApplicationFieldDefinitions { get; set; }
+
+        public DbSet<MembershipApplication> MembershipApplications { get; set; }
+        public DbSet<ApplicationAnswer> ApplicationAnswers { get; set; }
+        public DbSet<ApplicationReview> ApplicationReviews { get; set; }
+        public DbSet<PricingPolicy> PricingPolicies { get; set; }
+       
+
+     }
 }
