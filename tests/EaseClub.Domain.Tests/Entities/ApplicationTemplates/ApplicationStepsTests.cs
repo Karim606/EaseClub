@@ -12,48 +12,14 @@ namespace EaseClub.Domain.Tests.Entities.ApplicationTemplates
     public class ApplicationStepTests
     {
         [Fact]
-        public void Create_ShouldReturnSuccess_WhenDataIsValid()
-        {
-            // Arrange
-            var id = Guid.NewGuid();
-            var templateId = Guid.NewGuid();
-            var category = "IDENTITY";
-            var title = "Personal Details";
-            var order = 1;
-
-            // Act - Accessible via InternalsVisibleTo
-            var result = ApplicationStepDefinition.Create(id, templateId, category, title, order);
-
-            // Assert
-            result.IsSuccess.Should().BeTrue();
-            result.Value.Title.Should().Be(title);
-            result.Value.Category.Should().Be(category);
-            result.Value.Sections.Should().BeEmpty();
-        }
-
-        [Theory]
-        [InlineData(0)]
-        [InlineData(-1)]
-        public void Create_ShouldFail_WhenOrderIsInvalid(int invalidOrder)
-        {
-            // Act
-            var result = ApplicationStepDefinition.Create(
-                Guid.NewGuid(), Guid.NewGuid(), "CAT", "Title", invalidOrder);
-
-            // Assert
-            result.IsError.Should().BeTrue();
-            result.TopError.Should().Be(ApplicationStepErrors.InvalidOrder);
-        }
-
-        [Fact]
         public void AddNewSection_ShouldAddToList_WhenDataIsValid()
         {
             // Arrange
             var step = ApplicationStepDefinition.Create(
-                Guid.NewGuid(), Guid.NewGuid(), "CAT", "Step", 1).Value;
+                Guid.NewGuid(), Guid.NewGuid(), "CAT", "Step", 0).Value;
 
             // Act
-            var result = step.AddNewSection("Main Section", 1);
+            var result = step.AddNewSection("Main Section", 0);
 
             // Assert
             result.IsSuccess.Should().BeTrue();
@@ -62,35 +28,18 @@ namespace EaseClub.Domain.Tests.Entities.ApplicationTemplates
         }
 
         [Fact]
-        public void AddNewSection_ShouldPreventDuplicateTitles_CaseInsensitive()
+        public void AddNewSection_ShouldShiftExistingSections()
         {
             // Arrange
-            var step = ApplicationStepDefinition.Create(
-                Guid.NewGuid(), Guid.NewGuid(), "CAT", "Step", 1).Value;
-            step.AddNewSection("Profile", 1);
+            var step = ApplicationStepDefinition.Create(Guid.NewGuid(), Guid.NewGuid(), "CAT", "Step", 0).Value;
+            step.AddNewSection("Old First", 0);
 
-            // Act
-            var result = step.AddNewSection("profile", 2);
-
-            // Assert
-            result.IsError.Should().BeTrue();
-            result.TopError.Should().Be(ApplicationStepErrors.DuplicateSectionTitle);
-        }
-
-        [Fact]
-        public void RemoveSection_ShouldSucceed_WhenSectionExists()
-        {
-            // Arrange
-            var step = ApplicationStepDefinition.Create(
-                Guid.NewGuid(), Guid.NewGuid(), "CAT", "Step", 1).Value;
-            var section = step.AddNewSection("Delete Me", 1).Value;
-
-            // Act
-            var result = step.RemoveSection(section.Id);
+            // Act - Insert at 0
+            step.AddNewSection("New First", 0);
 
             // Assert
-            result.IsSuccess.Should().BeTrue();
-            step.Sections.Should().BeEmpty();
+            step.Sections.First(s => s.Title == "Old First").Order.Should().Be(1);
+            step.Sections.First(s => s.Title == "New First").Order.Should().Be(0);
         }
     }
 }

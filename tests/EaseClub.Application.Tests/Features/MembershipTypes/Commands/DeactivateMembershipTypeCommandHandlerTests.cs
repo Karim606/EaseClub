@@ -31,7 +31,7 @@ namespace EaseClub.Application.Tests.Features.MembershipTypes.Commands
         public async Task Handle_Should_Return_Unauthorized_When_User_Not_Found()
         {
             _currentUser.Setup(c => c.GetId()).Returns(Guid.NewGuid().ToString());
-            _clubAdminRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
+            _clubAdminRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), CancellationToken.None))
                 .ReturnsAsync((ClubAdminUser)null);
 
             var handler = CreateHandler();
@@ -54,9 +54,9 @@ namespace EaseClub.Application.Tests.Features.MembershipTypes.Commands
             var type = MembershipType.Create(Guid.NewGuid(), clubId, "Gold").Value;
 
             _currentUser.Setup(c => c.GetId()).Returns(adminId.ToString());
-            _clubAdminRepo.Setup(r => r.GetByIdAsync(adminId))
+            _clubAdminRepo.Setup(r => r.GetByIdAsync(adminId, CancellationToken.None))
                 .ReturnsAsync(ClubAdminUser.Create(adminId, clubId, "Ali", "Ali", phoneNumber,email));
-            _membershipRepo.Setup(r => r.GetByIdAsync(type.Id)).ReturnsAsync(type);
+            _membershipRepo.Setup(r => r.GetByIdAsync(type.Id,CancellationToken.None)).ReturnsAsync(type);
 
             var handler = CreateHandler();
 

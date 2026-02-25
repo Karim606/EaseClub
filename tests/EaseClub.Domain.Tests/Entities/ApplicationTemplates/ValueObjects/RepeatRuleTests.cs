@@ -18,7 +18,7 @@ namespace EaseClub.Domain.Tests.Entities.ApplicationTemplates.ValueObjects
 
             // Assert
             result.IsError.Should().BeTrue();
-            result.Errors.Should().Contain(RepeatErrors.FieldCodeRequired);
+            result.Errors.Should().Contain(RepeatErrors.FieldKeyRequired);
         }
 
         [Theory]

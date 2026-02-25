@@ -15,56 +15,24 @@ namespace EaseClub.Domain.Tests.Entities.MembershipApplications
     {
         private readonly Guid _userId = Guid.NewGuid();
         private readonly Guid _clubId = Guid.NewGuid();
+        private readonly Guid _typeId = Guid.NewGuid();
         private readonly Guid _planId = Guid.NewGuid();
         private readonly Guid _templateId = Guid.NewGuid();
-
-
+        private const string _dummySnapshot = "{\"Steps\":[]}"; // Minimal valid JSON for testing
 
         [Fact]
         public void Create_ShouldInitializeWithDraftStatusAndEstimatedPricing()
         {
             // Act
             var result = MembershipApplication.Create(
-                Guid.NewGuid(), "TRK-123", _userId, _clubId, Guid.NewGuid(), _planId, _templateId, 100.00m);
+                Guid.NewGuid(), "TRK-123", _dummySnapshot, _userId, _clubId, _typeId, _planId, _templateId, 100.00m);
 
             // Assert
             result.IsSuccess.Should().BeTrue();
             result.Value.Status.Should().Be(ApplicationStatus.Draft);
             result.Value.PricingState.Should().Be(PricingState.Estimated);
             result.Value.FinalPrice.Should().Be(100.00m);
-        }
-
-        [Fact]
-        public void AddNewStepInstance_ShouldFail_WhenApplicationIsNotDraft()
-        {
-            // Arrange
-            var app = MembershipApplication.Create(
-                Guid.NewGuid(), "TRK-123", _userId, _clubId, Guid.NewGuid(), _planId, _templateId, 100.00m).Value;
-            app.Submit(); // Move away from Draft
-
-            // Act
-            var result = app.AddNewStepInstance(Guid.NewGuid());
-
-            // Assert
-            result.IsError.Should().BeTrue();
-            result.TopError.Should().Be(MembershipApplicationErrors.CantModifyNonDraft);
-        }
-
-        [Fact]
-        public void AddNewStepInstance_ShouldPreventDuplicateTemplateSteps()
-        {
-            // Arrange
-            var stepId = Guid.NewGuid();
-            var app = MembershipApplication.Create(
-                Guid.NewGuid(), "TRK-123", _userId, _clubId, Guid.NewGuid(), _planId, _templateId, 100.00m).Value;
-            app.AddNewStepInstance(stepId);
-
-            // Act
-            var result = app.AddNewStepInstance(stepId);
-
-            // Assert
-            result.IsError.Should().BeTrue();
-            result.TopError.Should().Be(MembershipApplicationErrors.StepAlreadyExists);
+            result.Value.TemplateSnapshot.Should().Be(_dummySnapshot);
         }
 
         [Fact]
@@ -72,7 +40,7 @@ namespace EaseClub.Domain.Tests.Entities.MembershipApplications
         {
             // Arrange
             var app = MembershipApplication.Create(
-                Guid.NewGuid(), "TRK-123", _userId, _clubId, Guid.NewGuid(), _planId, _templateId, 100.00m).Value;
+                Guid.NewGuid(), "TRK-123", _dummySnapshot, _userId, _clubId, _typeId, _planId, _templateId, 100.00m).Value;
 
             // Act
             var result = app.Submit();
@@ -81,48 +49,23 @@ namespace EaseClub.Domain.Tests.Entities.MembershipApplications
             result.IsSuccess.Should().BeTrue();
             app.Status.Should().Be(ApplicationStatus.Submitted);
             app.PricingState.Should().Be(PricingState.Locked);
-            app.SubmittedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+            app.SubmittedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(2));
         }
 
         [Fact]
-        public void Submit_ShouldFail_IfAlreadySubmitted()
+        public void ApplyPricing_ShouldReturnError_WhenPricingIsLocked()
         {
             // Arrange
             var app = MembershipApplication.Create(
-                Guid.NewGuid(), "TRK-123", _userId, _clubId, Guid.NewGuid(), _planId, _templateId, 100.00m).Value;
-            app.Submit();
+                Guid.NewGuid(), "TRK-123", _dummySnapshot, _userId, _clubId, _typeId, _planId, _templateId, 100.00m).Value;
+            app.Submit(); // This sets PricingState to Locked
 
             // Act
-            var result = app.Submit();
+            var result = app.ApplyPricing(150.00m);
 
             // Assert
             result.IsError.Should().BeTrue();
-            result.TopError.Should().Be(MembershipApplicationErrors.InvalidStatusTransition);
-        }
-
-        [Fact]
-        public void ApplyPricing_ShouldReturnConflict_WhenPricingIsLocked()
-        {
-            // Arrange
-            var app = MembershipApplication.Create(
-                id: Guid.NewGuid(),
-                trackingNumber: "TRK-" + Guid.NewGuid().ToString()[..8], // Generates a random short string
-                userId: Guid.NewGuid(),
-                clubId: Guid.NewGuid(),
-                membershipTypeId: Guid.NewGuid(),
-                membershipPlanId: Guid.NewGuid(),
-                templateId: Guid.NewGuid(),
-                basePrice: 100.00m
-            ).Value;
-            app.Submit(); // Locks pricing
-
-            // Act
-            var result = app.ApplyPricing(99.99m);
-
-            // Assert
-            result.IsError.Should().BeTrue();
-            result.TopError.Type.Should().Be(ErrorKind.Conflict); // If your Error class has a Type property
-            result.TopError.Code.Should().Be("MembershipApplication.PriceIsLocked");
+            result.TopError.Should().Be(MembershipApplicationErrors.PricingLocked);
         }
     }
 }

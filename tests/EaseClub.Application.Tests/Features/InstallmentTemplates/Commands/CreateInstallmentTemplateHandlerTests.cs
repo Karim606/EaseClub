@@ -43,7 +43,7 @@ namespace EaseClub.Application.Tests.Features.InstallmentTemplates.Commands
             var result = await _handler.Handle(command, CancellationToken.None);
 
             result.IsError.Should().BeTrue();
-            _repo.Verify(x => x.AddAsync(It.IsAny<InstallmentTemplate>()), Times.Never);
+            _repo.Verify(x => x.AddAsync(It.IsAny<InstallmentTemplate>(), CancellationToken.None), Times.Never);
             _unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
@@ -62,7 +62,7 @@ namespace EaseClub.Application.Tests.Features.InstallmentTemplates.Commands
             result.IsError.Should().BeFalse();
             result.Value.Should().NotBe(Guid.Empty);
 
-            _repo.Verify(x => x.AddAsync(It.IsAny<InstallmentTemplate>()), Times.Once);
+            _repo.Verify(x => x.AddAsync(It.IsAny<InstallmentTemplate>(), CancellationToken.None), Times.Once);
             _unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
     }

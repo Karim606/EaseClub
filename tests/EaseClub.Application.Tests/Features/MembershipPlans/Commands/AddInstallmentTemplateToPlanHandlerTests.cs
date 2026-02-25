@@ -35,7 +35,7 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
         {
             var command = new AddInstallmentTemplateToPlanCommand(Guid.NewGuid(), Guid.NewGuid(),Guid.NewGuid());
 
-            _planRepo.Setup(x => x.GetByIdAsync(command.PlanId))
+            _planRepo.Setup(x => x.GetByIdAsync(command.PlanId,CancellationToken.None))
                      .ReturnsAsync((MembershipPlan?)null);
 
             var result = await _handler.Handle(command, default);
@@ -51,10 +51,10 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
 
             var command = new AddInstallmentTemplateToPlanCommand(plan.ClubId,plan.Id, Guid.NewGuid());
 
-            _planRepo.Setup(x => x.GetByIdAsync(command.PlanId))
+            _planRepo.Setup(x => x.GetByIdAsync(command.PlanId, CancellationToken.None))
                      .ReturnsAsync(plan);
 
-            _templateRepo.Setup(x => x.GetByIdAsync(command.TemplateId))
+            _templateRepo.Setup(x => x.GetByIdAsync(command.TemplateId,CancellationToken.None))
                          .ReturnsAsync((InstallmentTemplate?)null);
 
             var result = await _handler.Handle(command, default);
@@ -73,10 +73,10 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
 
             var command = new AddInstallmentTemplateToPlanCommand(plan.ClubId, plan.Id, template.Id);
 
-            _planRepo.Setup(x => x.GetByIdAsync(command.PlanId))
+            _planRepo.Setup(x => x.GetByIdAsync(command.PlanId, CancellationToken.None))
                      .ReturnsAsync(plan);
 
-            _templateRepo.Setup(x => x.GetByIdAsync(command.TemplateId))
+            _templateRepo.Setup(x => x.GetByIdAsync(command.TemplateId, CancellationToken.None))
                          .ReturnsAsync(template);
 
             var result = await _handler.Handle(command, default);

@@ -27,7 +27,7 @@ namespace EaseClub.Application.Tests.Features.Clubs.Queries
         {
             // Arrange
             var clubId = Guid.NewGuid();
-            _clubRepository.Setup(x => x.GetByIdAsync(clubId))
+            _clubRepository.Setup(x => x.GetByIdAsync(clubId, CancellationToken.None))
                            .ReturnsAsync((Club)null); // Club not found
 
             var handler = CreateHandler();
@@ -50,7 +50,7 @@ namespace EaseClub.Application.Tests.Features.Clubs.Queries
             var clubId = Guid.NewGuid();
             var club = Club.Create(clubId, "Ease Club").Value;
 
-            _clubRepository.Setup(x => x.GetByIdAsync(clubId))
+            _clubRepository.Setup(x => x.GetByIdAsync(clubId, CancellationToken.None))
                            .ReturnsAsync(club);
 
             var handler = CreateHandler();

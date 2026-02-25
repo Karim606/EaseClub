@@ -27,7 +27,7 @@ namespace EaseClub.Application.Tests.Features.InstallmentTemplates.Queries
         {
             var query = new GetInstallmentTemplateQuery(Guid.NewGuid());
 
-            _repo.Setup(x => x.GetByIdAsync(query.Id))
+            _repo.Setup(x => x.GetByIdAsync(query.Id, CancellationToken.None))
                  .ReturnsAsync((InstallmentTemplate?)null);
 
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -52,7 +52,7 @@ namespace EaseClub.Application.Tests.Features.InstallmentTemplates.Queries
                 }
             ).Value;
 
-            _repo.Setup(x => x.GetByIdAsync(template.Id))
+            _repo.Setup(x => x.GetByIdAsync(template.Id, CancellationToken.None))
                  .ReturnsAsync(template);
 
             var result = await _handler.Handle(

@@ -111,7 +111,7 @@ namespace EaseClub.Application.Tests.Features.MembershipTypes.Commands
 
             result.IsSuccess.Should().BeTrue();
 
-            _membershipRepo.Verify(r => r.AddAsync(It.IsAny<MembershipType>()), Times.Once);
+            _membershipRepo.Verify(r => r.AddAsync(It.IsAny<MembershipType>(), CancellationToken.None), Times.Once);
             _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
     }

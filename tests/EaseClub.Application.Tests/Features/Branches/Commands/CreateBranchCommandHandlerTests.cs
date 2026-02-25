@@ -38,7 +38,7 @@ namespace EaseClub.Application.Tests.Features.Branches.Commands
             var command = new CreateBranchCommand(Guid.NewGuid(), "Main Branch");
 
             _clubRepository
-                .Setup(x => x.IsExistAsync(command.ClubId))
+                .Setup(x => x.IsExistAsync(command.ClubId, CancellationToken.None))
                 .ReturnsAsync(false);
 
             var handler = CreateHandler();
@@ -51,7 +51,7 @@ namespace EaseClub.Application.Tests.Features.Branches.Commands
             result.TopError.Type.Should().Be(ErrorKind.NotFound);
 
             _branchRepository.Verify(
-                x => x.AddAsync(It.IsAny<Branch>()),
+                x => x.AddAsync(It.IsAny<Branch>(),CancellationToken.None),
                 Times.Never
             );
 
@@ -68,7 +68,7 @@ namespace EaseClub.Application.Tests.Features.Branches.Commands
             var command = new CreateBranchCommand(Guid.NewGuid(), " "); // invalid name
 
             _clubRepository
-                .Setup(x => x.IsExistAsync(command.ClubId))
+                .Setup(x => x.IsExistAsync(command.ClubId, CancellationToken.None))
                 .ReturnsAsync(true);
 
             var handler = CreateHandler();
@@ -81,7 +81,7 @@ namespace EaseClub.Application.Tests.Features.Branches.Commands
             result.TopError.Should().Be(BranchErrors.NullOrWhiteSpaces);
 
             _branchRepository.Verify(
-                x => x.AddAsync(It.IsAny<Branch>()),
+                x => x.AddAsync(It.IsAny<Branch>(), CancellationToken.None),
                 Times.Never
             );
 
@@ -98,7 +98,7 @@ namespace EaseClub.Application.Tests.Features.Branches.Commands
             var command = new CreateBranchCommand(Guid.NewGuid(), "Main Branch");
 
             _clubRepository
-                .Setup(x => x.IsExistAsync(command.ClubId))
+                .Setup(x => x.IsExistAsync(command.ClubId, CancellationToken.None))
                 .ReturnsAsync(true);
 
             var handler = CreateHandler();
@@ -115,7 +115,7 @@ namespace EaseClub.Application.Tests.Features.Branches.Commands
                     b.ClubId == command.ClubId &&
                     b.Name == command.Name &&
                     b.IsActive
-                )),
+                ), CancellationToken.None),
                 Times.Once
             );
 
@@ -132,7 +132,7 @@ namespace EaseClub.Application.Tests.Features.Branches.Commands
             var command = new CreateBranchCommand(Guid.NewGuid(), "Main Branch");
 
             _clubRepository
-                .Setup(x => x.IsExistAsync(command.ClubId))
+                .Setup(x => x.IsExistAsync(command.ClubId, CancellationToken.None))
                 .ReturnsAsync(true);
 
             _branchRepository
@@ -150,7 +150,7 @@ namespace EaseClub.Application.Tests.Features.Branches.Commands
             result.TopError.Description.Should().Contain(command.Name);
 
             _branchRepository.Verify(
-                x => x.AddAsync(It.IsAny<Branch>()),
+                x => x.AddAsync(It.IsAny<Branch>(), CancellationToken.None),
                 Times.Never
             );
 

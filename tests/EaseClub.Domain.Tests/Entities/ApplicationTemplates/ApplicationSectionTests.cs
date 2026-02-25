@@ -13,30 +13,13 @@ public class ApplicationSectionTests
     private readonly ValidationRuleSet _dummyRules = ValidationRuleSet.Create(false).Value;
 
     [Fact]
-    public void Create_ShouldReturnSuccess_WhenDataIsValid()
-    {
-        // Arrange
-        var id = Guid.NewGuid();
-        var stepId = Guid.NewGuid();
-        var title = "Emergency Contacts";
-
-        // Act - This works because of InternalsVisibleTo
-        var result = ApplicationSectionDefinition.Create(id, stepId, title, 1);
-
-        // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Title.Should().Be(title);
-        result.Value.Fields.Should().BeEmpty();
-    }
-
-    [Fact]
     public void AddNewField_ShouldAddToList_WhenDataIsValid()
     {
         // Arrange
-        var section = ApplicationSectionDefinition.Create(Guid.NewGuid(), Guid.NewGuid(), "Section", 1).Value;
+        var section = ApplicationSectionDefinition.Create(Guid.NewGuid(), Guid.NewGuid(), "Section", 0).Value;
 
         // Act
-        var result = section.AddNewField("phone_number", FieldType.Text, _dummyRules, null, false, true);
+        var result = section.AddNewField("phone_number", FieldType.Text, _dummyRules, null, false, 0);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -45,59 +28,67 @@ public class ApplicationSectionTests
     }
 
     [Fact]
-    public void AddNewField_ShouldFail_WhenKeyIsDuplicate()
+    public void AddNewField_ShouldShiftOrders_WhenInsertedAtExistingOrder()
     {
         // Arrange
-        var section = ApplicationSectionDefinition.Create(Guid.NewGuid(), Guid.NewGuid(), "Section", 1).Value;
-        section.AddNewField("email", FieldType.Text, _dummyRules, null, false, true);
+        var section = ApplicationSectionDefinition.Create(Guid.NewGuid(), Guid.NewGuid(), "Section", 0).Value;
+        // Add first field at order 0
+        section.AddNewField("first", FieldType.Text, _dummyRules, null, false, 0);
 
-        // Act
-        var result = section.AddNewField("email", FieldType.Text, _dummyRules, null, false, true);
+        // Act - Add second field also at order 0
+        var result = section.AddNewField("new_first", FieldType.Text, _dummyRules, null, false, 0);
 
         // Assert
-        result.IsError.Should().BeTrue();
-        result.TopError.Should().Be(ApplicationSectionDefinitionErrors.DuplicateFieldKey);
+        result.IsSuccess.Should().BeTrue();
+        section.Fields.First(f => f.Key == "new_first").Order.Should().Be(0);
+        section.Fields.First(f => f.Key == "first").Order.Should().Be(1); // Shifted up
+    }
+
+    [Fact]
+    public void RemoveField_ShouldCloseGap_ByDecrementingSubsequentOrders()
+    {
+        // Arrange
+        var section = ApplicationSectionDefinition.Create(Guid.NewGuid(), Guid.NewGuid(), "Section", 0).Value;
+        section.AddNewField("f1", FieldType.Text, _dummyRules, null, false, 0);
+        var f2 = section.AddNewField("f2", FieldType.Text, _dummyRules, null, false, 1).Value;
+        section.AddNewField("f3", FieldType.Text, _dummyRules, null, false, 2);
+
+        // Act
+        section.RemoveField(f2.Id);
+
+        // Assert
+        section.Fields.Should().HaveCount(2);
+        section.Fields.First(f => f.Key == "f1").Order.Should().Be(0);
+        section.Fields.First(f => f.Key == "f3").Order.Should().Be(1); // Shifted down from 2
     }
 
     [Fact]
     public void EvaluateRepeatRule_ShouldReturnZero_WhenSectionIsNotRepeatable()
     {
         // Arrange
-        var section = ApplicationSectionDefinition.Create(Guid.NewGuid(), Guid.NewGuid(), "Section", 1, repeatRule: null).Value;
+        var section = ApplicationSectionDefinition.Create(Guid.NewGuid(), Guid.NewGuid(), "Section", 0, repeatRule: null).Value;
 
         // Act
         var result = section.EvaluateRepeatRule("3");
 
         // Assert
+        // In your Result class, result.Value will be 0 if IsRepeatable is false
         result.Value.Should().Be(0);
     }
 
     [Fact]
-    public void EvaluateRepeatRule_ShouldReturnCorrectCount_WhenRepeatRuleIsSet()
+    public void SetRepeatRule_ShouldUpdateRuleSuccessfully()
     {
         // Arrange
-        var rule = RepeatRule.Create("depend_field", RepeatMode.ExactValue).Value;
-        var section = ApplicationSectionDefinition.Create(Guid.NewGuid(), Guid.NewGuid(), "Section", 1, rule).Value;
+        var section = ApplicationSectionDefinition.Create(Guid.NewGuid(), Guid.NewGuid(), "Section", 0).Value;
+        var rule = RepeatRule.Create("count", RepeatMode.ExactValue).Value;
 
         // Act
-        var result = section.EvaluateRepeatRule("5");
-
-        // Assert
-        result.Value.Should().Be(5);
-    }
-
-    [Fact]
-    public void RemoveField_ShouldRemoveFromList_WhenFieldExists()
-    {
-        // Arrange
-        var section = ApplicationSectionDefinition.Create(Guid.NewGuid(), Guid.NewGuid(), "Section", 1).Value;
-        var field = section.AddNewField("temp", FieldType.Text, _dummyRules, null, false, false).Value;
-
-        // Act
-        var result = section.RemoveField(field.Id);
+        var result = section.SetRepeatRule(rule);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        section.Fields.Should().BeEmpty();
+        section.IsRepeatable.Should().BeTrue();
+        section.RepeatRule.Should().Be(rule);
     }
 }

@@ -44,7 +44,7 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
                 60);
 
             _membershipTypeRepo
-                .Setup(x => x.GetByIdAsync(command.MembershipTypeId))
+                .Setup(x => x.GetByIdAsync(command.MembershipTypeId, CancellationToken.None))
                 .ReturnsAsync((MembershipType?)null);
 
             var result = await _handler.Handle(command, CancellationToken.None);
@@ -66,7 +66,7 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
                 60);
 
             _membershipTypeRepo
-                .Setup(x => x.GetByIdAsync(command.MembershipTypeId))
+                .Setup(x => x.GetByIdAsync(command.MembershipTypeId, CancellationToken.None))
                 .ReturnsAsync(membershipType);
 
             _planRepo
@@ -92,7 +92,7 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
                 60);
 
             _membershipTypeRepo
-                .Setup(x => x.GetByIdAsync(command.MembershipTypeId))
+                .Setup(x => x.GetByIdAsync(command.MembershipTypeId, CancellationToken.None))
                 .ReturnsAsync(membershipType);
 
             _planRepo
@@ -104,7 +104,7 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
             result.IsError.Should().BeFalse();
             result.Value.Should().NotBe(Guid.Empty);
 
-            _planRepo.Verify(x => x.AddAsync(It.IsAny<MembershipPlan>()), Times.Once);
+            _planRepo.Verify(x => x.AddAsync(It.IsAny<MembershipPlan>(), CancellationToken.None), Times.Once);
             _unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
     }
