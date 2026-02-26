@@ -119,9 +119,32 @@ namespace EaseClub.Domain.ApplicationTemplates
                 VisibilityCondition.ExpectedValue);
         }
 
-        public void AddPricingPolicy (PricingPolicy policy)
+        public Result<Success> AttachPricingPolicy(PricingPolicy policy)
         {
+            if (_PricingPolicies.Any(p => p.Id == policy.Id))
+            {
+                return ApplicationFieldErrors.DuplicatedPricingPolicy;
+            }
+
             _PricingPolicies.Add(policy);
+
+            return Result.Success;
+            
+        }
+
+        public Result<Success> DeattachPricingPolicy(Guid id)
+        {
+            var policy = _PricingPolicies.FirstOrDefault(p => p.Id == id);
+
+            if (policy == null)
+            {
+                return ApplicationFieldErrors.PricingPolicyNotAttached;
+            }
+
+            _PricingPolicies.Remove(policy);
+
+            return Result.Success;
+
         }
     }
 }
