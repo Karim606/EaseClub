@@ -1,6 +1,9 @@
-﻿using EaseClub.Application.Features.MembershipApplications.Commands.CreateApplication;
+﻿using EaseClub.Application.Features.MembershipApplications.Commands.CompleteStep;
+using EaseClub.Application.Features.MembershipApplications.Commands.CreateApplication;
 using EaseClub.Application.Features.MembershipApplications.Commands.RemoveAnswer;
+using EaseClub.Application.Features.MembershipApplications.Commands.SubmitApplication;
 using EaseClub.Application.Features.MembershipApplications.Commands.UpdateAnswer;
+using EaseClub.Application.Features.MembershipApplications.Queries;
 using EaseClub.Application.Features.MembershipApplications.Queries.GetApplication;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -31,6 +34,11 @@ namespace EaseClub.Api.Controllers
         [HttpPost("{id}/steps/{order}/complete")]
         public async Task<IActionResult> CompleteStep(Guid id, int order, [FromBody] List<AnswerDto> answers) =>
         (await sender.Send(new CompleteStepCommand(id, order, answers))).Match(_ => NoContent(), Problem);
+
+        [HttpPost("{id}/submit")]
+        public async Task<IActionResult> Submit(Guid id) =>
+            (await sender.Send(new SubmitApplicationCommand(id))).Match(_ => Ok(), Problem);
+
 
         // Update an answer (The one we built in the previous step)
         //[HttpPatch("{id}/answers")]
