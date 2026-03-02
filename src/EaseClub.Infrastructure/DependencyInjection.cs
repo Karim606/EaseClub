@@ -8,10 +8,12 @@ using EaseClub.Domain.Branches;
 using EaseClub.Domain.ClubAdmin;
 using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Common;
+using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Member;
 using EaseClub.Domain.MembershipApplications.Repositories;
 using EaseClub.Domain.MembershipPlans.Repositories;
 using EaseClub.Domain.MembershipTypes;
+using EaseClub.Domain.PricingPolices;
 using EaseClub.Infrastructure.Auth.Entities;
 using EaseClub.Infrastructure.Auth.interfaces;
 using EaseClub.Infrastructure.Auth.Repositories;
@@ -24,6 +26,7 @@ using EaseClub.Infrastructure.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -57,16 +60,17 @@ namespace EaseClub.Application
         {
             if (env.IsEnvironment("testing"))
             {
-                    services.AddDbContext<AppDbContext>(options =>
-                    options.UseInMemoryDatabase("IntegrationTestDb"));
+                var uniqueDbName = Guid.NewGuid().ToString();
+                services.AddDbContext<AppDbContext>(options =>
+                options.UseInMemoryDatabase(uniqueDbName));
             }
             else
             {
                 var typeOfDB = env.IsDevelopment() ? "Dev" : "Prod";
-                var connectionString = configuration.GetConnectionString(typeOfDB);
+            var connectionString = configuration.GetConnectionString(typeOfDB);
 
-                services.AddDbContext<AppDbContext>(options =>
-                    options.UseSqlServer(connectionString));
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseSqlServer(connectionString));
             }
 
             services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<AppDbContext>());
@@ -150,6 +154,7 @@ namespace EaseClub.Application
             Services.AddScoped<IApplicationSectionRepository, ApplicationSectionRepository>();
             Services.AddScoped<IMembershipApplicationRepository,MembershipApplicationsRepository>();
             Services.AddScoped<IApplicationFieldRepository, ApplicationFieldRepository>();
+            Services.AddScoped<IPricingPolicyRepository,PricingPolicyRepository>();
 
             return Services;
         }
