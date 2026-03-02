@@ -6,6 +6,8 @@ using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipApplications;
 using EaseClub.Domain.MembershipApplications.Repositories;
 using EaseClub.Domain.MembershipPlans.Repositories;
+using EaseClub.Domain.MembershipTypes;
+using EaseClub.Domain.PricingPolices;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using System;
@@ -20,66 +22,52 @@ using static System.Net.Mime.MediaTypeNames;
 namespace EaseClub.Application.Features.MembershipApplications.Commands.CreateApplication
 {
     public class CreateApplicationCommandHandler(
-    IApplicationTemplateQueryService queryService,
-    IMembershipPlanRepository membershipPlanRepository,
-    IMembershipApplicationRepository applicationRepository,
+    IApplicationTemplateRepository tempRepo,
+    IMembershipPlanRepository membershipPlanRepo,
+    IMembershipTypeRepository membershipTyeRepo,
+    IMembershipApplicationRepository appRepo,
+    IPricingPolicyRepository pricingPolicyRepo,
     ICurrentUserService currentUserService,
     ILogger<CreateApplicationCommandHandler>logger,
     IUnitOfWork unitOfWork) : IRequestHandler<CreateApplicationCommand, Result<Guid>>
     {
         public async Task<Result<Guid>> Handle(CreateApplicationCommand request, CancellationToken ct)
         {
-            // 1. Fetch the Definition Tree (Relational)
-            // Note: Use AsNoTracking and AsSplitQuery as we discussed for performance
-            var template = await queryService.GetFullTemplateTreeAsync(request.TemplateId, ct);
+            // 1. Fetch Live Template
+            var template = await tempRepo.GetFullTemplateAsync(request.TemplateId, ct);
+            if (template == null) return Error.NotFound("Template not found");
 
-            if (template == null)
-            {
-                logger.LogWarning("The template definition was not found"); 
-                return Error.NotFound("Template.NotFound", "The template definition was not found.");
-            }
-            // 2. Serialize the Tree to JSON (The Snapshot)
-            var snapshotJson = JsonSerializer.Serialize(template, new JsonSerializerOptions
-            {
-                ReferenceHandler = ReferenceHandler.IgnoreCycles,
-                WriteIndented = false
-            });
+            var memType = await membershipTyeRepo.GetByIdAsync(request.MembershipTypeId);
+            if (memType == null)
+                return Error.NotFound(description: "Membership type not found.");
 
-            var plan = await membershipPlanRepository.GetByIdAsync(request.MembershipPlanId, ct);
+            var plan = await  membershipPlanRepo.GetByIdAsync(request.MembershipPlanId);
 
-            if(plan == null)
-            {
-                logger.LogWarning("membership plan was not found.");
-                return Error.NotFound(description:"membership plan was not found.");
-            }
+            if (plan == null || plan.MembershipTypeId != memType.Id)
+               return Error.NotFound(description: "plan not found");
+            // 2. Fetch Live Pricing Policies for this club
+            var policies = await pricingPolicyRepo.GetByClubIdAsync(request.ClubId, ct);
 
-            Guid.TryParse(currentUserService.GetId(),out var userId);
+            // 3. Create the Frozen Snapshot
+            var snapshot = template.ToSnapshot(plan.TotalPrice,policies.Select(p => p.ToSnapshot()).ToList());
 
-
-            // 3. Create the Aggregate Root
-            var res =  MembershipApplication.Create(
+            Guid.TryParse(currentUserService.GetId(), out var userId);
+            // 4. Initialize the Aggregate
+            var trackingNumber = $"APP-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString()[..8].ToUpper()}";
+            var application = MembershipApplication.Create(
                 Guid.NewGuid(),
-                "EaseClub"+ new Random().NextInt64(),
-                snapshotJson,
+                trackingNumber,
+                snapshot,
                 userId,
                 request.ClubId,
                 request.MembershipTypeId,
                 request.MembershipPlanId,
-                request.TemplateId,
-                plan.TotalPrice
+                request.TemplateId).Value;
 
-                );
-
-            if (res.IsError)
-            {
-                logger.LogError("failed to create membership application, reason:{Error}", res.TopError);
-                return res.TopError;
-            }
-            // 4. Persist
-            await applicationRepository.AddAsync(res.Value, ct);
+            await appRepo.AddAsync(application);
             await unitOfWork.SaveChangesAsync(ct);
 
-            return res.Value.Id;
+            return application.Id;
         }
     }
 }

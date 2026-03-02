@@ -17,6 +17,7 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Commands.Field.AddF
 {
     public class AddFiedlCommandHandler(ILogger<AddFiedlCommandHandler> logger,
        IApplicationSectionRepository sectionRepository,
+       IApplicationTemplateRepository tempRepo,
        IApplicationFieldRepository fieldRepository,
        IUnitOfWork unitOfWork)
    : IRequestHandler<AddFieldCommand, Result<Guid>>
@@ -25,11 +26,10 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Commands.Field.AddF
 
         public async Task<Result<Guid>> Handle(AddFieldCommand request, CancellationToken ct)
         {
-            // 1. Fetch the Section (The Behavior already verified it belongs to the Club)
-            var section = await sectionRepository.GetSectionWithFields(request.SectionId, ct);
+            var temp = await tempRepo.GetFullTemplateAsync(request.TemplateId);
 
-            if (section == null)
-                return Error.NotFound("Section.NotFound", "The specified section does not exist.");
+            if (temp == null)
+                return Error.NotFound("ApplicationTemplate.NotFound", "The specified template does not exist.");
 
             var rulesOfValidation = request.ValidationRules;
             
@@ -66,13 +66,15 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Commands.Field.AddF
                 visibilityCondition = resOfCond.Value;
              }
             // 2. Domain Logic: Create the Field via the Section Aggregate
-            var fieldResult = section.AddNewField(
+            var fieldResult = temp.AddFieldToSection(
+                Guid.NewGuid(),
+                request.SectionId,
                 request.Key,
+                request.label,
                 request.type,
                 rule.Value,
                 visibilityCondition,
-                request.PersistToMembership,
-                request.Order-1
+                request.PersistToMembership
             );
 
             if (fieldResult.IsError)

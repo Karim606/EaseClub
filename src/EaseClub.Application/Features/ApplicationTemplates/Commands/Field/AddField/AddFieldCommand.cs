@@ -9,28 +9,30 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.ApplicationTemplates.Commands.Field.AddField
 {
     public record AddFieldCommand(
         Guid ClubId,
+        Guid TemplateId,
         string Key,
-        int Order,
+        string label,
         bool PersistToMembership,
         FieldType type,
         ValidationRuleSetDto ValidationRules,
         ConditionExpressionDto? VisibilityCondition
         ) : IRequest<Result<Guid>>, IRequireClubAdmin, IRequireClubOwnershipValidation
     {
+        [JsonIgnore]
         public Guid SectionId { get; init; }
-
         public IEnumerable<OwnershipRule> Rules()
         {
             yield return new OwnershipRule(
-                auth => auth.CheckAppTemplateComponentsOwnership(typeof(ApplicationSectionDefinition), SectionId, ClubId),
-                nameof(ApplicationSectionDefinition),
-                SectionId
+                auth => auth.DoesResourceBelongToClubAsync<ApplicationTemplateDefinition>(TemplateId, ClubId),
+                nameof(ApplicationTemplateDefinition),
+                TemplateId
                 );
         }
     }
