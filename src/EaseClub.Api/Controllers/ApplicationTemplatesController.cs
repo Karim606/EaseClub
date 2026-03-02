@@ -1,12 +1,15 @@
 ﻿using EaseClub.Application.Common.Pagination.Parameters;
-using EaseClub.Application.Features.ApplicationTemplates.Commands.Template.DeleteTemplate;
 using EaseClub.Application.Features.ApplicationTemplates.Commands.Field.AddField;
+using EaseClub.Application.Features.ApplicationTemplates.Commands.Field.RemoveField;
 using EaseClub.Application.Features.ApplicationTemplates.Commands.Field.UpdateField;
 using EaseClub.Application.Features.ApplicationTemplates.Commands.Section.AddSection;
+using EaseClub.Application.Features.ApplicationTemplates.Commands.Section.RemoveSection;
 using EaseClub.Application.Features.ApplicationTemplates.Commands.Section.UpdateSection;
 using EaseClub.Application.Features.ApplicationTemplates.Commands.Step.AddStep;
+using EaseClub.Application.Features.ApplicationTemplates.Commands.Step.RemoveStep;
 using EaseClub.Application.Features.ApplicationTemplates.Commands.Step.UpdateStep;
 using EaseClub.Application.Features.ApplicationTemplates.Commands.Template.CreateTemplate;
+using EaseClub.Application.Features.ApplicationTemplates.Commands.Template.DeleteTemplate;
 using EaseClub.Application.Features.ApplicationTemplates.Commands.Template.UpdateTemplate;
 using EaseClub.Application.Features.ApplicationTemplates.Queries.GetStepByOrder;
 using EaseClub.Application.Features.ApplicationTemplates.Queries.GetTemplates;
@@ -132,6 +135,31 @@ namespace EaseClub.Api.Controllers
         public async Task<IActionResult> UpdateField(Guid fieldId, [FromBody] UpdateFieldCommand command,CancellationToken ct)
         {
             var result = await sender.Send(command with { FieldId = fieldId },ct);
+            return result.Match(_ => NoContent(), Problem);
+        }
+
+        #endregion
+
+        #region Remove Operations
+
+        [HttpDelete("steps/{stepId}")]
+        public async Task<IActionResult> RemoveStep(Guid stepId, [FromQuery] Guid templateId, [FromHeader(Name = "X-Club-Id")] Guid clubId, CancellationToken ct)
+        {
+            var result = await sender.Send(new RemoveStepCommand(clubId, templateId, stepId), ct);
+            return result.Match(_ => NoContent(), Problem);
+        }
+
+        [HttpDelete("steps/{stepId}/sections/{sectionId}")]
+        public async Task<IActionResult> RemoveSection(Guid stepId, Guid sectionId, [FromHeader(Name = "X-Club-Id")] Guid clubId, CancellationToken ct)
+        {
+            var result = await sender.Send(new RemoveSectionCommand(clubId, stepId, sectionId), ct);
+            return result.Match(_ => NoContent(), Problem);
+        }
+
+        [HttpDelete("sections/{sectionId}/fields/{fieldId}")]
+        public async Task<IActionResult> RemoveField(Guid sectionId, Guid fieldId, [FromQuery] Guid templateId, [FromHeader(Name = "X-Club-Id")] Guid clubId, CancellationToken ct)
+        {
+            var result = await sender.Send(new RemoveFieldCommand(clubId, templateId, sectionId, fieldId), ct);
             return result.Match(_ => NoContent(), Problem);
         }
 
