@@ -28,24 +28,28 @@ namespace EaseClub.Api.Controllers
                 Problem);
         }
 
-        // Update an answer (The one we built in the previous step)
-        [HttpPatch("{id}/answers")]
-        public async Task<IActionResult> UpdateAnswer(Guid id, [FromBody] SetAnswerCommand command,CancellationToken ct)
-        {
-            var result = await sender.Send(command with { ApplicationId = id },ct);
-            return result.Match(_ => NoContent(), Problem);
-        }
+        [HttpPost("{id}/steps/{order}/complete")]
+        public async Task<IActionResult> CompleteStep(Guid id, int order, [FromBody] List<AnswerDto> answers) =>
+        (await sender.Send(new CompleteStepCommand(id, order, answers))).Match(_ => NoContent(), Problem);
 
-        [HttpDelete("{applicationId}/answers/{fieldDefinitionId}")]
-        public async Task<IActionResult> RemoveAnswer(
-        Guid applicationId,
-        Guid fieldDefinitionId,
-        CancellationToken ct,
-        [FromQuery] int index = 0
-        )
-        {
-            var result = await sender.Send(new RemoveAnswerCommand(applicationId, fieldDefinitionId, index),ct);
-            return result.Match(_ => NoContent(), Problem);
-        }
+        // Update an answer (The one we built in the previous step)
+        //[HttpPatch("{id}/answers")]
+        //public async Task<IActionResult> UpdateAnswer(Guid id, [FromBody] SetAnswerCommand command,CancellationToken ct)
+        //{
+        //    var result = await sender.Send(command with { ApplicationId = id },ct);
+        //    return result.Match(_ => NoContent(), Problem);
+        //}
+
+        //[HttpDelete("{applicationId}/answers/{fieldDefinitionId}")]
+        //public async Task<IActionResult> RemoveAnswer(
+        //Guid applicationId,
+        //Guid fieldDefinitionId,
+        //CancellationToken ct,
+        //[FromQuery] int index = 0
+        //)
+        //{
+        //    var result = await sender.Send(new RemoveAnswerCommand(applicationId, fieldDefinitionId, index),ct);
+        //    return result.Match(_ => NoContent(), Problem);
+        //}
     }
 }
