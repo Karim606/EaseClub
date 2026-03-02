@@ -22,7 +22,8 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Commands.Field.AddF
         bool PersistToMembership,
         FieldType type,
         ValidationRuleSetDto ValidationRules,
-        ConditionExpressionDto? VisibilityCondition
+        ConditionExpressionDto? VisibilityCondition,
+        List<string>? AllowedValues = null
         ) : IRequest<Result<Guid>>, IRequireClubAdmin, IRequireClubOwnershipValidation
     {
         [JsonIgnore]

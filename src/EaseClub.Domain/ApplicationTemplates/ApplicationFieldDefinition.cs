@@ -30,7 +30,8 @@ namespace EaseClub.Domain.ApplicationTemplates
             FieldType type,
             ValidationRuleSet validationRules,
             ConditionExpression? visibilityCondition,
-            bool persistToMembership) : base(id)
+            bool persistToMembership,
+            List<string>? allowedValues=null) : base(id)
         {
             SectionId = sectionId;
             TemplateId = templateId;
@@ -40,6 +41,7 @@ namespace EaseClub.Domain.ApplicationTemplates
             ValidationRules = validationRules;
             VisibilityCondition = visibilityCondition;
             PersistToMembership = persistToMembership;
+            AllowedValues = allowedValues;
         }
 
         public Guid SectionId { get; private set; }
@@ -70,12 +72,15 @@ namespace EaseClub.Domain.ApplicationTemplates
             ValidationRuleSet validationRules,
             ConditionExpression? visibilityCondition,
             bool persistToMembership,
-            int order)
+            int order,
+            List<string>? allowedValues=null)
         {
             if (sectionId == Guid.Empty) return ApplicationFieldErrors.SectionIdRequired;
             if (templateId == Guid.Empty) return ApplicationFieldErrors.TemplateIdRequired;
             if (string.IsNullOrWhiteSpace(key)) return ApplicationFieldErrors.KeyRequired;
             if (string.IsNullOrWhiteSpace(label)) return ApplicationFieldErrors.KeyRequired;
+            if (type == FieldType.Enum && (allowedValues == null || !allowedValues.Any()))
+                return Error.Validation("Field.AllowedValuesRequired", "Allowed values are required for Enum fields.");
             if (validationRules == null) return ApplicationFieldErrors.ValidationRulesRequired;
 
 
@@ -92,25 +97,29 @@ namespace EaseClub.Domain.ApplicationTemplates
             );
 
             field.Order = order;
-
+            if(field.Type==FieldType.Enum)
+            field.SetAllowedValues(allowedValues);
             return field;
         }
 
-        public Result<Success> Update(string key,
-            FieldType type,
+        public Result<Success> Update(string label,
             ValidationRuleSet validationRules,
             ConditionExpression? visibilityCondition,
-            bool persistToMembership
+            bool persistToMembership,
+            List<string>? allowedValues=null
             )
         {
-            if (string.IsNullOrWhiteSpace(key)) return ApplicationFieldErrors.KeyRequired;
+            if (string.IsNullOrWhiteSpace(label)) return ApplicationFieldErrors.LabelRequired;
             if (validationRules == null) return ApplicationFieldErrors.ValidationRulesRequired;
+            if (Type == FieldType.Enum && (allowedValues == null || !allowedValues.Any()))
+                return Error.Validation("Field.AllowedValuesRequired", "Enum fields require allowed values.");
 
-            Type = type;
-            Key = key;
+            Label = label;
             ValidationRules = validationRules;
             VisibilityCondition = visibilityCondition;
             PersistToMembership = persistToMembership;
+
+            if (Type == FieldType.Enum) SetAllowedValues(allowedValues);
 
             return Result.Success;
         }
@@ -120,12 +129,16 @@ namespace EaseClub.Domain.ApplicationTemplates
             Order = order;
         }
 
-        public Result<Success> SetAllowedValues<TEnum>(List<TEnum> values) where TEnum : Enum
+        private Result<Success> SetAllowedValues(List<string>? values ) 
         {
-            if (Type != FieldType.Enum)
-                return Error.Conflict(description: "Cant set allowed values while field type is not enum.");
 
-            AllowedValues = values.Select(v => v.ToString()).ToList();
+            //  Clean the data: Remove whitespace, ignore empty strings, remove duplicates
+            AllowedValues = values!
+            .Where(v => !string.IsNullOrWhiteSpace(v))
+            .Select(v => v.Trim())
+            .GroupBy(v => v.ToLowerInvariant())
+            .Select(g => g.First())
+            .ToList();
 
             return Result.Success;
         }

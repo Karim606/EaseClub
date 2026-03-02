@@ -110,7 +110,8 @@ namespace EaseClub.Domain.ApplicationTemplates
             FieldType type,
             ValidationRuleSet rules,
             ConditionExpression? visibilityCondition,
-            bool persistToMembership)
+            bool persistToMembership,
+            List<string>? allowedValues = null)
         {
             var keyIsNull = string.IsNullOrWhiteSpace(key);
             string finalKey = keyIsNull
@@ -145,7 +146,8 @@ namespace EaseClub.Domain.ApplicationTemplates
                 rules,
                 visibilityCondition, // Visibility
                 persistToMembership, // Persist
-                section.Fields.Count+1);
+                section.Fields.Count+1,
+                allowedValues);
 
             if (fieldResult.IsError) return fieldResult.TopError;
 

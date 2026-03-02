@@ -64,11 +64,11 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Commands.Field.Upda
             }
 
             var res = field.Update(
-                        request.Key,
-                        request.Type,
+                        request.Label,
                         rule.Value,
                         visibilityCondition,
-                        request.PersistToMembership
+                        request.PersistToMembership,
+                        request.AllowedValues
                         );
             if (res.IsError)
             {

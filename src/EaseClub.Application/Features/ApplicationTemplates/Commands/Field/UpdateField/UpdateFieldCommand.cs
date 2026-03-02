@@ -16,11 +16,11 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Commands.Field.Upda
 {
     public record UpdateFieldCommand(
     Guid ClubId,
-    string Key,
+    string Label,
     bool PersistToMembership,
-    FieldType Type,
     ValidationRuleSetDto ValidationRules,
-    ConditionExpressionDto? VisibilityCondition
+    ConditionExpressionDto? VisibilityCondition,
+    List<string>?AllowedValues = null
 ) : IRequest<Result<Success>>, IRequireClubAdmin, IRequireClubOwnershipValidation
     {
         [JsonIgnore]
