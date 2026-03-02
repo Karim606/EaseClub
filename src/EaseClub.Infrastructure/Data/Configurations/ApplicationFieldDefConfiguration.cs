@@ -36,31 +36,33 @@ namespace EaseClub.Infrastructure.Data.Configurations
                 nav.ToJson();
             });
 
-            // 3. Map ConditionExpression (Flattened into the same table)
+            // 3. Map ConditionExpression
             builder.OwnsOne(f => f.VisibilityCondition, nav =>
             {
-                // Renaming columns to be descriptive in the table
-                nav.Property(c => c.DependsOnFieldKey)
-                    .HasColumnName("Visibility_DependsOnFieldKey")
-                    .HasMaxLength(100);
-
-                nav.Property(c => c.Operator)
-                    .HasColumnName("Visibility_Operator")
-                    .HasConversion<string>();
-
-                nav.Property(c => c.ExpectedValue)
-                    .HasColumnName("Visibility_ExpectedValue")
-                    .HasMaxLength(500);
+                nav.ToJson();
             });
 
+            builder.Property(f => f.AllowedValues)
+            .HasConversion(
+                v => v == null ? null : string.Join(",", v),      // List<string> -> CSV string
+                 v => string.IsNullOrEmpty(v)
+                    ? null
+                    : v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList()  // CSV -> List<string>
+                )
+                .HasColumnType("nvarchar(max)")
+                .IsRequired(false);
 
-
+            builder.HasOne<ApplicationTemplateDefinition>( )  // optional if navigation needed
+            .WithMany()
+            .HasForeignKey(f => f.TemplateId)
+            .OnDelete(DeleteBehavior.Restrict);
 
             // Optional: Index for faster lookups by Key within a Section
-            builder.HasIndex(f => new { f.SectionId, f.Key }).IsUnique();
+            builder.HasIndex(f => new { f.TemplateId, f.Key }).IsUnique();
             builder.HasIndex(f => new { f.SectionId, f.Order }).IsUnique();
-            builder.HasMany(f => f.PricingPolices).WithMany();
-            builder.Navigation(f => f.PricingPolices).HasField("_PricingPolicies").UsePropertyAccessMode(PropertyAccessMode.Field);
+
+
+
         }
     }
 }

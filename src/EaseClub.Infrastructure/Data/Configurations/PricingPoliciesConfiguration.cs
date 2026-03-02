@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.MembershipApplications;
+﻿using EaseClub.Domain.PricingPolices;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
@@ -16,58 +16,35 @@ namespace EaseClub.Infrastructure.Data.Configurations
 
             builder.HasKey(p => p.Id);
 
-            // 1. Basic Properties
             builder.Property(p => p.Name)
-                .IsRequired()
-                .HasMaxLength(150);
+            .IsRequired()
+            .HasMaxLength(200);
 
-            builder.Property(p => p.Trigger)
-                .IsRequired()
-                .HasConversion<string>(); // e.g., "OnFieldChanged", "OnSectionAdded"
+            builder.Property(p => p.FixedAmount)
+                .HasPrecision(18, 2);
 
-            builder.Property(p => p.IsPercentage)
-                .IsRequired();
+            builder.Property(p => p.PercentageValue)
+                .HasPrecision(18, 2); // e.g., 15.50%
 
-            builder.Property(p => p.IsIncrease)
-                .IsRequired();
+            builder.Property(p => p.MultiplierSourceKey)
+                .HasMaxLength(100);
 
-            // 2. Map Money Value Object (EffectAmount)
-            builder.OwnsOne(p => p.EffectAmount, money =>
+            // ============================================================
+            // Mapping the Conditions List as JSON
+            // ============================================================
+            // We use ToJson() so we don't need a separate join table for conditions.
+            // This keeps performance high and the schema simple.
+            builder.OwnsMany(p => p.Conditions, builder =>
             {
-                money.Property(m => m.Amount)
-                    .HasColumnName("Effect_Amount")
-                    .HasPrecision(18, 2)
-                    .IsRequired();
-
-                money.Property(m => m.Currency)
-                    .HasColumnName("Effect_Currency")
-                    .HasMaxLength(3)
-                    .IsRequired();
+                builder.ToJson();
             });
 
-            // 3. Map ConditionExpression Value Object (Condition)
-            // Reusing the flattening strategy we used in Field Definitions
-            builder.OwnsOne(p => p.Condition, cond =>
-            {
-                cond.Property(c => c.DependsOnFieldKey)
-                    .HasColumnName("Condition_FieldKey")
-                    .HasMaxLength(100)
-                    .IsRequired();
+            // Ensure the backing field is used for the read-only property
+            builder.Navigation(p => p.Conditions)
+                .HasField("_Conditions")
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
 
-                cond.Property(c => c.Operator)
-                    .HasColumnName("Condition_Operator")
-                    .HasConversion<string>()
-                    .IsRequired();
-
-                cond.Property(c => c.ExpectedValue)
-                    .HasColumnName("Condition_ExpectedValue")
-                    .HasMaxLength(500)
-                    .IsRequired();
-            });
-
-            // 4. Indexes
-            // Since pricing policies are often looked up by trigger
-            builder.HasIndex(p => p.Trigger);
+            builder.Property(p => p.ClubId).IsRequired();
         }
     }
 }

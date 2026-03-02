@@ -36,6 +36,9 @@ namespace EaseClub.Infrastructure.Data.Configurations
             builder.Navigation(x=> x.Steps).HasField("_Steps")
                 .UsePropertyAccessMode(PropertyAccessMode.Field);
 
+            //builder.Navigation(x => x.Fields).HasField("_Fields")
+            //    .UsePropertyAccessMode(PropertyAccessMode.Field);
+
             builder.HasMany(t => t.Steps)
                 .WithOne(s => s.Template)
                 .HasForeignKey(s => s.TemplateId)

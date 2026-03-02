@@ -21,6 +21,7 @@ using EaseClub.Domain.MembershipTypes;
 using EaseClub.Domain.MembershipPlans;
 using EaseClub.Domain.ApplicationTemplates;
 using EaseClub.Domain.MembershipApplications;
+using EaseClub.Domain.PricingPolices;
 
 namespace EaseClub.Infrastructure.Data
 {
