@@ -3,11 +3,13 @@ using EaseClub.Domain.ApplicationTemplates.ValueObjects.ConditionExpression;
 using EaseClub.Domain.ApplicationTemplates.ValueObjects.ValidationRulesSet;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
-using EaseClub.Domain.MembershipApplications;
+using EaseClub.Domain.MembershipApplications.ValueObjects;
+using EaseClub.Domain.PricingPolices;
 using Microsoft.VisualBasic.FileIO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -22,14 +24,18 @@ namespace EaseClub.Domain.ApplicationTemplates
         private ApplicationFieldDefinition(
             Guid id,
             Guid sectionId,
+            Guid templateId,
             string key,
+            string label,
             FieldType type,
             ValidationRuleSet validationRules,
             ConditionExpression? visibilityCondition,
             bool persistToMembership) : base(id)
         {
             SectionId = sectionId;
+            TemplateId = templateId;
             Key = key;
+            Label = label;
             Type = type;
             ValidationRules = validationRules;
             VisibilityCondition = visibilityCondition;
@@ -37,9 +43,12 @@ namespace EaseClub.Domain.ApplicationTemplates
         }
 
         public Guid SectionId { get; private set; }
+        public Guid TemplateId { get; private set; }
         public ApplicationSectionDefinition Section { get; private set;}
-        public Guid? ParentFieldId { get; private set; } // For extending system fields
+        //public Guid? ParentFieldId { get; private set; } // For extending system fields
         public string Key { get; private set; }          // Unique identifier
+        public string Label { get; private set; }
+
         public FieldType Type { get; private set; }      // Text, Number, etc.
         public ValidationRuleSet ValidationRules { get; private set; }
         public ConditionExpression? VisibilityCondition { get; private set; }
@@ -47,14 +56,16 @@ namespace EaseClub.Domain.ApplicationTemplates
         public int Order { get; internal set; } // Allow the Section to re-order fields
         public bool PersistToMembership { get; private set; }
 
-        private readonly List<PricingPolicy> _PricingPolicies = new();
-        public IReadOnlyList<PricingPolicy> PricingPolices => _PricingPolicies.AsReadOnly();
+        public List<string>? AllowedValues { get; private set; }
+
 
         // 3. Internal Factory: Only ApplicationSectionDefinition can call this
         internal static Result<ApplicationFieldDefinition> Create(
             Guid id,
+            Guid templateId,
             Guid sectionId,
             string key,
+            string label,
             FieldType type,
             ValidationRuleSet validationRules,
             ConditionExpression? visibilityCondition,
@@ -62,13 +73,18 @@ namespace EaseClub.Domain.ApplicationTemplates
             int order)
         {
             if (sectionId == Guid.Empty) return ApplicationFieldErrors.SectionIdRequired;
+            if (templateId == Guid.Empty) return ApplicationFieldErrors.TemplateIdRequired;
             if (string.IsNullOrWhiteSpace(key)) return ApplicationFieldErrors.KeyRequired;
+            if (string.IsNullOrWhiteSpace(label)) return ApplicationFieldErrors.KeyRequired;
             if (validationRules == null) return ApplicationFieldErrors.ValidationRulesRequired;
+
 
             var field = new ApplicationFieldDefinition(
                 id,
                 sectionId,
+                templateId,
                 key,
+                label,
                 type,
                 validationRules,
                 visibilityCondition,
@@ -104,47 +120,28 @@ namespace EaseClub.Domain.ApplicationTemplates
             Order = order;
         }
 
-        public List<Error> Validate(string? value)
+        public Result<Success> SetAllowedValues<TEnum>(List<TEnum> values) where TEnum : Enum
         {
-            return ValidationStrategyRegistry.ApplyAll(value, ValidationRules, Type);
-        }
+            if (Type != FieldType.Enum)
+                return Error.Conflict(description: "Cant set allowed values while field type is not enum.");
 
-        public bool Visible(string? value)
-        {
-            if (VisibilityCondition == null) return true;
-
-            return ComparisonStrategyRegistry.Evaluate(
-                VisibilityCondition.Operator,
-                value,
-                VisibilityCondition.ExpectedValue);
-        }
-
-        public Result<Success> AttachPricingPolicy(PricingPolicy policy)
-        {
-            if (_PricingPolicies.Any(p => p.Id == policy.Id))
-            {
-                return ApplicationFieldErrors.DuplicatedPricingPolicy;
-            }
-
-            _PricingPolicies.Add(policy);
+            AllowedValues = values.Select(v => v.ToString()).ToList();
 
             return Result.Success;
-            
         }
 
-        public Result<Success> DeattachPricingPolicy(Guid id)
+        //ToSnapshot
+        public FieldSnapshot ToSnapshot()
         {
-            var policy = _PricingPolicies.FirstOrDefault(p => p.Id == id);
-
-            if (policy == null)
-            {
-                return ApplicationFieldErrors.PricingPolicyNotAttached;
-            }
-
-            _PricingPolicies.Remove(policy);
-
-            return Result.Success;
-
+            return new FieldSnapshot(
+                Id,
+                Key,
+                Label,
+                Type, // Enum (Text, Number, Date, etc.)
+                ValidationRules.ToSnapshot(),      // Value Object
+                VisibilityCondition?.ToSnapshot(),   // Value Object
+                Order
+            );
         }
     }
 }

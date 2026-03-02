@@ -1,4 +1,5 @@
 ﻿using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.MembershipApplications.ValueObjects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,6 +33,12 @@ namespace EaseClub.Domain.ApplicationTemplates.ValueObjects.ConditionExpression
         public bool IsSatisfiedBy(string? actualValue)
         {
             return ComparisonStrategyRegistry.Evaluate(Operator, actualValue, ExpectedValue);
+        }
+
+        //ToSnapshot
+        public ConditionExpressionSnapshot ToSnapshot()
+        {
+            return ConditionExpressionSnapshot.FromDomain(this);
         }
     }
 }

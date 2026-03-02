@@ -2,6 +2,7 @@
 using EaseClub.Domain.ApplicationTemplates.ValueObjects.RepeatRule;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.MembershipApplications.ValueObjects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -108,6 +109,18 @@ namespace EaseClub.Domain.ApplicationTemplates
                 remainingSection.UpdateOrder(remainingSection.Order - 1);
             }
             return Result.Success;
+        }
+
+        //ToSnapshot
+        public StepSnapshot ToSnapshot()
+        {
+            return new StepSnapshot(
+                Id,
+                Category,
+                Title,
+                Order,
+                _Sections.OrderBy(s => s.Order).Select(s => s.ToSnapshot()).ToList()
+            );
         }
     }
 }

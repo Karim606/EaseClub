@@ -1,6 +1,7 @@
 ﻿using EaseClub.Domain.ApplicationTemplates;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.MembershipApplications.ValueObjects;
 
 namespace EaseClub.Domain.ApplicationTemplates.ValueObjects.ValidationRulesSet
 {
@@ -47,6 +48,12 @@ namespace EaseClub.Domain.ApplicationTemplates.ValueObjects.ValidationRulesSet
         public List<Error> Validate(string? value, FieldType type)
         {
             return ValidationStrategyRegistry.ApplyAll(value, this, type);
+        }
+
+        //ToSnapshot
+        public ValidationRuleSetSnapshot ToSnapshot()
+        {
+            return ValidationRuleSetSnapshot.FromDomain(this);
         }
     }
 }

@@ -4,6 +4,7 @@ using EaseClub.Domain.ApplicationTemplates.ValueObjects.RepeatRule;
 using EaseClub.Domain.ApplicationTemplates.ValueObjects.ValidationRulesSet;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.MembershipApplications.ValueObjects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -57,45 +58,87 @@ namespace EaseClub.Domain.ApplicationTemplates
             return new ApplicationSectionDefinition(id, stepId, title, order, repeatRule);
         }
 
-        // 4. Field Management: The Section acts as the Field Factory
-        public Result<ApplicationFieldDefinition> AddNewField(
-            string key,
-            FieldType type,
-            ValidationRuleSet validationRules,
-            ConditionExpression? visibilityCondition,
-            bool persistToMembership,
-            int order = 0)
+        //Add,Remove and Reorder fields
+        internal void AddField(ApplicationFieldDefinition field)=> _Fields.Add(field);
+
+        internal Result<Success> RemoveField(Guid fieldId)
         {
-            // Domain Rule: Uniqueness of 'Key' within this section
-            if (_Fields.Any(f => f.Key == key))
-                return ApplicationSectionDefinitionErrors.DuplicateFieldKey;
+            var existingField = _Fields.FirstOrDefault(f => f.Id == fieldId);
+            if (existingField == null)
+                return Error.NotFound("Section.FieldNotFound", "Field not found in this section.");
 
-            if (order < 0 || order > _Fields.Count) return ApplicationSectionDefinitionErrors.InvalidFieldOrder;
+            var removedOrder = existingField.Order;
 
-            var fieldResult = ApplicationFieldDefinition.Create(
-                Guid.NewGuid(),
-                this.Id, 
-                key,
-                type,
-                validationRules,
-                visibilityCondition,
-                persistToMembership,
-                order
-            );
+            // 1. Remove the item
+            _Fields.Remove(existingField);
 
-            if (fieldResult.IsError) return fieldResult.TopError;
-
-            // 3. SHIFTING LOGIC: Move existing fields forward
-            foreach (var existingField in _Fields.Where(f => f.Order >= order))
+            // 2. Re-index: Shift everything above the removed order down by 1
+            foreach (var field in _Fields.Where(f => f.Order > removedOrder))
             {
-                existingField.UpdateOrder(existingField.Order + 1);
+                field.UpdateOrder(field.Order - 1);
             }
 
-            _Fields.Add(fieldResult.Value);
-
-
-            return fieldResult.Value;
+            return Result.Success;
         }
+
+        internal Result<Success> ReorderFields(List<Guid> fieldIdsInOrder)
+        {
+            if (fieldIdsInOrder.Count != _Fields.Count)
+                return Error.Validation("Section.InvalidReorder", "Count mismatch.");
+
+            for (int i = 0; i < fieldIdsInOrder.Count; i++)
+            {
+                var field = _Fields.FirstOrDefault(f => f.Id == fieldIdsInOrder[i]);
+                if (field == null) return Error.NotFound("Section.FieldNotFound");
+
+                field.UpdateOrder(i + 1); // 1-based indexing
+            }
+
+            return Result.Success;
+        }
+
+
+        // 4. Field Management: The Section acts as the Field Factory
+        //public Result<ApplicationFieldDefinition> AddNewField(
+        //    string key,
+        //    string label,
+        //    FieldType type,
+        //    ValidationRuleSet validationRules,
+        //    ConditionExpression? visibilityCondition,
+        //    bool persistToMembership,
+        //    int order = 0)
+        //{
+        //    // Domain Rule: Uniqueness of 'Key' within this section
+        //    if (_Fields.Any(f => f.Key == key))
+        //        return ApplicationSectionDefinitionErrors.DuplicateFieldKey;
+
+        //    if (order < 0 || order > _Fields.Count) return ApplicationSectionDefinitionErrors.InvalidFieldOrder;
+
+        //    var fieldResult = ApplicationFieldDefinition.Create(
+        //        Guid.NewGuid(),
+        //        this, 
+        //        key,
+        //        label,
+        //        type,
+        //        validationRules,
+        //        visibilityCondition,
+        //        persistToMembership,
+        //        order
+        //    );
+
+        //    if (fieldResult.IsError) return fieldResult.TopError;
+
+        //    // 3. SHIFTING LOGIC: Move existing fields forward
+        //    foreach (var existingField in _Fields.Where(f => f.Order >= order))
+        //    {
+        //        existingField.UpdateOrder(existingField.Order + 1);
+        //    }
+
+        //    _Fields.Add(fieldResult.Value);
+
+
+        //    return fieldResult.Value;
+        //}
 
         public Result<Success> Update(string title,RepeatRule? rule=null)
         {
@@ -110,25 +153,25 @@ namespace EaseClub.Domain.ApplicationTemplates
             Order = order;
         }
 
-        public Result<Success> RemoveField(Guid fieldId)
-        {
-            var existingField = _Fields.FirstOrDefault(f => f.Id == fieldId);
+        //public Result<Success> RemoveField(Guid fieldId)
+        //{
+        //    var existingField = _Fields.FirstOrDefault(f => f.Id == fieldId);
 
-            if (existingField == null)
-                return ApplicationSectionDefinitionErrors.FieldDoesntExist;
+        //    if (existingField == null)
+        //        return ApplicationSectionDefinitionErrors.FieldDoesntExist;
             
-            var removedOrder = existingField.Order;
+        //    var removedOrder = existingField.Order;
 
-            _Fields.Remove(existingField);
+        //    _Fields.Remove(existingField);
 
-            // 3. SHIFTING LOGIC: Close the gap
-            foreach (var remainingField in _Fields.Where(s => s.Order > removedOrder))
-            {
-                remainingField.UpdateOrder(remainingField.Order - 1);
-            }
+        //    // 3. SHIFTING LOGIC: Close the gap
+        //    foreach (var remainingField in _Fields.Where(s => s.Order > removedOrder))
+        //    {
+        //        remainingField.UpdateOrder(remainingField.Order - 1);
+        //    }
 
-            return Result.Success;
-        }
+        //    return Result.Success;
+        //}
 
         public Result<Success> SetRepeatRule(RepeatRule? rule)
         {
@@ -140,6 +183,19 @@ namespace EaseClub.Domain.ApplicationTemplates
         {
             if (!IsRepeatable) return 0;
             return RepeatRule!.Evaluate(actualValue);
+        }
+
+        //ToSnapShot
+
+        public SectionSnapshot ToSnapshot()
+        {
+            return new SectionSnapshot(
+                Id,
+                Title,
+                Order,
+                RepeatRule, // Value Object (Immutable)
+                _Fields.OrderBy(f => f.Order).Select(f => f.ToSnapshot()).ToList()
+            );
         }
     }
 }

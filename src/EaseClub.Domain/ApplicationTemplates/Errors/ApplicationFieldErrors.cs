@@ -11,7 +11,10 @@ namespace EaseClub.Domain.ApplicationTemplates.Errors
     {
         public static Error SectionIdRequired => Error.Validation(
             code: "ApplicationField.SectionIdRequired",
-            description: "Section ID is required for the field.");
+            description: "Section id is required for the field.");
+        public static Error TemplateIdRequired => Error.Validation(
+            code: "ApplicationField.TemplateIdRequired",
+            description: "Template id is required for the field.");
 
         public static Error ClubIdRequired => Error.Validation(
             code: "ApplicationField.ClubIdRequired",
@@ -20,6 +23,10 @@ namespace EaseClub.Domain.ApplicationTemplates.Errors
         public static Error KeyRequired => Error.Validation(
             code: "ApplicationField.KeyRequired",
             description: "Field key must not be empty.");
+
+        public static Error LabelRequired => Error.Validation(
+            code: "ApplicationField.LabelRequired",
+            description: "Field label must not be empty.");
 
         public static Error ValidationRulesRequired => Error.Validation(
             code: "ApplicationField.ValidationRulesRequired",

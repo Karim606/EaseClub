@@ -1,10 +1,14 @@
 ﻿using EaseClub.Domain.ApplicationTemplates.Errors;
+using EaseClub.Domain.ApplicationTemplates.ValueObjects.ConditionExpression;
+using EaseClub.Domain.ApplicationTemplates.ValueObjects.ValidationRulesSet;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.MembershipApplications.ValueObjects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -25,6 +29,9 @@ namespace EaseClub.Domain.ApplicationTemplates
         public Guid ClubId { get; private set; }
         public string Name { get; private set; }
         public bool IsActive { get; private set; } = true;
+
+        //private readonly List<ApplicationFieldDefinition> _Fields = new();
+        //public  IReadOnlyList<ApplicationFieldDefinition> Fields => _Fields.AsReadOnly();
 
         private readonly List<ApplicationStepDefinition> _Steps = new();
         public IReadOnlyList<ApplicationStepDefinition> Steps => _Steps.AsReadOnly();
@@ -93,6 +100,124 @@ namespace EaseClub.Domain.ApplicationTemplates
             }
 
             return Result.Success;
+        }
+
+        public Result<ApplicationFieldDefinition> AddFieldToSection(
+            Guid id,
+            Guid sectionId,
+            string? key,
+            string label,
+            FieldType type,
+            ValidationRuleSet rules,
+            ConditionExpression? visibilityCondition,
+            bool persistToMembership)
+        {
+            var keyIsNull = string.IsNullOrWhiteSpace(key);
+            string finalKey = keyIsNull
+            ? GenerateUniqueKey(label)
+            : key.ToLower().Trim();
+
+            bool isDuplicate = false;
+            if (!keyIsNull)
+            {
+                     isDuplicate = _Steps
+                    .SelectMany(s => s.Sections)
+                    .SelectMany(sec => sec.Fields)
+                    .Any(f => f.Key.Equals(key, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (isDuplicate)
+                return Error.Conflict("Template.DuplicateKey", $"Key '{key}' already exists in this template.");
+
+            // 2. Find the target section
+            var section = _Steps.SelectMany(s => s.Sections).FirstOrDefault(s => s.Id == sectionId);
+            if (section == null) return Error.NotFound("Template.SectionNotFound");
+
+            // 3. Delegate to the internal factory we already have
+            // We pass 'this.Id' (TemplateId) into the field
+            var fieldResult = ApplicationFieldDefinition.Create(
+                id,
+                Id,
+                section.Id,
+                finalKey,
+                label,
+                type,
+                rules,
+                visibilityCondition, // Visibility
+                persistToMembership, // Persist
+                section.Fields.Count+1);
+
+            if (fieldResult.IsError) return fieldResult.TopError;
+
+            // 4. Add to the section's internal list
+            section.AddField(fieldResult.Value);
+
+            return fieldResult.Value;
+        }
+
+        public Result<Success> RemoveField(Guid sectionId, Guid fieldId)
+        {
+            // 1. Find the section
+            var section = _Steps.SelectMany(s => s.Sections)
+                                .FirstOrDefault(s => s.Id == sectionId);
+
+            if (section == null) return Error.NotFound("Template.SectionNotFound");
+
+            // 2. Find the field to check its Key
+            var field = section.Fields.FirstOrDefault(f => f.Id == fieldId);
+            if (field == null) return Error.NotFound("Template.FieldNotFound");
+
+            // 4. If safe, tell the section to remove it
+            return section.RemoveField(fieldId);
+        }
+        public Result<Success> ReorderFieldsInSection(Guid sectionId, List<Guid> newOrderIds)
+        {
+            // 1. Find the section
+            var section = _Steps.SelectMany(s => s.Sections)
+                                .FirstOrDefault(s => s.Id == sectionId);
+
+            if (section == null) return Error.NotFound("Template.SectionNotFound");
+
+            // 2. Delegate the physical reordering to the section
+            return section.ReorderFields(newOrderIds);
+        }
+
+        //GenerateUniqueKey
+        private string GenerateUniqueKey(string label)
+        {
+            // 1. Basic Slugify: "Full Name!" -> "full_name"
+            var baseKey = new string(label.ToLower().Trim()
+                .Select(c => char.IsLetterOrDigit(c) ? c : '_')
+                .ToArray())
+                .Replace("__", "_");
+
+            var existingKeys = _Steps
+                .SelectMany(s => s.Sections)
+                .SelectMany(sec => sec.Fields)
+                .Select(f => f.Key)
+                .ToHashSet();
+
+            // 2. Collision Loop: if "full_name" exists, try "full_name_1", etc.
+            var uniqueKey = baseKey;
+            int counter = 1;
+            while (existingKeys.Contains(uniqueKey))
+            {
+                uniqueKey = $"{baseKey}_{counter++}";
+            }
+
+            return uniqueKey;
+        }
+
+        //ToSnapShot 
+        public ApplicationTemplateSnapshot ToSnapshot(decimal BaseFee, List<PricingPolicySnapshot> policies)
+        {
+            return new ApplicationTemplateSnapshot(
+                Id,
+                Name,
+                BaseFee,
+                policies, // Passed in from the Application Layer
+                _Steps.OrderBy(s => s.Order).Select(s => s.ToSnapshot()).ToList()
+            );
         }
     }
 }

@@ -36,6 +36,9 @@ namespace EaseClub.Domain.MembershipApplications.Errors
         public static Error StepAlreadyExists =>
             Error.Conflict("MembershipApplication.StepAlreadyExists",
                 "This step instance already exists.");
+        public static Error StepNotFound =>
+            Error.Conflict("MembershipApplication.StepNotFound",
+                "This step instance not found.");
 
         public static Error InvalidStatusTransition =>
             Error.Validation("MembershipApplication.InvalidStatusTransition",
@@ -56,5 +59,19 @@ namespace EaseClub.Domain.MembershipApplications.Errors
         public static Error PricingLocked =>
         Error.Conflict("MembershipApplication.PriceIsLocked",
             "The pricing for this application has been locked and cannot be recalculated.");
+
+        public static Error NotAllStepsCompleted => Error.Conflict(
+            "MembershipApplication.NotAllStepsAreCompleted",
+            "Not all steps are completed"
+            );
+        public static Error SectionCountMismatch(string title, int actualCount, int expectedCount) =>
+            Error.Conflict(
+                "MembershipApplication.SectionCountMismatch",
+                $"Section with title:{title} actual count of repeated sections is :{actualCount} while what the excpected number of sections"
+                + $" should be:{expectedCount}.");
+
+        public static Error PreviousStepRequired => Error.Validation(
+        code: "MembershipApplication.PreviousStepRequired",
+        description: "You cannot skip steps. Please complete the previous step before moving forward.");
     }
 }

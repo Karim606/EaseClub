@@ -40,7 +40,7 @@ namespace EaseClub.Domain.MembershipApplications
 
         #region Factory
 
-        internal static Result<ApplicationAnswer> Create(
+        public static Result<ApplicationAnswer> Create(
             Guid applicationId,
             Guid fieldDefinitionId,
             string fieldKey,
