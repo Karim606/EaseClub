@@ -175,14 +175,17 @@ namespace EaseClub.Api.IntegrationTests.Controllers
             await LoginAsAdminAsync();
             var ids = await _helpers.CreateFullTemplateHierarchyAsync(_testClubId);
 
-            var updateCmd = new
-            {
-                ClubId = _testClubId,
-                Key = "updated_key",
-                PersistToMembership = true,
-                Type = FieldType.Text,
-                ValidationRules = new ValidationRuleSetDto { IsRequired = true }
-            };
+            var updateCmd = new UpdateFieldCommand(_testClubId, "updated_label", true,
+                new ValidationRuleSetDto { IsRequired = true },
+                null, null);
+            //{
+            //    ClubId = _testClubId,
+            //    Key = "updated_key",
+            //    PersistToMembership = true,
+            //    Type = FieldType.Text,
+            //    ValidationRules = new ValidationRuleSetDto { IsRequired = true }
+                
+            //};
 
             var response = await Client.PutAsJsonAsync($"/api/v1/admin/application-templates/fields/{ids.fieldId}", updateCmd);
 
@@ -192,7 +195,7 @@ namespace EaseClub.Api.IntegrationTests.Controllers
             ClearTracker();
 
             var field = await DbContext.ApplicationFieldDefinitions.FindAsync(ids.fieldId);
-            Assert.Equal("updated_key", field!.Key);
+            Assert.Equal("updated_label", field!.Label);
         }
         //[Fact]
         //public async Task UpdateField_Endpoint_UpdatesField()

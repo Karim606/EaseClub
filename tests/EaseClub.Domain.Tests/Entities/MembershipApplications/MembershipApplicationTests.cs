@@ -221,7 +221,7 @@ public class MembershipApplicationTests
     private ApplicationTemplateSnapshot CreateSnapshotWithStep(int order, Guid fieldId)
     {
         var validationRule = ValidationRuleSet.Create(false).Value;
-        var field = new FieldSnapshot(fieldId, "k", "FieldLabel", FieldType.Text, validationRule, null, 0);
+        var field = new FieldSnapshot(fieldId, "k", "FieldLabel", FieldType.Text, validationRule.ToSnapshot(), null, 0);
         var section = new SectionSnapshot(Guid.NewGuid(), "Sec", 0, null, new() { field });
         var step = new StepSnapshot(Guid.NewGuid(), "Cat", "Title", order, new() { section });
 
@@ -232,8 +232,8 @@ public class MembershipApplicationTests
     {
         var validationRule = ValidationRuleSet.Create(false).Value;
 
-        var driverField = new FieldSnapshot(dId, dKey,"FieldLabel",FieldType.Number, validationRule, null, 0);
-        var detailField = new FieldSnapshot(fId, "detail","FieldLabel",FieldType.Text, validationRule, null, 0);
+        var driverField = new FieldSnapshot(dId, dKey,"FieldLabel",FieldType.Number, validationRule.ToSnapshot(), null, 0);
+        var detailField = new FieldSnapshot(fId, "detail","FieldLabel",FieldType.Text, validationRule.ToSnapshot(), null, 0);
 
         var section = new SectionSnapshot(Guid.NewGuid(), "Guests", 0, rule, new() { detailField });
         var driverSection = new SectionSnapshot(Guid.NewGuid(), "Driver", 0, null, new() { driverField });
