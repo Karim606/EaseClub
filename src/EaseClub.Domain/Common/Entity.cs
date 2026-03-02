@@ -10,6 +10,7 @@ namespace EaseClub.Domain.Common
 {
     public class Entity:IEntity
     {
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public Guid Id { get; }
 
         protected Entity() { }
