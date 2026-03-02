@@ -21,8 +21,10 @@ namespace EaseClub.Domain.Tests.Entities.ApplicationTemplates
             // Act
             var result = ApplicationFieldDefinition.Create(
                 Guid.NewGuid(),
+                Guid.NewGuid(),
                 Guid.Empty, // Invalid
                 "first_name",
+                "fieldLabel",
                 FieldType.Text,
                 _defaultRules,
                 null,
@@ -35,19 +37,24 @@ namespace EaseClub.Domain.Tests.Entities.ApplicationTemplates
         }
 
         [Fact]
-        public void Validate_ShouldReturnErrors_WhenValueIsInvalid()
+        public void Create_ShouldReturnError_WhenTemplateIdIsEmpty()
         {
-            // Arrange
-            var rules = ValidationRuleSet.Create(isRequired: true, minLength: 10).Value;
-            var field = ApplicationFieldDefinition.Create(
-                Guid.NewGuid(), Guid.NewGuid(), "bio",
-                FieldType.Text, rules, null, false, 0).Value;
-
             // Act
-            var errors = field.Validate("short");
+            var result = ApplicationFieldDefinition.Create(
+                Guid.NewGuid(),
+                Guid.Empty, // Invalid TemplateId
+                Guid.NewGuid(),
+                "first_name",
+                "First Name",
+                FieldType.Text,
+                _defaultRules,
+                null,
+                false,
+                1);
 
             // Assert
-            errors.Should().NotBeEmpty();
+            result.IsError.Should().BeTrue();
+            result.TopError.Should().Be(ApplicationFieldErrors.TemplateIdRequired);
         }
     }
 }
