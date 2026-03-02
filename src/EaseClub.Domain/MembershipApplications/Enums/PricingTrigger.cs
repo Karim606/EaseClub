@@ -6,5 +6,5 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Domain.MembershipApplications.Enums
 {
-   public enum PricingTrigger { OnSubmit, OnReview,OnFieldChange }
+   public enum PricingTrigger { OnFieldChange }
 }

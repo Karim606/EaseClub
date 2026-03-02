@@ -16,6 +16,6 @@ namespace EaseClub.Domain.PricingPolices
         decimal? FixedAmount { get; }
         string? MultiplierSourceKey { get; }
         decimal? PercentageValue { get; }
-        IReadOnlyList<ConditionExpression>? Conditions { get; }
+        IReadOnlyList<ConditionExpression> Conditions { get; }
     }
 }
