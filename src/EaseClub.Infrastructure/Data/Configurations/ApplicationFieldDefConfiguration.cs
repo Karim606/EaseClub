@@ -1,5 +1,6 @@
 ﻿using EaseClub.Domain.ApplicationTemplates;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
 using System.Collections.Generic;
@@ -50,7 +51,14 @@ namespace EaseClub.Infrastructure.Data.Configurations
                     : v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList()  // CSV -> List<string>
                 )
                 .HasColumnType("nvarchar(max)")
-                .IsRequired(false);
+                .IsRequired(false)
+                .Metadata.SetValueComparer(
+                    new ValueComparer<List<string>>(
+                        (c1, c2) => c1.SequenceEqual(c2),                          // equality
+                        c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())), // hash
+                        c => c.ToList()                                              // snapshot
+                    )
+                );
 
             builder.HasOne<ApplicationTemplateDefinition>( )  // optional if navigation needed
             .WithMany()
