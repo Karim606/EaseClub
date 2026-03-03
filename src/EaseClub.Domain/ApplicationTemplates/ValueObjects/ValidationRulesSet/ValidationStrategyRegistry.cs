@@ -35,8 +35,7 @@ namespace EaseClub.Domain.ApplicationTemplates.ValueObjects.ValidationRulesSet
                 new List<IValidationStrategy>
                 {
                 new RequiredValidationStrategy(),
-                new RangeValidationStrategy()
-                    // Later: DateRangeValidationStrategy
+                new  DateRangeValidationStrategy()
                 }
             },
 

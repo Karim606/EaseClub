@@ -167,6 +167,8 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
         public string? Regex { get; init; }
         public decimal? MinValue { get; init; }
         public decimal? MaxValue { get; init; }
+        public DateTime? MinDate { get; init; }
+        public DateTime? MaxDate { get; init; }
 
         [JsonConstructor]
         public ValidationRuleSetSnapshot(
@@ -175,7 +177,9 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
             int? maxLength,
             string? regex,
             decimal? minValue,
-            decimal? maxValue)
+            decimal? maxValue,
+            DateTime? minDate,
+            DateTime? maxDate)
         {
             IsRequired = isRequired;
             MinLength = minLength;
@@ -183,6 +187,8 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
             Regex = regex;
             MinValue = minValue;
             MaxValue = maxValue;
+            MinDate = minDate;
+            MaxDate = maxDate;
         }
 
         // Domain -> Snapshot
@@ -193,12 +199,14 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
                 domain.MaxLength,
                 domain.Regex,
                 domain.MinValue,
-                domain.MaxValue
+                domain.MaxValue,
+                domain.MinDate,
+                domain.MaxDate
             );
 
         // Snapshot -> Domain
         public ValidationRuleSet ToDomain() =>
-            ValidationRuleSet.Create(IsRequired, MinLength, MaxLength, Regex, MinValue, MaxValue).Value;
+            ValidationRuleSet.Create(IsRequired, MinLength, MaxLength, Regex, MinValue, MaxValue,MinDate,MaxDate).Value;
     }
 
     public record ConditionExpressionSnapshot

@@ -58,6 +58,27 @@ namespace EaseClub.Domain.ApplicationTemplates.ValueObjects.ValidationRulesSet
         }
     }
 
+    public sealed class DateRangeValidationStrategy : IValidationStrategy
+    {
+        public Error? Validate(string? value, ValidationRuleSet rules)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return null;
+
+            if (!DateTime.TryParse(value, out var date))
+                return ValidationErrors.InvalidFormat;
+
+            if (rules.MinDate.HasValue && date < rules.MinDate.Value)
+                return ValidationErrors.OutOfRange;
+
+            if (rules.MaxDate.HasValue && date > rules.MaxDate.Value)
+                return ValidationErrors.OutOfRange;
+
+            return null;
+        }
+    }
+
+
     public sealed class RegexValidationStrategy : IValidationStrategy
     {
         public Error? Validate(string? value, ValidationRuleSet rules)

@@ -15,8 +15,12 @@ namespace EaseClub.Domain.ApplicationTemplates.ValueObjects.ValidationRulesSet
         public decimal? MinValue { get; init; }
         public decimal? MaxValue { get; init; }
 
+        // New date properties
+        public DateTime? MinDate { get; init; }
+        public DateTime? MaxDate { get; init; }
+
         // Private constructor prevents direct instantiation: new ValidationRuleSet(...)
-        private ValidationRuleSet(bool isRequired, int? minLength, int? maxLength, string? regex, decimal? minValue, decimal? maxValue)
+        private ValidationRuleSet(bool isRequired, int? minLength, int? maxLength, string? regex, decimal? minValue, decimal? maxValue,DateTime? minDate, DateTime? maxDate)
         {
             IsRequired = isRequired;
             MinLength = minLength;
@@ -24,6 +28,8 @@ namespace EaseClub.Domain.ApplicationTemplates.ValueObjects.ValidationRulesSet
             Regex = regex;
             MinValue = minValue;
             MaxValue = maxValue;
+            MinDate = minDate;
+            MaxDate = maxDate;
         }
 
         public static Result<ValidationRuleSet> Create(
@@ -32,7 +38,9 @@ namespace EaseClub.Domain.ApplicationTemplates.ValueObjects.ValidationRulesSet
             int? maxLength = null,
             string? regex = null,
             decimal? minValue = null,
-            decimal? maxValue = null)
+            decimal? maxValue = null,
+            DateTime? minDate = null,
+            DateTime? maxDate = null)
         {
             // 1. Domain Validation Logic
             if (minLength.HasValue && maxLength.HasValue && minLength > maxLength)
@@ -41,8 +49,10 @@ namespace EaseClub.Domain.ApplicationTemplates.ValueObjects.ValidationRulesSet
             if (minValue.HasValue && maxValue.HasValue && minValue > maxValue)
                 return Error.Validation("Validation.Setup.Range", "Min value cannot be greater than Max value.");
 
+            if (minDate.HasValue && maxDate.HasValue && minDate > maxDate)
+                return Error.Validation("Validation.Setup.DateRange", "Min date cannot be later than Max date.");
             // 2. Return valid instance
-            return new ValidationRuleSet(isRequired, minLength, maxLength, regex, minValue, maxValue);
+            return new ValidationRuleSet(isRequired, minLength, maxLength, regex, minValue, maxValue, minDate, maxDate);
         }
 
         public List<Error> Validate(string? value, FieldType type)
