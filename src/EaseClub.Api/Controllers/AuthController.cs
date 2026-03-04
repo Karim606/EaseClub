@@ -272,9 +272,9 @@ namespace EaseClub.Api.Controllers
             {
                 HttpOnly = true,               // JS cannot access the cookie
                 Expires = expiry,              // Expiration matches token
-                SameSite = SameSiteMode.Strict,// strict to Protect from CSRF
+                SameSite = SameSiteMode.None,// strict to Protect from CSRF
                 Secure = true,                 // Only over HTTPS
-                Path = "/"
+                Path = "/api/v1/auth"
             };
 
             Response.Cookies.Append(RefreshTokenCookieName, refreshToken, cookieOptions);
@@ -287,9 +287,9 @@ namespace EaseClub.Api.Controllers
             {
                 HttpOnly = true,               // JS cannot access the cookie,
                 Expires = DateTime.UnixEpoch,
-                SameSite = SameSiteMode.Strict,// strict to Protect from CSRF
+                SameSite = SameSiteMode.None,// strict to Protect from CSRF
                 Secure = true,                 // Only over HTTPS
-                Path = "/"
+                Path = "/api/v1/auth"
             };
 
             Response.Cookies.Delete(RefreshTokenCookieName, cookieOptions);
