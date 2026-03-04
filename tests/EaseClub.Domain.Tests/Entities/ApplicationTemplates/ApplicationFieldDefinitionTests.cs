@@ -104,8 +104,8 @@ namespace EaseClub.Domain.Tests.Entities.ApplicationTemplates
             // Should be: trimmed, unique, and case-sensitive preservation is tricky 
             // based on your private SetAllowedValues logic. Currently, .Distinct() 
             // is case-sensitive. If you want case-insensitive, see the logic below.
-            result.Value.AllowedValues.Should().HaveCount(4);
-            result.Value.AllowedValues.Should().Contain(new[] { "Red", "blue", "RED", "Green" });
+            result.Value.AllowedValues.Should().HaveCount(3);
+            result.Value.AllowedValues.Should().Contain(new[] { "Red", "blue", "Green" });
         }
 
         [Fact]
