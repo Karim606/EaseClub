@@ -22,7 +22,7 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Commands.Section.Up
     public IEnumerable<OwnershipRule> Rules()
     {
         yield return new OwnershipRule(
-            auth => auth.CheckAppTemplateComponentsOwnership(typeof(ApplicationSectionDefinition), SectionId, ClubId),
+            (auth, clubId) => auth.CheckAppTemplateComponentsOwnership(typeof(ApplicationSectionDefinition), SectionId, clubId),
             nameof(ApplicationSectionDefinition),
             SectionId);
     }

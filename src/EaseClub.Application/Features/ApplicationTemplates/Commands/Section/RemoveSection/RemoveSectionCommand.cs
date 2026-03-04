@@ -17,7 +17,7 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Commands.Section.Re
         public IEnumerable<OwnershipRule> Rules()
         {
             yield return new OwnershipRule(
-                auth => auth.CheckAppTemplateComponentsOwnership(typeof(ApplicationStepDefinition), StepId, ClubId),
+                (auth, clubId) => auth.CheckAppTemplateComponentsOwnership(typeof(ApplicationStepDefinition), StepId, clubId),
                 nameof(ApplicationStepDefinition),
                 StepId);
         }

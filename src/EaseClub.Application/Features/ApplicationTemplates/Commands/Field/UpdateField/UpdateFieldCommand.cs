@@ -29,7 +29,7 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Commands.Field.Upda
         public IEnumerable<OwnershipRule> Rules()
         {
             yield return new OwnershipRule(
-                auth => auth.CheckAppTemplateComponentsOwnership(typeof(ApplicationFieldDefinition), FieldId, ClubId),
+                (auth, clubId) => auth.CheckAppTemplateComponentsOwnership(typeof(ApplicationFieldDefinition), FieldId, clubId),
                 nameof(ApplicationFieldDefinition),
                 FieldId);
         }

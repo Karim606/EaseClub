@@ -18,12 +18,12 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.AddTemplateToPla
         public IEnumerable<OwnershipRule> Rules()
         {
             yield return new OwnershipRule(
-                 auth => auth.DoesResourceBelongToClubAsync<MembershipPlan>(PlanId, ClubId),
+                 (auth, clubId) => auth.DoesResourceBelongToClubAsync<MembershipPlan>(PlanId, clubId),
                  nameof(MembershipPlan),
                  PlanId);
 
             yield return new OwnershipRule(
-                auth => auth.DoesResourceBelongToClubAsync<InstallmentTemplate>(TemplateId, ClubId),
+                (auth, clubId) => auth.DoesResourceBelongToClubAsync<InstallmentTemplate>(TemplateId, clubId),
                 nameof(InstallmentTemplate),
                 TemplateId);
         }

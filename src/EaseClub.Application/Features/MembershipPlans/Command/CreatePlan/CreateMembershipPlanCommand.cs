@@ -21,7 +21,7 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.CreatePlan
     {
         public IEnumerable<OwnershipRule> Rules()
         {
-            yield return new OwnershipRule(auth => auth.DoesResourceBelongToClubAsync<MembershipType>(MembershipTypeId, ClubId),
+            yield return new OwnershipRule((auth, clubId) => auth.DoesResourceBelongToClubAsync<MembershipType>(MembershipTypeId, clubId),
                 nameof(MembershipType),
                 MembershipTypeId
             );

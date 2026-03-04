@@ -23,7 +23,7 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Commands.Template.U
         public IEnumerable<OwnershipRule> Rules()
         {
             yield return new OwnershipRule(
-                auth => auth.DoesResourceBelongToClubAsync<ApplicationTemplateDefinition>(TemplateId, ClubId),
+                (auth, clubId) => auth.DoesResourceBelongToClubAsync<ApplicationTemplateDefinition>(TemplateId, clubId),
                 nameof(ApplicationTemplateDefinition),
                 TemplateId);
         }
