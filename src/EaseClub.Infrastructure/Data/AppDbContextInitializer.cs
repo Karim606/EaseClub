@@ -143,6 +143,7 @@ namespace EaseClub.Infrastructure.Data
             // 1. Add roles
             await AddRole("ClubAdmin");
             await AddRole("Member");
+            await AddRole("SuperAdmin");
 
             // 2. Add domain-specific users
             await AddClubAdminUser(
