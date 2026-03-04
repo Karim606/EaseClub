@@ -11,7 +11,7 @@ namespace EaseClub.Application.Common.Interfaces
     {
         Task<bool> DoesResourceBelongToClubAsync<TEntity>(Guid entityId, Guid clubId) where TEntity : class, IHaveClub;
         Task<bool> IsUserAdminOfClubAsync(Guid userId, Guid clubId);
-
+        public  Task<bool> IsUserMemberOfClubAsync(Guid userId, Guid clubId);
         public Task<bool> CheckAppTemplateComponentsOwnership(Type resourceType, Guid resourceId, Guid clubId);
     }
 }

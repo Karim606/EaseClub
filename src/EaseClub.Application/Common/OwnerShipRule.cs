@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace EaseClub.Application.Common
 {
     public record OwnershipRule(
-    Func<IClubAuthorizationService, Task<bool>> Check,
+    Func<IClubAuthorizationService,Guid, Task<bool>> Check,
     string ResourceName,
     Guid ResourceId);
 }

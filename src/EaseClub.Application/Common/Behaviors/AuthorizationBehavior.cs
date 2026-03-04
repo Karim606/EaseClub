@@ -30,52 +30,65 @@ namespace EaseClub.Application.Common.Behaviors
         {
             _currentUserService = currentUserService;
             _clubAuthorizationService = clubAuthorizationService;
+            _currentUserService = currentUserService;
             _logger = logger;
         }
 
         public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
-
-            if (request is IRequireClubAdmin clubAdminRequest)
+            Guid.TryParse(_currentUserService.GetId(),out var userId);
+            
+            if (userId == Guid.Empty)
             {
-                var userId = _currentUserService.GetId();
-                Guid.TryParse(userId, out Guid userGuid);
+                return (dynamic)Error.Unauthorized();
+            }
 
-                var isUserAdminOfClub = await _clubAuthorizationService.IsUserAdminOfClubAsync(userGuid, clubAdminRequest.ClubId);
-                
-                if (!isUserAdminOfClub) {
-                    _logger.LogWarning("User {UserId} is NOT an admin for club {ClubId}", userGuid, clubAdminRequest.ClubId);
-                    return (dynamic)Error.Forbidden(description: "You aren't allowed to manage this club's resources.");
-                    
-                }
+            var isSuperAdmin = _currentUserService.GetRoles().Contains("SuperAdmin");
 
-                
-                if(request is IRequireClubOwnershipValidation ownershipRequest)
+            // 1. Identify the Target Club (The Context Anchor)
+            Guid? targetClubId = request switch
+            {
+                IRequireClubAdmin adminReq => adminReq.ClubId,
+                IRequireMembership memberReq => memberReq.ClubId,
+                _ => null
+            };
+
+            // 2. Validate Persona (WHO is acting)
+            if (targetClubId.HasValue && !isSuperAdmin)
+            {
+                if (request is IRequireClubAdmin)
                 {
-                    foreach (var rule in ownershipRequest.Rules())
-                    {
-                        var allowed = await rule.Check(_clubAuthorizationService);
-                        
-                        if (!allowed)
-                        {
-                            _logger.LogWarning(
-                            "Authorization Failed: Resource {ResourceName} with ID {ResourceId} does not belong to Club {ClubId}. User: {UserId}",
-                            rule.ResourceName,
-                            rule.ResourceId,
-                            clubAdminRequest.ClubId,
-                            userGuid);
+                    var isAdmin = await _clubAuthorizationService.IsUserAdminOfClubAsync(userId, targetClubId.Value);
+                    if (!isAdmin) return (dynamic)Error.Forbidden("You aren't an admin of this club.");
+                }
+                else if (request is IRequireMembership)
+                {
+                    var isMember = await _clubAuthorizationService.IsUserMemberOfClubAsync(userId, targetClubId.Value);
+                    if (!isMember) return (dynamic)Error.Forbidden("You aren't a member of this club.");
+                }
+            }
 
-                            return (dynamic)Error.Forbidden(
-                                description: $"The {rule.ResourceName} you are trying to access does not belong to your club.");
-                        }
+            // 3. Validate Ownership (WHAT is being touched)
+            // IMPORTANT: SuperAdmins STILL trigger this to prevent data corruption!
+            if (request is IRequireClubOwnershipValidation ownershipRequest && targetClubId.HasValue)
+            {
+                foreach (var rule in ownershipRequest.Rules())
+                {
+                    // We pass the targetClubId found above into the Rule's Check function
+                    var isCorrectOwner = await rule.Check(_clubAuthorizationService, targetClubId.Value);
+
+                    if (!isCorrectOwner)
+                    {
+                        _logger.LogWarning("Ownership Failure: Resource {ResId} does not belong to Club {ClubId}",
+                            rule.ResourceId, targetClubId);
+                        return (dynamic)Error.Forbidden($"The {rule.ResourceName} does not belong to the selected club.");
                     }
                 }
-                
-
             }
 
             return await next();
         }
+
     }
 
 }

@@ -63,6 +63,11 @@ namespace EaseClub.Infrastructure.Services
 
             return false;
         }
+
+        public Task<bool> IsUserMemberOfClubAsync(Guid userId, Guid clubId)
+        {
+            throw new NotImplementedException();
+        }
     }
 
 }
