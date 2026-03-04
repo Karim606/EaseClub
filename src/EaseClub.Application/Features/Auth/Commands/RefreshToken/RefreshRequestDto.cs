@@ -8,6 +8,6 @@ namespace EaseClub.Application.Features.Auth.Commands.RefreshToken
 {
     public sealed class RefreshRequestDto
     {
-        public string RefreshToken { get; init; }
+        public string? RefreshToken { get; init; }
     }
 }

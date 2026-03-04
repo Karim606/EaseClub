@@ -71,7 +71,7 @@ namespace EaseClub.Api.Controllers
         }
 
         //-------------------------------------------------------------Logout----------------------------------------------------
-
+        
         [HttpPost("logout")]
         [MapToApiVersion("1.0")]
         [RequireClientType]
@@ -108,7 +108,7 @@ namespace EaseClub.Api.Controllers
                 Request.Cookies.TryGetValue(RefreshTokenCookieName, out refreshToken);
 
                 // Clear the cookie
-                SetRefreshTokenCookie("", DateTime.UtcNow.AddDays(-1));
+                DeleteRefreshTokenCookie();
             }
             else
             {
@@ -256,7 +256,11 @@ namespace EaseClub.Api.Controllers
                          RefreshTokenExpiry: value.RefreshTokenExpiry
                      ));
                  },
-                 Problem
+                 errors =>
+                 {
+                     DeleteRefreshTokenCookie();
+                     return Problem(errors);
+                 }
              );
 
         }
@@ -276,8 +280,23 @@ namespace EaseClub.Api.Controllers
             Response.Cookies.Append(RefreshTokenCookieName, refreshToken, cookieOptions);
         }
 
+        //-------------------------------------------------------------DeleteRefreshToken----------------------------------------------------
+        private void DeleteRefreshTokenCookie()
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,               // JS cannot access the cookie,
+                Expires = DateTime.UnixEpoch,
+                SameSite = SameSiteMode.Strict,// strict to Protect from CSRF
+                Secure = true,                 // Only over HTTPS
+                Path = "/"
+            };
+
+            Response.Cookies.Delete(RefreshTokenCookieName, cookieOptions);
+        }
+
         //-------------------------------------------------------------ForgotPassword----------------------------------------------------
-      
+
         [HttpPost("forgot-password")] // Client-type agnostic endpoint (Web & Mobile)
         [MapToApiVersion("1.0")]
 

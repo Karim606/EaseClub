@@ -9,6 +9,6 @@ namespace EaseClub.Application.Features.Auth.Commands.LogOut
 
     public sealed class LogoutRequestDto
     {
-        public string RefreshToken { get; init; }
+        public string? RefreshToken { get; init; }
     }
 }

@@ -89,8 +89,8 @@ namespace EaseClub.Infrastructure.Auth.Services
 
         public async Task<Result<AuthTokensDto>> RefreshAsync(string refreshToken, string ip,string deviceInfo)
         {
-            var decodedToken = WebUtility.UrlDecode(refreshToken);
-            var hashed = _jwtService.HashToken(decodedToken);
+             
+            var hashed = _jwtService.HashToken(refreshToken);
             var storedToken = await _refreshRepo.GetByHashedTokenAsync(hashed);
 
             if (storedToken == null)
