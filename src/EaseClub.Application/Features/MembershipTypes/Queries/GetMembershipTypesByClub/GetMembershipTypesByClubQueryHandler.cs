@@ -16,18 +16,14 @@ namespace EaseClub.Application.Features.MembershipTypes.Queries.GetMembershipTyp
         public async Task<Result<List<MembershipTypeDto>>> Handle(GetMembershipTypesByClubQuery request, CancellationToken cancellationToken)
         {
             var membershipTypes = (await membershipTypeRepository.GetByClubIdAsync(request.ClubId))
-                .Select(mt => new MembershipTypeDto
-                {
-                    Id = mt.Id,
-                    Name = mt.Name,
-                    Description = mt.Description,
-                    FamilyAllowed = mt.FamilyAllowed,
-                    MaxFamilyMembers = mt.MaxFamilyMembers,
-                    AllBranchesPermitted = mt.AllBranchesPermitted,
-                    BranchIds = mt.PermittedBranches.Select(pb => pb.BranchId).ToList()
-                })
-                .ToList();
-
+                 .Select(mt => new MembershipTypeDto(
+                    mt.Id,
+                    mt.Name,
+                    mt.Description,
+                    mt.FamilyAllowed,
+                    mt.MaxFamilyMembers,
+                    mt.AllBranchesPermitted
+                    )).ToList();
             return membershipTypes;
         }
     }

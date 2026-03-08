@@ -1,5 +1,8 @@
-﻿using EaseClub.Application.Features.MembershipTypes.Commands.CreateMembershipType;
+﻿using EaseClub.Application.Features.MembershipTypes;
+using EaseClub.Application.Features.MembershipTypes.Commands.CreateMembershipType;
+using EaseClub.Application.Features.MembershipTypes.Commands.ToggleMembershipTypeActivation;
 using EaseClub.Application.Features.MembershipTypes.Queries.GetMembershipTypesByClub;
+using EaseClub.Application.Features.MembershipTypes.Queries.GetTypeById;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -11,7 +14,7 @@ namespace EaseClub.Api.Controllers
     public class MembershipTypesController(ISender sender) : ApiController
     {
 
-        [Authorize(Roles = "ClubAdmin")]
+        [Authorize(Roles = "ClubAdmin,SuperAdmin")]
         [HttpPost]
         [MapToApiVersion("1.0")]
 
@@ -49,6 +52,41 @@ namespace EaseClub.Api.Controllers
 
             return result.Match(
                 (membershipTypes) => Ok(membershipTypes),
+                Problem);
+        }
+
+        [HttpGet("{id:guid}")]
+        [MapToApiVersion("1.0")]
+        [ProducesResponseType(typeof(MembershipTypeDetailsDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [EndpointName("GetMembershipType")]
+        [EndpointSummary("Retrieves details of a specific membership type.")]
+        public async Task<IActionResult> GetById(Guid clubId, Guid id)
+        {
+            var result = await sender.Send(new GetMembershipTypeByIdQuery(clubId, id));
+
+            return result.Match(
+                type => Ok(type),
+                Problem);
+        }
+
+        [Authorize(Roles = "ClubAdmin,SuperAdmin")]
+        [HttpPatch("{id:guid}/toggle-status")]
+        [MapToApiVersion("1.0")]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [EndpointName("ToggleMembershipTypeStatus")]
+        [EndpointSummary("Toggles the activation status (Active/Inactive) of a membership type.")]
+        public async Task<IActionResult> ToggleStatus(Guid clubId, Guid id)
+        {
+            var result = await sender.Send(new ToggleTypeActivationCommand(clubId, id));
+
+            return result.Match(
+                isActive => Ok(isActive),
                 Problem);
         }
     }
