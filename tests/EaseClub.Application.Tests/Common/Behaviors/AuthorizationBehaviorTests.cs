@@ -24,38 +24,31 @@ namespace EaseClub.Application.Tests.Common.Behaviors
     {
         private readonly Mock<IClubAuthorizationService> _clubAuthorizationService = new();
         private readonly Mock<ICurrentUserService> _currentUserService = new();
-        private readonly Mock<ILogger<AuthorizationBehavior<IAuthorizeRequest, Result<TestResponse>>>> _logger = new();
+        private readonly Mock<IClubAdminUserRepository> _clubAdminUserRepository = new();
 
         #region Test Request Types
 
-        public class TestResponse : IResult
-        {
-            public bool IsSuccess => true;
-            public bool IsError => false;
-            public IReadOnlyList<Error>? Errors => null;
-        }
+        public class TestResponse { }
 
-        public class TestRequestRequireClubAdmin : IRequireClubAdmin
+        public class TestRequestRequireClubAdmin : IAuthorizeRequest, IRequireClubAdmin
         {
             public Guid ClubId { get; init; }
         }
 
-        public class TestRequestRequireMembership : IRequireMembership
+        public class TestRequestRequireMembership : IAuthorizeRequest, IRequireMembership
         {
             public Guid ClubId { get; init; }
         }
 
-        public class TestOwnershipRequest :
-            IRequireClubAdmin,
-            IRequireClubOwnershipValidation
+        public class TestOwnershipRequest : IAuthorizeRequest, IRequireClubOwnershipValidation
         {
             public Guid ClubId { get; init; }
 
             public IEnumerable<OwnershipRule> Rules()
             {
                 yield return new OwnershipRule(
-                    (auth, clubId) => Task.FromResult(false), // force failure
-                    "Field",
+                    (auth, clubId) => Task.FromResult(false), // force ownership failure
+                    "Resource",
                     Guid.NewGuid());
             }
         }
@@ -70,15 +63,14 @@ namespace EaseClub.Application.Tests.Common.Behaviors
             return new AuthorizationBehavior<TRequest, Result<TestResponse>>(
                 _clubAuthorizationService.Object,
                 _currentUserService.Object,
+                _clubAdminUserRepository.Object,
                 Mock.Of<ILogger<AuthorizationBehavior<TRequest, Result<TestResponse>>>>());
         }
 
-        private Task<Result<TestResponse>> Next()
-            => Task.FromResult((Result<TestResponse>)new TestResponse());
+        private Task<Result<TestResponse>> Next() =>
+            Task.FromResult( (Result<TestResponse>)new TestResponse() );
 
-        private (Guid userId, Guid clubId) SetupUser(
-            IEnumerable<string>? roles = null,
-            string? userIdValue = null)
+        private (Guid userId, Guid clubId) SetupUser(IEnumerable<string>? roles = null, string? userIdValue = null)
         {
             var userId = Guid.NewGuid();
             var clubId = Guid.NewGuid();
@@ -89,10 +81,6 @@ namespace EaseClub.Application.Tests.Common.Behaviors
             return (userId, clubId);
         }
 
-        private AuthorizationBehavior<TRequest, Result<TestResponse>> SetupBehavior<TRequest>()
-            where TRequest : notnull, IAuthorizeRequest
-            => CreateBehavior<TRequest>();
-
         #endregion
 
         #region Tests
@@ -101,8 +89,7 @@ namespace EaseClub.Application.Tests.Common.Behaviors
         public async Task Handle_UserIdEmpty_Returns_Unauthorized()
         {
             _currentUserService.Setup(c => c.GetId()).Returns(string.Empty);
-
-            var behavior = SetupBehavior<TestRequestRequireClubAdmin>();
+            var behavior = CreateBehavior<TestRequestRequireClubAdmin>();
 
             var result = await behavior.Handle(
                 new TestRequestRequireClubAdmin { ClubId = Guid.NewGuid() },
@@ -114,15 +101,12 @@ namespace EaseClub.Application.Tests.Common.Behaviors
         }
 
         [Fact]
-        public async Task Handle_UserNotAuthorizedForClub_Returns_Forbidden()
+        public async Task Handle_UserNotAdmin_Returns_Forbidden()
         {
             var (userId, clubId) = SetupUser();
+            _clubAuthorizationService.Setup(r => r.IsUserAdminOfClubAsync(userId, clubId)).ReturnsAsync(false);
 
-            _clubAuthorizationService
-                .Setup(r => r.IsUserAdminOfClubAsync(userId, clubId))
-                .ReturnsAsync(false);
-
-            var behavior = SetupBehavior<TestRequestRequireClubAdmin>();
+            var behavior = CreateBehavior<TestRequestRequireClubAdmin>();
 
             var result = await behavior.Handle(
                 new TestRequestRequireClubAdmin { ClubId = clubId },
@@ -134,15 +118,12 @@ namespace EaseClub.Application.Tests.Common.Behaviors
         }
 
         [Fact]
-        public async Task Handle_UserAuthorizedForClub_AllowsProcessing()
+        public async Task Handle_UserIsAdmin_AllowsProcessing()
         {
             var (userId, clubId) = SetupUser();
+            _clubAuthorizationService.Setup(r => r.IsUserAdminOfClubAsync(userId, clubId)).ReturnsAsync(true);
 
-            _clubAuthorizationService
-                .Setup(r => r.IsUserAdminOfClubAsync(userId, clubId))
-                .ReturnsAsync(true);
-
-            var behavior = SetupBehavior<TestRequestRequireClubAdmin>();
+            var behavior = CreateBehavior<TestRequestRequireClubAdmin>();
 
             var result = await behavior.Handle(
                 new TestRequestRequireClubAdmin { ClubId = clubId },
@@ -153,11 +134,10 @@ namespace EaseClub.Application.Tests.Common.Behaviors
         }
 
         [Fact]
-        public async Task Handle_SuperAdmin_Bypasses_AdminCheck()
+        public async Task Handle_SuperAdmin_BypassesAdminCheck()
         {
             var (userId, clubId) = SetupUser(roles: new[] { "SuperAdmin" });
-
-            var behavior = SetupBehavior<TestRequestRequireClubAdmin>();
+            var behavior = CreateBehavior<TestRequestRequireClubAdmin>();
 
             var result = await behavior.Handle(
                 new TestRequestRequireClubAdmin { ClubId = clubId },
@@ -166,21 +146,16 @@ namespace EaseClub.Application.Tests.Common.Behaviors
 
             result.IsSuccess.Should().BeTrue();
 
-            _clubAuthorizationService.Verify(
-                s => s.IsUserAdminOfClubAsync(It.IsAny<Guid>(), It.IsAny<Guid>()),
-                Times.Never);
+            _clubAuthorizationService.Verify(r => r.IsUserAdminOfClubAsync(It.IsAny<Guid>(), It.IsAny<Guid>()), Times.Never);
         }
 
         [Fact]
         public async Task Handle_MemberNotInClub_Returns_Forbidden()
         {
             var (userId, clubId) = SetupUser();
+            _clubAuthorizationService.Setup(r => r.IsUserMemberOfClubAsync(userId, clubId)).ReturnsAsync(false);
 
-            _clubAuthorizationService
-                .Setup(s => s.IsUserMemberOfClubAsync(userId, clubId))
-                .ReturnsAsync(false);
-
-            var behavior = SetupBehavior<TestRequestRequireMembership>();
+            var behavior = CreateBehavior<TestRequestRequireMembership>();
 
             var result = await behavior.Handle(
                 new TestRequestRequireMembership { ClubId = clubId },
@@ -195,12 +170,11 @@ namespace EaseClub.Application.Tests.Common.Behaviors
         public async Task Handle_OwnershipFails_Returns_Forbidden()
         {
             var (userId, clubId) = SetupUser();
+            _clubAuthorizationService.Setup(r => r.IsUserAdminOfClubAsync(userId, clubId)).ReturnsAsync(true);
+            _clubAdminUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClubAdminUser.Create(userId, clubId, "First", "Last", null, null));
 
-            _clubAuthorizationService
-                .Setup(r => r.IsUserAdminOfClubAsync(userId, clubId))
-                .ReturnsAsync(true);
-
-            var behavior = SetupBehavior<TestOwnershipRequest>();
+            var behavior = CreateBehavior<TestOwnershipRequest>();
 
             var result = await behavior.Handle(
                 new TestOwnershipRequest { ClubId = clubId },
@@ -212,19 +186,26 @@ namespace EaseClub.Application.Tests.Common.Behaviors
         }
 
         [Fact]
-        public async Task Handle_SuperAdmin_StillFails_Ownership()
+        public async Task Handle_SuperAdmin_OwnershipFails_AllowsProcessing()
         {
+            // Arrange: SuperAdmin user
             var (userId, clubId) = SetupUser(roles: new[] { "SuperAdmin" });
 
-            var behavior = SetupBehavior<TestOwnershipRequest>();
+            // Setup repository to return a ClubAdminUser (needed for normal ownership checks)
+            _clubAdminUserRepository
+                .Setup(r => r.GetByIdAsync(userId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClubAdminUser.Create(userId, clubId, "First", "Last", null, null));
 
+            var behavior = CreateBehavior<TestOwnershipRequest>();
+
+            // Act: Execute the pipeline
             var result = await behavior.Handle(
                 new TestOwnershipRequest { ClubId = clubId },
                 _ => Next(),
                 CancellationToken.None);
 
-            result.IsError.Should().BeTrue();
-            result.TopError.Type.Should().Be(ErrorKind.Forbidden);
+            // Assert: SuperAdmin bypasses ownership validation → should succeed
+            result.IsSuccess.Should().BeTrue();
         }
 
         #endregion

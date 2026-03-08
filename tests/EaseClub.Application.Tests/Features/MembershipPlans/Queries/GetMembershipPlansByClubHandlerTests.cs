@@ -30,7 +30,7 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Queries
         {
             // Arrange
             var clubId = Guid.NewGuid();
-            var query = new GetMembershipPlansByClubQuery(clubId, new OffsetPaginationParameters());
+            var query = new GetMembershipPlansByClubQuery(clubId, null, new OffsetPaginationParameters());
 
             // Create a valid Result containing an empty paginated object
             var emptyPaginatedResult = new OffsetPaginatedResult<MembershipPlanDto>
@@ -38,13 +38,14 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Queries
                 Items = new List<MembershipPlanDto>(),
                 TotalCount = 0,
                 Page = 1,
-                TotalPages = 0
+                //TotalPages = 0
             };
             var serviceResult = emptyPaginatedResult;
 
             _queryServiceMock
                 .Setup(x => x.GetMembershipPlansByClubAsync<OffsetPaginatedResult<MembershipPlanDto>>(
                     clubId,
+                    null,
                     query.Parameters,
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(serviceResult);
@@ -63,7 +64,7 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Queries
         {
             // Arrange
             var clubId = Guid.NewGuid();
-            var query = new GetMembershipPlansByClubQuery(clubId, new OffsetPaginationParameters());
+            var query = new GetMembershipPlansByClubQuery(clubId,null, new OffsetPaginationParameters());
 
             var dtos = new List<MembershipPlanDto>
             {
@@ -76,12 +77,13 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Queries
                 Items = dtos,
                 TotalCount = 2,
                 Page = 1,
-                TotalPages = 1
+                //TotalPages = 1
             };
 
             _queryServiceMock
                 .Setup(x => x.GetMembershipPlansByClubAsync<OffsetPaginatedResult<MembershipPlanDto>>(
                     clubId,
+                    null,
                     query.Parameters,
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(paginatedResult);

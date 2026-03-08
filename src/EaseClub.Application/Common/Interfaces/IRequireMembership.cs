@@ -8,6 +8,6 @@ namespace EaseClub.Application.Common.Interfaces
 {
     public interface IRequireMembership:IAuthorizeRequest
     {
-        public Guid ClubId { get; set; }
+        public Guid ClubId { get; init; }
     }
 }
