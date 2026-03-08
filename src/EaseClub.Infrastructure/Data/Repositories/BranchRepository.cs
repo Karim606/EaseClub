@@ -28,5 +28,12 @@ namespace EaseClub.Infrastructure.Data.Repositories
         {
             return await _context.Branches.AnyAsync(b => b.ClubId == clubId && b.Name == name);
         }
+        public async Task<Branch> GetBranchesByMembershipType(Guid typeId,CancellationToken ct = default)
+        {
+            return await _context.MembershipTypeBranches.Where(b => b.MembershipType.Id == typeId)
+                .Select(b => b.Branch).FirstOrDefaultAsync(ct);
+                
+        }
+
     }
 }

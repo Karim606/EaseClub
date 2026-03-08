@@ -1,4 +1,6 @@
 ﻿using EaseClub.Application.Features.Branches.Commands.CreateBranch;
+using EaseClub.Application.Features.Branches.Commands.DeleteBranch;
+using EaseClub.Application.Features.Branches.Commands.EditBranch;
 using EaseClub.Application.Features.Branches.Queries.GetBranchesByClub;
 using EaseClub.Application.Features.Clubs.Queries.GetClubById;
 using MediatR;
@@ -30,7 +32,7 @@ namespace EaseClub.Api.Controllers
                 Problem);
         }
 
-        [Authorize(Roles = "ClubAdmin")]
+        [Authorize(Roles = "ClubAdmin,SuperAdmin")]
         [HttpPost]
         [MapToApiVersion("1.0")]
 
@@ -48,6 +50,36 @@ namespace EaseClub.Api.Controllers
 
            return result.Match(
                 (id) =>{return CreatedAtAction(nameof(GetByClub), new { version = "1.0", clubId }, id);},
+                Problem);
+        }
+
+        [Authorize(Roles = "ClubAdmin,SuperAdmin")]
+        [HttpPut("{id}")]
+        [MapToApiVersion("1.0")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [EndpointName("EditBranch")]
+        [EndpointSummary("Edit the details of an existing branch.")]
+        public async Task<IActionResult> Edit(Guid id, [FromBody] EditBranchRequest request)
+        {
+            var result = await sender.Send(new EditBranchCommand(id, request.Name));
+
+            return result.Match(
+                _ => NoContent(),
+                Problem);
+        }
+
+        [Authorize(Roles = "ClubAdmin,SuperAdmin")]
+        [HttpDelete("{id}")]
+        [MapToApiVersion("1.0")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [EndpointName("DeleteBranch")]
+        [EndpointSummary("Remove a branch from the club.")]
+        public async Task<IActionResult> Delete(Guid id)
+        {
+            var result = await sender.Send(new DeleteBranchCommand(id));
+
+            return result.Match(
+                (_) => NoContent(),
                 Problem);
         }
     }
