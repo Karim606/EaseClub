@@ -20,8 +20,21 @@ namespace EaseClub.Application.Features.InstallmentTemplates.Commands.CreateInst
 
         public async Task<Result<Guid>> Handle(CreateInstallmentTemplateCommand request, CancellationToken cancellationToken)
         {
-            var templateResult = InstallmentTemplate.Create(Guid.NewGuid(),request.ClubId, request.Name,request.NumOfInstallments,
-                request.DurationInDays, request.Installments);
+            List<Installment>? installments=null;
+
+            if (request.Installments != null)
+            {
+                installments = new List<Installment>();
+                foreach (var installment in request.Installments)
+                {
+                    var res = Installment.Create(installment.Percentage, installment.DueAfterDays, installment.Order);
+                    if (res.IsError) return res.TopError;
+                    installments.Add(res.Value);
+                }
+            }
+
+                var templateResult = InstallmentTemplate.Create(Guid.NewGuid(), request.ClubId, request.Name, request.NumOfInstallments,
+                    request.DurationInDays, installments);
 
             if (templateResult.IsError) return templateResult.TopError;
 

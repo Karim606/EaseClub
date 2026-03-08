@@ -1,4 +1,5 @@
 ﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Features.InstallmentTemplates.Queries.GetTemplateById;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipPlans;
 using MediatR;
@@ -15,7 +16,7 @@ namespace EaseClub.Application.Features.InstallmentTemplates.Commands.CreateInst
     string Name,
     int? NumOfInstallments,
     int?DurationInDays,
-    List<Installment>? Installments) : IRequest<Result<Guid>>,IRequireClubAdmin
+    List<InstallmentDto>? Installments) : IRequest<Result<Guid>>,IRequireClubAdmin
     {
         [JsonIgnore]
         public Guid ClubId { get; init; }
