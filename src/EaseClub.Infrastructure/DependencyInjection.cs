@@ -20,6 +20,7 @@ using EaseClub.Infrastructure.Auth.interfaces;
 using EaseClub.Infrastructure.Auth.Repositories;
 using EaseClub.Infrastructure.Auth.Services;
 using EaseClub.Infrastructure.Data;
+using EaseClub.Infrastructure.Data.Interceptors;
 using EaseClub.Infrastructure.Data.Repositories;
 using EaseClub.Infrastructure.Services;
 using EaseClub.Infrastructure.Services.QueryServices;
@@ -62,16 +63,27 @@ namespace EaseClub.Application
             if (env.IsEnvironment("testing"))
             {
                 var uniqueDbName = Guid.NewGuid().ToString();
-                services.AddDbContext<AppDbContext>(options =>
-                options.UseInMemoryDatabase(uniqueDbName));
+                services.AddDbContext<AppDbContext>((sp, options) =>
+                options.UseInMemoryDatabase(uniqueDbName)
+                .AddInterceptors(
+                    sp.GetRequiredService<AuditableEntityInterceptor>(),
+                    sp.GetRequiredService<DispatchDomainEventsInterceptor>()
+                ));
             }
             else
             {
                 var typeOfDB = env.IsDevelopment() ? "Dev" : "Prod";
-            var connectionString = configuration.GetConnectionString(typeOfDB);
+                var connectionString = configuration.GetConnectionString(typeOfDB);
 
-            services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlServer(connectionString));
+            services.AddDbContext<AppDbContext>((sp, options) => {
+                options.UseSqlServer(connectionString)
+                .AddInterceptors(
+                    sp.GetRequiredService<AuditableEntityInterceptor>(),
+                    sp.GetRequiredService<DispatchDomainEventsInterceptor>()
+                ); 
+            }
+                );
+
             }
 
             services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<AppDbContext>());
