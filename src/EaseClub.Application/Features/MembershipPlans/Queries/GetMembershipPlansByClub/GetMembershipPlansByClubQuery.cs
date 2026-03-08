@@ -12,5 +12,6 @@ namespace EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPla
 {
     public record GetMembershipPlansByClubQuery(
      Guid ClubId,
+     Guid? MembershipTypeId,
      OffsetPaginationParameters Parameters) : IRequest<Result<OffsetPaginatedResult<MembershipPlanDto>>>;
 }

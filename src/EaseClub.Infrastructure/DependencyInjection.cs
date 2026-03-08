@@ -2,6 +2,7 @@
 using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Features.ApplicationTemplates.Queries;
 using EaseClub.Application.Features.Auth.Common.Interfaces;
+using EaseClub.Application.Features.InstallmentTemplates.Queries;
 using EaseClub.Application.Features.MembershipPlans.Queries;
 using EaseClub.Domain.ApplicationTemplates.Repositories;
 using EaseClub.Domain.Branches;
@@ -134,6 +135,7 @@ namespace EaseClub.Application
         {
             services.AddScoped<IMembershipPlanQueryService, MembershipPlanQueryService>();
             services.AddScoped<IApplicationTemplateQueryService, ApplicationTemplateQueryService>();
+            services.AddScoped<IInstallmentTemplateQueryService, InstallmentTemplateQueryService>();
             return services;
         }
         private static IServiceCollection AddRepositories(this IServiceCollection Services)

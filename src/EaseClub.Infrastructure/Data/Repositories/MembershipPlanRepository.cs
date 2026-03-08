@@ -26,10 +26,15 @@ namespace EaseClub.Infrastructure.Data.Repositories
            return  await _context.MembershipPlans.Where(mp => mp.ClubId == clubId).AsNoTracking().ToListAsync(cancellationToken);
         }
 
-        public async Task<MembershipPlan> GetPlanWithDetailsAsync(Guid id, CancellationToken cancellationToken)
+       public async Task<MembershipPlan> GetPlanWithDetailsAsync(Guid id, CancellationToken cancellationToken)
         {
-            return await _context.MembershipPlans.Where(mp => mp.Id == id).Include(mp => mp.InstallmentTemplates).AsNoTracking()
-                .FirstOrDefaultAsync();
+            return await _context.MembershipPlans.Where(mp => mp.Id == id).Include(mp => mp.InstallmentTemplates)
+                .FirstOrDefaultAsync(); 
+        }
+
+        public async Task<List<MembershipPlan>> GetPlansByMembershipTypeAsync(Guid typeId, CancellationToken cancellationToken = default)
+        {
+            return await _context.MembershipPlans.Where(mp => mp.MembershipTypeId == typeId).ToListAsync(cancellationToken);
         }
 
     }

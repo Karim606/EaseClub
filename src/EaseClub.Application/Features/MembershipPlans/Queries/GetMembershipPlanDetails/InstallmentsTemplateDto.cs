@@ -8,7 +8,5 @@ namespace EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPla
 {
     public record InstallmentsTemplateDto(
      Guid Id,
-     string Name,
-     int InstallmentCount,
-     decimal TotalAmount);
+     string Name);
 }

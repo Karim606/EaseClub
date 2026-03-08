@@ -9,6 +9,8 @@ namespace EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPla
     public record MembershipPlanDetailsDto(
     Guid Id,
     string Name,
+    string? Description,
+    int DurationInDays,
     decimal Price,
     bool IsActive,
     List<InstallmentsTemplateDto> Templates);

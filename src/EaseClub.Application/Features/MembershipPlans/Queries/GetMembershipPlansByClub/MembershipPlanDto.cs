@@ -18,7 +18,7 @@ namespace EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPla
         public Guid Id {  get; init; }
         public string Name { get; init; }
         public int DurationInDays {  get; init; }
-        public string Description { get; init; }
+        public string? Description { get; init; }
         public decimal Price { get; init; }
 
     }

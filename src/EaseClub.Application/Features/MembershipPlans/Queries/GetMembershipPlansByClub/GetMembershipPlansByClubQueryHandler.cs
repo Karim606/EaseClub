@@ -20,6 +20,7 @@ namespace EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPla
             // We pass 'OffsetPaginatedResult' as the generic type TResult
             return await queryService.GetMembershipPlansByClubAsync<OffsetPaginatedResult<MembershipPlanDto>>(
                 request.ClubId,
+                request.MembershipTypeId,
                 request.Parameters,
                 cancellationToken);
         }

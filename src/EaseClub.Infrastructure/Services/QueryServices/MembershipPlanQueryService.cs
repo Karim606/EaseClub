@@ -29,12 +29,14 @@ namespace EaseClub.Infrastructure.Services.QueryServices
 
         public async Task<Result<TResult>> GetMembershipPlansByClubAsync<TResult>(
             Guid clubId,
+            Guid? membershipTypeId,
             PaginationParameters parameters,
             CancellationToken ct) where TResult : PaginatedResult<MembershipPlanDto>, new()
         {
             // 1. Build the base filter
             var query = Query().Where(p => p.ClubId == clubId);
 
+            if(membershipTypeId.HasValue) query = query.Where(p => p.MembershipTypeId == membershipTypeId.Value);
             // 2. Optional: Add search if your parameters include it
             // query = query.ApplySearch(parameters.Search, p => p.Name);
 

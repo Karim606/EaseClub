@@ -14,6 +14,7 @@ namespace EaseClub.Application.Features.MembershipPlans.Queries
     {
         Task<Result<TResult>> GetMembershipPlansByClubAsync<TResult>(
             Guid clubId,
+            Guid? membershipTypeId,
             PaginationParameters parameters,
             CancellationToken ct) where TResult : PaginatedResult<MembershipPlanDto>, new();
     }
