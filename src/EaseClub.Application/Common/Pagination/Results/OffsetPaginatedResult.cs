@@ -9,7 +9,7 @@ namespace EaseClub.Application.Common.Pagination.Results
     public sealed class OffsetPaginatedResult<T> : PaginatedResult<T>
     {
         public int Page { get; init; }
-        public int TotalPages { get; init; }
+       // public int TotalPages { get; init; }
         public int TotalCount { get; init; }
     }
 }

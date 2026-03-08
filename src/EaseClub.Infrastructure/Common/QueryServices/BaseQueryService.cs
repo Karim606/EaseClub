@@ -1,4 +1,5 @@
-﻿using EaseClub.Application.Common.Pagination.Parameters;
+﻿using EaseClub.Application.Common.Pagination;
+using EaseClub.Application.Common.Pagination.Parameters;
 using EaseClub.Application.Common.Pagination.Results;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
@@ -116,8 +117,65 @@ public abstract class BaseQueryService<TEntity> where TEntity : class
             Items = items,
             Page = parameters.Page,
             TotalCount = totalCount,
-            TotalPages = (int)Math.Ceiling(totalCount / (double)parameters.Limit),
+           // TotalPages = (int)Math.Ceiling(totalCount / (double)parameters.Limit),
             HasMore = parameters.Page * parameters.Limit < totalCount
+        };
+    }
+
+
+    protected async Task<Result<UnifiedPaginatedResponse<TDto>>> GetUnifiedPaginatedAsync<TDto, TKey>(
+       IQueryable<TEntity> query,
+       PaginationRequest paginationRequest,
+       Expression<Func<TEntity, TDto>> selector,
+       Expression<Func<TEntity, TKey>> orderSelector,
+       CancellationToken cancellationToken)
+       where TKey : IComparable<TKey>
+
+    {
+        try
+        {
+            var parameters = paginationRequest.ToParameters();
+            PaginatedResult<TDto> result = parameters switch
+            {
+                CursorPaginationParameters cursor => await ExecuteCursorQuery(query, cursor, selector, orderSelector, cancellationToken),
+                OffsetPaginationParameters offset => await ExecuteOffsetQuery(query, offset, selector, cancellationToken),
+                _ => throw new InvalidOperationException("Unsupported pagination type")
+            };
+
+            return MapToUnified(result);
+        }
+        catch (FormatException) // Handle invalid Base64 cursor strings
+        {
+            _logger.LogError("Pagination.InvalidCursor,The provided cursor is not in a valid format.");
+            return Error.Validation("Pagination.InvalidCursor", "The provided cursor is not in a valid format.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Pagination.Error, Error: {ex.Message}");
+            return Error.Unexpected("Pagination.Error", $"An unexpected error occurred during pagination: {ex.Message}");
+        }
+    }
+
+    private UnifiedPaginatedResponse<TDto> MapToUnified<TDto>(PaginatedResult<TDto> result)
+    {
+        // Pattern matching (C# 9.0+) is the cleanest way to do this
+        return result switch
+        {
+            OffsetPaginatedResult<TDto> offset => new UnifiedPaginatedResponse<TDto>(
+                offset.Items,
+                offset.HasMore,
+                Page: offset.Page,
+                TotalCount: offset.TotalCount,
+                NextCursor: null),
+
+            CursorPaginatedResult<TDto> cursor => new UnifiedPaginatedResponse<TDto>(
+                cursor.Items,
+                cursor.HasMore,
+                Page: null,
+                TotalCount: null,
+                NextCursor: cursor.NextCursor),
+
+            _ => new UnifiedPaginatedResponse<TDto>(result.Items, result.HasMore)
         };
     }
 }
