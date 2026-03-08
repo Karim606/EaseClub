@@ -109,6 +109,17 @@ namespace EaseClub.Domain.MembershipPlans
             return template;
         }
 
+
+        //---------------------------Update Installments--------------------------//
+
+        public Result<Success> UpdateInstallments(List<Installment> installments)
+        {
+            ValidateInstallments(installments);
+
+            _Installments.Clear();
+            _Installments.AddRange(installments);
+            return Result.Success;
+        }
         //---------------------------Private Methods--------------------------//
 
         private static Result<bool> ValidateInstallments(List<Installment> installments)

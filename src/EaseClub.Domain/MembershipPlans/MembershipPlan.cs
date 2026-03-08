@@ -134,5 +134,43 @@ namespace EaseClub.Domain.MembershipPlans
             var membershipPlan = new MembershipPlan(id, clubId, membershipTypeId, name, totalPrice, durationInDays);
             return membershipPlan;
         }
+
+        public Result<Success> Update(
+        string name,
+        string? description,
+        decimal totalPrice,
+    IEnumerable<InstallmentTemplate> newTemplates)
+        {
+            // 1. Basic Validation
+            if (string.IsNullOrWhiteSpace(name))
+                return MembershipPlanErrors.MembershipPlanNameMustNotBeEmpty;
+            if (totalPrice <= 0)
+                return MembershipPlanErrors.MembershipPlanTotalPriceMustBeGreaterThanZero;
+
+            // 2. Metadata Assignment
+            Name = name;
+            Description = description;
+            TotalPrice = totalPrice;
+
+            // 3. Sync Installment Templates (Reconciliation)
+            var incomingIds = newTemplates.Select(t => t.Id).ToHashSet();
+
+            // Remove templates not in the new list
+            _InstallmentTemplates.RemoveAll(it => !incomingIds.Contains(it.InstallmentTemplateId));
+
+            // Add only truly new templates
+            foreach (var template in newTemplates)
+            {
+                if (_InstallmentTemplates.Any(it => it.InstallmentTemplateId == template.Id))
+                    continue;
+
+                // Reuse existing validation logic
+                var addResult = AddInstallmentTemplate(template);
+                if (addResult.IsError) return addResult.TopError;
+            }
+
+            return Result.Success;
+        }
+
     }
 }
