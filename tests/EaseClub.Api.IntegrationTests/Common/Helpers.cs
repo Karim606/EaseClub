@@ -1,5 +1,6 @@
 ﻿using EaseClub.Domain.ApplicationTemplates;
 using EaseClub.Domain.ApplicationTemplates.ValueObjects.ValidationRulesSet;
+using EaseClub.Domain.MembershipTypes;
 using EaseClub.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -100,6 +101,21 @@ namespace EaseClub.Api.IntegrationTests.Common
             await _context.SaveChangesAsync();
 
             return field.Id;
+        }
+
+        public async Task<MembershipType> CreateMembershipTypeAsync(Guid clubId, string name = "Test Membership")
+        {
+            var membershipType = MembershipType.Create(
+                Guid.NewGuid(),
+                clubId,
+                name
+            ).Value;
+
+            await _context.MembershipTypes.AddAsync(membershipType);
+
+            await _context.SaveChangesAsync();
+
+            return membershipType;
         }
     }
 }
