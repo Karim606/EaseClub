@@ -1,7 +1,7 @@
 ﻿using EaseClub.Application.Common.Pagination.Parameters;
 using EaseClub.Application.Common.Pagination.Results;
+using EaseClub.Application.Features.ApplicationTemplates;
 using EaseClub.Application.Features.ApplicationTemplates.Queries;
-using EaseClub.Application.Features.ApplicationTemplates.Queries.GetStepByOrder;
 using EaseClub.Application.Features.ApplicationTemplates.Queries.GetTemplates;
 using EaseClub.Domain.ApplicationTemplates;
 using EaseClub.Domain.Common;
@@ -30,14 +30,14 @@ namespace EaseClub.Infrastructure.Services.QueryServices
             PaginationParameters parameters,
             CancellationToken ct
             )
-            where TResult : PaginatedResult<ApplicationTemplateDto>, new()
+            where TResult : PaginatedResult<TemplateSummaryDto>, new()
         {
             var query = Query().Where(at => at.ClubId == clubId);
 
-            var result = await GetPaginatedAsync<ApplicationTemplateDto, string, TResult>(
+            var result = await GetPaginatedAsync<TemplateSummaryDto, string, TResult>(
                  query,
                 parameters,
-                selector: at => new ApplicationTemplateDto(at.ClubId, at.Name, at.IsActive, at.Steps.Count),
+                selector: at => new TemplateSummaryDto(at.Id, at.Name, at.CreatedAt,at.UpdatedAt, at.ConnectedMembershipTypes.Select(t=>t.Name).ToList()),
                 orderSelector: at => at.Name,
                 ct
                 );
@@ -71,8 +71,8 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                     sec.Fields.OrderBy(f => f.Order).Select(f => new FieldDetailsDto(
                         f.Id,
                         f.Key,
+                        f.Label,
                         f.Type,
-                        f.ValidationRules.IsRequired,
                         f.ValidationRules,
                         f.VisibilityCondition
                     )).ToList(),
@@ -105,15 +105,15 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                             sec.Fields.OrderBy(f => f.Order).Select(f => new FieldDetailsDto (
                               f.Id,
                               f.Key,
+                              f.Label,
                               f.Type,
-                              f.ValidationRules.IsRequired,
                               f.ValidationRules,
                               f.VisibilityCondition
                              )).ToList(),
                             sec.RepeatRule
                         )).ToList()
                     )).ToList()
-            )).FirstOrDefaultAsync(ct);
+            )).AsNoTracking().FirstOrDefaultAsync(ct);
 
             return templateData;
         }

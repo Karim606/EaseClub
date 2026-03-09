@@ -26,5 +26,12 @@ namespace EaseClub.Infrastructure.Data.Repositories
                 .Include(mt => mt.PermittedBranches)
                 .ToListAsync();
         }
+
+        public async Task<List<MembershipType>> GetByIdsAsync(IEnumerable<Guid> ids,CancellationToken ct = default)
+        {
+            return await _context.MembershipTypes
+                .Where(x => ids.Contains(x.Id))
+                .ToListAsync(ct);
+        }
     }
 }

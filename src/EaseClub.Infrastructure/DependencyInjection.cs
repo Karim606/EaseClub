@@ -65,10 +65,11 @@ namespace EaseClub.Application
                 var uniqueDbName = Guid.NewGuid().ToString();
                 services.AddDbContext<AppDbContext>((sp, options) =>
                 options.UseInMemoryDatabase(uniqueDbName)
-                .AddInterceptors(
-                    sp.GetRequiredService<AuditableEntityInterceptor>(),
-                    sp.GetRequiredService<DispatchDomainEventsInterceptor>()
-                ));
+                //.AddInterceptors(
+                //    sp.GetRequiredService<AuditableEntityInterceptor>(),
+                //    sp.GetRequiredService<DispatchDomainEventsInterceptor>()
+                //)
+                );
             }
             else
             {

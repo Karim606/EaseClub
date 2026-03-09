@@ -1,6 +1,5 @@
 ﻿using EaseClub.Application.Common.Pagination.Parameters;
 using EaseClub.Application.Common.Pagination.Results;
-using EaseClub.Application.Features.ApplicationTemplates.Queries.GetStepByOrder;
 using EaseClub.Application.Features.ApplicationTemplates.Queries.GetTemplates;
 using EaseClub.Domain.Common.Results;
 using System;
@@ -15,7 +14,7 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Queries
     {
         public Task<Result<TResult>> GetTemplatesByClubAsync<TResult>(Guid clubId,PaginationParameters parameters,
             CancellationToken ct)
-            where TResult : PaginatedResult<ApplicationTemplateDto>, new();
+            where TResult : PaginatedResult<TemplateSummaryDto>, new();
 
         public Task<Result<StepDetailsDto>> GetTemplateStepByOrder(Guid templateId, int order,
             CancellationToken ct);

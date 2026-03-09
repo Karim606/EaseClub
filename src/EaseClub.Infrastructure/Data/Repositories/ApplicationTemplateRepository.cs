@@ -33,5 +33,11 @@ namespace EaseClub.Infrastructure.Data.Repositories
                 .FirstOrDefaultAsync(t => t.Id == templateId, ct);
         }
 
+        public async Task<ApplicationTemplateDefinition> GetTemplateWithConnectedMembershipTypeAsync(Guid templateId, CancellationToken ct = default)
+        {
+            return await _context.ApplicationTemplateDefinitions
+                .Include(t => t.ConnectedMembershipTypes)
+                .FirstOrDefaultAsync(t => t.Id == templateId, ct);
+        }
     }
 }
