@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace EaseClub.Application.Features.ApplicationTemplates.Queries.GetTemplates
 {
     public record GetApplicationTemplatesQuery(Guid ClubId, OffsetPaginationParameters Parameters) :
-        IRequest<Result<OffsetPaginatedResult<ApplicationTemplateDto>>>,
+        IRequest<Result<OffsetPaginatedResult<TemplateSummaryDto>>>,
         IRequireClubAdmin;
     
 }

@@ -14,12 +14,12 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Queries.GetTemplate
 {
     public class GetApplicationTemplatesQueryHandler(IApplicationTemplateQueryService queryService,
         ILogger<GetApplicationTemplatesQueryHandler> logger) :
-        IRequestHandler<GetApplicationTemplatesQuery, Result<OffsetPaginatedResult<ApplicationTemplateDto>>>
+        IRequestHandler<GetApplicationTemplatesQuery, Result<OffsetPaginatedResult<TemplateSummaryDto>>>
     {
-        public async Task<Result<OffsetPaginatedResult<ApplicationTemplateDto>>> Handle(GetApplicationTemplatesQuery request,
+        public async Task<Result<OffsetPaginatedResult<TemplateSummaryDto>>> Handle(GetApplicationTemplatesQuery request,
             CancellationToken cancellationToken)
         {
-            var result = await queryService.GetTemplatesByClubAsync<OffsetPaginatedResult<ApplicationTemplateDto>>(request.ClubId,
+            var result = await queryService.GetTemplatesByClubAsync<OffsetPaginatedResult<TemplateSummaryDto>>(request.ClubId,
                 request.Parameters,
                 cancellationToken);
 

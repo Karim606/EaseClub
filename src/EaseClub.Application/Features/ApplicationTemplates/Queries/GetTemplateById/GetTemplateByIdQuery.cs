@@ -1,5 +1,6 @@
 ﻿using EaseClub.Application.Common;
 using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Features.ApplicationTemplates.Queries.GetTemplates;
 using EaseClub.Domain.ApplicationTemplates;
 using EaseClub.Domain.Common.Results;
 using MediatR;
@@ -9,15 +10,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EaseClub.Application.Features.ApplicationTemplates.Commands.Template.DeleteTemplate
+namespace EaseClub.Application.Features.ApplicationTemplates.Queries.GetTemplateById
 {
-    public record DeleteTemplateCommand(Guid TemplateId)
-    : IRequest<Result<Success>>,IRequireClubOwnershipValidation
+    public record GetTemplateByIdQuery(Guid TemplateId)
+    : IRequest<Result<TemplateDetailsDto>>,IRequireClubOwnershipValidation
     {
         public IEnumerable<OwnershipRule> Rules()
         {
             yield return new OwnershipRule(
-                (auth, clubId) => auth.DoesResourceBelongToClubAsync<ApplicationTemplateDefinition>(TemplateId, clubId),
+                (auth,clubId) => auth.DoesResourceBelongToClubAsync<ApplicationTemplateDefinition>(TemplateId,clubId),
                 nameof(ApplicationTemplateDefinition),
                 TemplateId);
         }
