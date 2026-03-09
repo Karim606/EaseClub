@@ -59,7 +59,38 @@ namespace EaseClub.Domain.ApplicationTemplates
         }
 
         //Add,Remove and Reorder fields
-        internal void AddField(ApplicationFieldDefinition field)=> _Fields.Add(field);
+        internal Result<ApplicationFieldDefinition> CreateField(
+        Guid id,
+        Guid templateId,
+        string key,
+        string label,
+        FieldType type,
+        ValidationRuleSet rules,
+        ConditionExpression? visibilityCondition,
+        bool persistToMembership,
+        List<string>? allowedValues)
+        {
+            var fieldResult = ApplicationFieldDefinition.Create(
+                id,
+                templateId,
+                Id,
+                key,
+                label,
+                type,
+                rules,
+                visibilityCondition,
+                persistToMembership,
+                _Fields.Count + 1,
+                allowedValues
+            );
+
+            if (fieldResult.IsError)
+                return fieldResult.TopError;
+
+            _Fields.Add(fieldResult.Value);
+
+            return fieldResult.Value;
+        }
 
         internal Result<Success> RemoveField(Guid fieldId)
         {

@@ -12,5 +12,7 @@ namespace EaseClub.Domain.ApplicationTemplates.Repositories
         public Task<ApplicationTemplateDefinition> GetTemplateWithStepsAsync(Guid templateId,CancellationToken ct =default);
 
         public Task<ApplicationTemplateDefinition> GetFullTemplateAsync(Guid templateId, CancellationToken ct = default);
+
+        public Task<ApplicationTemplateDefinition> GetTemplateWithConnectedMembershipTypeAsync(Guid templateId, CancellationToken ct = default);
     }
 }

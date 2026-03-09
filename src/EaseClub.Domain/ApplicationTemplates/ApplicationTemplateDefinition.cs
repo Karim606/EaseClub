@@ -5,6 +5,7 @@ using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipApplications.ValueObjects;
+using EaseClub.Domain.MembershipTypes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,6 +36,28 @@ namespace EaseClub.Domain.ApplicationTemplates
 
         private readonly List<ApplicationStepDefinition> _Steps = new();
         public IReadOnlyList<ApplicationStepDefinition> Steps => _Steps.AsReadOnly();
+
+        private readonly List<MembershipType> _ConnectedMembershipTypes = new();
+        public IReadOnlyList<MembershipType> ConnectedMembershipTypes => _ConnectedMembershipTypes.AsReadOnly();
+
+        private HashSet<string>? _fieldKeys;
+
+        private HashSet<string> FieldKeys
+        {
+            get
+            {
+                if (_fieldKeys == null)
+                {
+                    _fieldKeys = new HashSet<string>(
+                        _Steps
+                        .SelectMany(s => s.Sections)
+                        .SelectMany(sec => sec.Fields)
+                        .Select(f => f.Key)
+                    );
+                }
+                return _fieldKeys;
+            }
+        }
 
         // 3. Public Static Factory (Public because App Layer uses this)
         public static Result<ApplicationTemplateDefinition> Create(Guid id, Guid clubId, string name)
@@ -113,46 +136,35 @@ namespace EaseClub.Domain.ApplicationTemplates
             bool persistToMembership,
             List<string>? allowedValues = null)
         {
-            var keyIsNull = string.IsNullOrWhiteSpace(key);
-            string finalKey = keyIsNull
-            ? GenerateUniqueKey(label)
-            : key.ToLower().Trim();
+            var section = FindSection(sectionId);
 
-            bool isDuplicate = false;
-            if (!keyIsNull)
-            {
-                     isDuplicate = _Steps
-                    .SelectMany(s => s.Sections)
-                    .SelectMany(sec => sec.Fields)
-                    .Any(f => f.Key.Equals(key, StringComparison.OrdinalIgnoreCase));
-            }
+            if (section == null)
+                return Error.NotFound("Template.SectionNotFound");
 
-            if (isDuplicate)
-                return Error.Conflict("Template.DuplicateKey", $"Key '{key}' already exists in this template.");
+            var finalKey = ResolveKey(key, label);
 
-            // 2. Find the target section
-            var section = _Steps.SelectMany(s => s.Sections).FirstOrDefault(s => s.Id == sectionId);
-            if (section == null) return Error.NotFound("Template.SectionNotFound");
+            // enforce uniqueness
+            if (!FieldKeys.Add(finalKey))
+                return Error.Conflict("Template.DuplicateKey",
+                    $"Field key '{finalKey}' already exists.");
 
-            // 3. Delegate to the internal factory we already have
-            // We pass 'this.Id' (TemplateId) into the field
-            var fieldResult = ApplicationFieldDefinition.Create(
+            var fieldResult = section.CreateField(
                 id,
                 Id,
-                section.Id,
                 finalKey,
                 label,
                 type,
                 rules,
-                visibilityCondition, // Visibility
-                persistToMembership, // Persist
-                section.Fields.Count+1,
-                allowedValues);
+                visibilityCondition,
+                persistToMembership,
+                allowedValues
+            );
 
-            if (fieldResult.IsError) return fieldResult.TopError;
-
-            // 4. Add to the section's internal list
-            section.AddField(fieldResult.Value);
+            if (fieldResult.IsError)
+            {
+                FieldKeys.Remove(finalKey);
+                return fieldResult.TopError;
+            }
 
             return fieldResult.Value;
         }
@@ -160,8 +172,7 @@ namespace EaseClub.Domain.ApplicationTemplates
         public Result<Success> RemoveField(Guid sectionId, Guid fieldId)
         {
             // 1. Find the section
-            var section = _Steps.SelectMany(s => s.Sections)
-                                .FirstOrDefault(s => s.Id == sectionId);
+            var section = FindSection(sectionId);
 
             if (section == null) return Error.NotFound("Template.SectionNotFound");
 
@@ -210,6 +221,25 @@ namespace EaseClub.Domain.ApplicationTemplates
             return uniqueKey;
         }
 
+        public Result<Success> SyncMembershipTypes(List<MembershipType> newTypes)
+        {
+            var newIds = newTypes.Select(t => t.Id).ToHashSet();
+
+            // remove old ones
+            _ConnectedMembershipTypes.RemoveAll(t => !newIds.Contains(t.Id));
+
+            // add new ones
+            foreach (var type in newTypes)
+            {
+                if (_ConnectedMembershipTypes.All(t => t.Id != type.Id))
+                {
+                    _ConnectedMembershipTypes.Add(type);
+                }
+            }
+
+            return Result.Success;
+        }
+
         //ToSnapShot 
         public ApplicationTemplateSnapshot ToSnapshot(decimal BaseFee, List<PricingPolicySnapshot> policies)
         {
@@ -220,6 +250,22 @@ namespace EaseClub.Domain.ApplicationTemplates
                 policies, // Passed in from the Application Layer
                 _Steps.OrderBy(s => s.Order).Select(s => s.ToSnapshot()).ToList()
             );
+        }
+
+
+        private ApplicationSectionDefinition? FindSection(Guid sectionId)
+        {
+            return _Steps
+                .SelectMany(s => s.Sections)
+                .FirstOrDefault(s => s.Id == sectionId);
+        }
+
+        private string ResolveKey(string? key, string label)
+        {
+            if (!string.IsNullOrWhiteSpace(key))
+                return key.ToLower().Trim();
+
+            return GenerateUniqueKey(label);
         }
     }
 }

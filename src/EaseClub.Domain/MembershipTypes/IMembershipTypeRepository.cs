@@ -11,5 +11,7 @@ namespace EaseClub.Domain.MembershipTypes
     {
         public Task<MembershipType> GetByClubIdAndNameAsync(Guid clubId,string Name);
         public Task<List<MembershipType>> GetByClubIdAsync(Guid clubId);
+
+        public Task<List<MembershipType>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default);
     }
 }
