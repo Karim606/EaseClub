@@ -1,5 +1,4 @@
-﻿using EaseClub.Application.Features.MembershipApplications.Queries;
-using EaseClub.Domain.Common.Results;
+﻿using EaseClub.Domain.Common.Results;
 using MediatR;
 using System;
 using System.Collections.Generic;

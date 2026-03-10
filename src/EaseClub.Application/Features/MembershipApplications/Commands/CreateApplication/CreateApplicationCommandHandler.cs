@@ -5,6 +5,7 @@ using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipApplications;
 using EaseClub.Domain.MembershipApplications.Repositories;
+using EaseClub.Domain.MembershipPlans;
 using EaseClub.Domain.MembershipPlans.Repositories;
 using EaseClub.Domain.MembershipTypes;
 using EaseClub.Domain.PricingPolices;
@@ -28,6 +29,7 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.CreateAp
     IMembershipApplicationRepository appRepo,
     IPricingPolicyRepository pricingPolicyRepo,
     ICurrentUserService currentUserService,
+    IInstallmentsTemplatesRepository installmentsTemplatesRepository,
     ILogger<CreateApplicationCommandHandler>logger,
     IUnitOfWork unitOfWork) : IRequestHandler<CreateApplicationCommand, Result<Guid>>
     {
@@ -41,15 +43,24 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.CreateAp
             if (memType == null)
                 return Error.NotFound(description: "Membership type not found.");
 
-            var plan = await  membershipPlanRepo.GetByIdAsync(request.MembershipPlanId);
+            var plan = await  membershipPlanRepo.GetPlanWithDetailsAsync(request.MembershipPlanId);
 
-            if (plan == null || plan.MembershipTypeId != memType.Id)
+            if (plan == null )
                return Error.NotFound(description: "plan not found");
             // 2. Fetch Live Pricing Policies for this club
             var policies = await pricingPolicyRepo.GetByClubIdAsync(request.ClubId, ct);
 
+            var installmentTemplate = await installmentsTemplatesRepository.GetByIdAsync(request.InstallmentTemplateId);
+
+            if(installmentTemplate == null) 
+                return Error.NotFound(description: "Installment Template not found");
+
             // 3. Create the Frozen Snapshot
-            var snapshot = template.ToSnapshot(plan.TotalPrice,policies.Select(p => p.ToSnapshot()).ToList());
+            var snapshot = template.ToSnapshot(plan.TotalPrice,
+                policies.Select(p => p.ToSnapshot()).ToList(),
+                plan.ToSnapshot(),
+                Installment.ListToSnapshot(installmentTemplate.Installments)
+                );
 
             Guid.TryParse(currentUserService.GetId(), out var userId);
             // 4. Initialize the Aggregate
@@ -60,8 +71,9 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.CreateAp
                 snapshot,
                 userId,
                 request.ClubId,
-                request.MembershipTypeId,
-                request.MembershipPlanId,
+                plan,
+                installmentTemplate,
+                memType,
                 request.TemplateId).Value;
 
             await appRepo.AddAsync(application);
