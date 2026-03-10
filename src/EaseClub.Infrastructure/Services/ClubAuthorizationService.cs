@@ -1,6 +1,7 @@
 ﻿using Azure.Core;
 using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.ApplicationTemplates;
+using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -32,10 +33,18 @@ namespace EaseClub.Infrastructure.Services
 
         public async Task<bool> DoesResourceBelongToClubAsync<TEntity>(
             Guid entityId,
-            Guid clubId) where TEntity : class,IHaveClub
+            Guid clubId) where TEntity : Entity,IHaveClub
         {
             return await _context.Set<TEntity>()
                 .AnyAsync(x => x.ClubId == clubId && x.Id == entityId);
+        }
+
+        public async Task<bool> DoesResourceBelongToUserAsync<TEntity>(
+            Guid entityId,
+            Guid userId) where TEntity : Entity, IBelongToUser
+        {
+            return await _context.Set<TEntity>()
+                .AnyAsync(x => x.UserId == userId && x.Id == entityId);
         }
 
         public async Task<bool> CheckAppTemplateComponentsOwnership(Type resourceType,Guid resourceId,Guid clubId)
