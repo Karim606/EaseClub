@@ -15,5 +15,9 @@
 			<_Parameter1>EaseClub.Domain.Tests</_Parameter1>
 		</AssemblyAttribute>
 	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="Common\Interfaces\IBelongToUser.cs" />
+	</ItemGroup>
 	
 </Project>

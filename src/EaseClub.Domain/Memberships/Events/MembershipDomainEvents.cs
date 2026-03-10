@@ -14,31 +14,27 @@ namespace EaseClub.Domain.Memberships.Events
         Guid MembershipTypeId,
         Guid MembershipPlanId,
         DateTime StartDate,
-        DateTime EndDate,
-        DateTime OccurredOn
-    ) : DomainEvent(OccurredOn);
+        DateTime EndDate
+    ) : DomainEvent;
 
     public sealed record MembershipActivatedDomainEvent(
         Guid MembershipId,
         Guid UserId,
-        DateTime ActivatedAt,
-        DateTime OccurredOn
-    ) : DomainEvent(OccurredOn);
+        DateTime ActivatedAt
+    ) : DomainEvent;
 
     public sealed record MembershipCancelledDomainEvent(
         Guid MembershipId,
         Guid UserId,
         string? CancellationReason,
-        DateTime CancelledAt,
-        DateTime OccurredOn
-    ) : DomainEvent(OccurredOn);
+        DateTime CancelledAt
+    ) : DomainEvent;
 
     public sealed record MembershipExpiredDomainEvent(
         Guid MembershipId,
         Guid UserId,
-        DateTime ExpiredAt,
-        DateTime OccurredOn
-    ) : DomainEvent(OccurredOn);
+        DateTime ExpiredAt
+    ) : DomainEvent;
 
     public sealed record MembershipRenewedDomainEvent(
         Guid MembershipId,
@@ -46,9 +42,8 @@ namespace EaseClub.Domain.Memberships.Events
         DateTime OldEndDate,
         DateTime NewEndDate,
         Guid? NewPlanId,
-        DateTime RenewedAt,
-        DateTime OccurredOn
-    ) : DomainEvent(OccurredOn);
+        DateTime RenewedAt
+    ) : DomainEvent;
 
     public sealed record MembershipUpgradedDomainEvent(
         Guid MembershipId,
@@ -57,9 +52,8 @@ namespace EaseClub.Domain.Memberships.Events
         Guid NewMembershipTypeId,
         Guid OldPlanId,
         Guid NewPlanId,
-        DateTime UpgradedAt,
-        DateTime OccurredOn
-    ) : DomainEvent(OccurredOn);
+        DateTime UpgradedAt
+    ) : DomainEvent;
 
     public sealed record MembershipDowngradedDomainEvent(
         Guid MembershipId,
@@ -68,23 +62,20 @@ namespace EaseClub.Domain.Memberships.Events
         Guid NewMembershipTypeId,
         Guid OldPlanId,
         Guid NewPlanId,
-        DateTime DowngradedAt,
-        DateTime OccurredOn
-    ) : DomainEvent(OccurredOn);
+        DateTime DowngradedAt
+    ) : DomainEvent;
 
     public sealed record FamilyMemberAddedDomainEvent(
         Guid MembershipId,
         Guid FamilyMemberId,
         string FamilyMemberName,
-        DateTime AddedAt,
-        DateTime OccurredOn
-    ) : DomainEvent(OccurredOn);
+        DateTime AddedAt
+    ) : DomainEvent;
 
     public sealed record FamilyMemberRemovedDomainEvent(
         Guid MembershipId,
         Guid FamilyMemberId,
         string FamilyMemberName,
-        DateTime RemovedAt,
-        DateTime OccurredOn
-    ) : DomainEvent(OccurredOn);
+        DateTime RemovedAt
+    ) : DomainEvent;
 }

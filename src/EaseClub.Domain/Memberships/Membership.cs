@@ -1,15 +1,20 @@
-﻿using EaseClub.Domain.Common;
+﻿using EaseClub.Domain.Clubs;
+using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Membership;
+using EaseClub.Domain.MembershipApplications;
+using EaseClub.Domain.MembershipApplications.ValueObjects;
+using EaseClub.Domain.MembershipPlans;
 using EaseClub.Domain.Memberships.Errors;
 using EaseClub.Domain.Memberships.Events;
+using EaseClub.Domain.MembershipApplications.Enums;
 using EaseClub.Domain.Memberships.ValueObjects;
+using EaseClub.Domain.MembershipTypes;
 
 namespace EaseClub.Domain.Memberships
 {
     public class Membership : AuditableEntity
     {
-        private readonly List<FamilyMemberInfo> _familyMembers = new();
 
         private Membership() { } // EF Core
 
@@ -20,8 +25,7 @@ namespace EaseClub.Domain.Memberships
             Guid membershipTypeId,
             Guid membershipPlanId,
             MembershipPeriod period,
-            string? extraDataJson = null,
-            string? primaryContact = null) : base(id)
+            string? extraDataJson = null)  : base(id)
         {
             UserId = userId;
             ClubId = clubId;
@@ -30,24 +34,28 @@ namespace EaseClub.Domain.Memberships
             Period = period;
             Status = MembershipStatus.Active;
             ExtraDataJson = extraDataJson;
-            PrimaryContact = primaryContact;
         }
 
         // Properties
         public Guid UserId { get; private set; }
         public Guid ClubId { get; private set; }
         public Guid MembershipTypeId { get; private set; }
+        public MembershipType MembershipType { get; private set; }
         public Guid MembershipPlanId { get; private set; }
+        public MembershipPlan MembershipPlan { get; private set; }
         public MembershipPeriod Period { get; private set; }
         public MembershipStatus Status { get; private set; }
 
-        // Optional fields persisted from application
-        public string? PrimaryContact { get; private set; }
         public string? ExtraDataJson { get; private set; }
 
         // Family members
-        public IReadOnlyList<FamilyMemberInfo> FamilyMembers => _familyMembers.AsReadOnly();
-        public int FamilyMemberCount => _familyMembers.Count;
+        //private readonly List<FamilyMemberInfo> _FamilyMembers = new();
+        //public IReadOnlyList<FamilyMemberInfo> FamilyMembers => _FamilyMembers.AsReadOnly();
+
+        //public int FamilyMemberCount => _FamilyMembers.Count;
+
+        private readonly List<MembershipInstallment> _MembershipInstallments = new();
+        public IReadOnlyList<MembershipInstallment> MembershipInstallments => _MembershipInstallments.AsReadOnly();
 
         // Cancellation tracking
         public DateTime? CancelledAt { get; private set; }
@@ -89,8 +97,8 @@ namespace EaseClub.Domain.Memberships
                 membershipTypeId,
                 membershipPlanId,
                 periodResult.Value,
-                extraDataJson,
-                primaryContact);
+                extraDataJson
+                );
 
             membership.RaiseDomainEvent(new MembershipCreatedDomainEvent(
                 membership.Id,
@@ -99,9 +107,52 @@ namespace EaseClub.Domain.Memberships
                 membershipTypeId,
                 membershipPlanId,
                 startDate,
-                endDate,
-                DateTime.UtcNow));
+                endDate));
 
+            return membership;
+        }
+
+        public static Result<Membership> CreateFromApplication(
+            MembershipApplication app)
+        {
+            // Skip the plan.SupportsTemplate check because it was verified 
+            // when the Application was submitted.
+            if(app.Status!= ApplicationStatus.Approved) return Error.Conflict(description:"Membership.Cannot.CreateFromApplication.NotApproved");
+            var subYears = app.TemplateSnapshot.MembershipPlan.SubscriptionValidityInYears;
+            var membershipPeriod = MembershipPeriod.Create(DateTime.UtcNow, DateTime.UtcNow.AddYears(subYears));
+            if (membershipPeriod.IsError) return membershipPeriod.TopError;
+
+            var membership = new Membership(
+                Guid.NewGuid(),
+                app.UserId,
+                app.ClubId,
+                app.MembershipTypeId,
+                app.MembershipPlanId,
+                membershipPeriod.Value
+                );
+
+            var installmentRules = InstallmentRuleSnapshot.ListToDomain(app.TemplateSnapshot.InstallmentRules);
+
+            if(installmentRules.IsError) return installmentRules.TopError;
+
+            var instBluePrint = InstallmentEngine.GenerateMembershipInstallments(installmentRules.Value,app.FinalPriceSummary!.TotalPrice);
+
+            if(instBluePrint.IsError) return instBluePrint.TopError;
+            // Directly stamp the frozen installments from the snapshot
+            foreach (var bp in instBluePrint.Value)
+            {
+                membership._MembershipInstallments.Add(MembershipInstallment.Create(
+                    membership.Id,
+                    app.ClubId,
+                    app.MembershipTypeId,
+                    app.MembershipPlanId,
+                    app.TemplateId, // Use the ID from the frozen application
+                    bp.Order,
+                    bp.Amount,
+                    bp.DueDate
+                ).Value);
+            }
+            membership.Status = MembershipStatus.Suspended;
             return membership;
         }
 
@@ -125,8 +176,8 @@ namespace EaseClub.Domain.Memberships
             RaiseDomainEvent(new MembershipActivatedDomainEvent(
                 Id,
                 UserId,
-                DateTime.UtcNow,
-                DateTime.UtcNow));
+                DateTime.UtcNow
+                ));
 
             return Result.Success;
         }
@@ -147,8 +198,8 @@ namespace EaseClub.Domain.Memberships
                 Id,
                 UserId,
                 reason,
-                DateTime.UtcNow,
-                DateTime.UtcNow));
+                DateTime.UtcNow
+                ));
 
             return Result.Success;
         }
@@ -167,9 +218,7 @@ namespace EaseClub.Domain.Memberships
             RaiseDomainEvent(new MembershipExpiredDomainEvent(
                 Id,
                 UserId,
-                DateTime.UtcNow,
                 DateTime.UtcNow));
-
             return Result.Success;
         }
 
@@ -202,7 +251,6 @@ namespace EaseClub.Domain.Memberships
                 oldEndDate,
                 newEndDate,
                 newPlanId,
-                DateTime.UtcNow,
                 DateTime.UtcNow));
 
             return Result.Success;
@@ -237,9 +285,7 @@ namespace EaseClub.Domain.Memberships
                 newMembershipTypeId,
                 oldPlanId,
                 newPlanId,
-                DateTime.UtcNow,
                 DateTime.UtcNow));
-
             return Result.Success;
         }
 
@@ -272,7 +318,6 @@ namespace EaseClub.Domain.Memberships
                 newMembershipTypeId,
                 oldPlanId,
                 newPlanId,
-                DateTime.UtcNow,
                 DateTime.UtcNow));
 
             return Result.Success;
@@ -280,66 +325,64 @@ namespace EaseClub.Domain.Memberships
 
         #endregion
 
-        #region Family Members Management
+        //#region Family Members Management
 
-        public Result<Success> AddFamilyMember(
-            Guid familyMemberId,
-            string fullName,
-            string relationship,
-            DateTime dateOfBirth,
-            int maxAllowed)
-        {
-            if (Status != MembershipStatus.Active)
-                return MembershipErrors.NotActive;
+        //public Result<Success> AddFamilyMember(
+        //    Guid familyMemberId,
+        //    string fullName,
+        //    string relationship,
+        //    DateTime dateOfBirth,
+        //    int maxAllowed)
+        //{
+        //    if (Status != MembershipStatus.Active)
+        //        return MembershipErrors.NotActive;
 
-            if (_familyMembers.Count >= maxAllowed)
-                return MembershipErrors.MaxFamilyMembersReached;
+        //    if (_FamilyMembers.Count >= maxAllowed)
+        //        return MembershipErrors.MaxFamilyMembersReached;
 
-            if (_familyMembers.Any(f => f.FamilyMemberId == familyMemberId))
-                return Error.Conflict("Membership.FamilyMember.AlreadyExists",
-                    "This family member is already added.");
+        //    if (_FamilyMembers.Any(f => f.FamilyMemberId == familyMemberId))
+        //        return Error.Conflict("Membership.FamilyMember.AlreadyExists",
+        //            "This family member is already added.");
 
-            var familyMemberResult = FamilyMemberInfo.Create(
-                familyMemberId,
-                fullName,
-                relationship,
-                dateOfBirth);
+        //    var familyMemberResult = FamilyMemberInfo.Create(
+        //        familyMemberId,
+        //        fullName,
+        //        relationship,
+        //        dateOfBirth);
 
-            if (familyMemberResult.IsError)
-                return familyMemberResult.TopError;
+        //    if (familyMemberResult.IsError)
+        //        return familyMemberResult.TopError;
 
-            _familyMembers.Add(familyMemberResult.Value);
+        //    _FamilyMembers.Add(familyMemberResult.Value);
 
-            RaiseDomainEvent(new FamilyMemberAddedDomainEvent(
-                Id,
-                familyMemberId,
-                fullName,
-                DateTime.UtcNow,
-                DateTime.UtcNow));
+        //    RaiseDomainEvent(new FamilyMemberAddedDomainEvent(
+        //        Id,
+        //        familyMemberId,
+        //        fullName,
+        //        DateTime.UtcNow));
 
-            return Result.Success;
-        }
+        //    return Result.Success;
+        //}
 
-        public Result<Success> RemoveFamilyMember(Guid familyMemberId)
-        {
-            var familyMember = _familyMembers.FirstOrDefault(f => f.FamilyMemberId == familyMemberId);
+        //public Result<Success> RemoveFamilyMember(Guid familyMemberId)
+        //{
+        //    var familyMember = _FamilyMembers.FirstOrDefault(f => f.FamilyMemberId == familyMemberId);
 
-            if (familyMember == null)
-                return MembershipErrors.FamilyMemberNotFound;
+        //    if (familyMember == null)
+        //        return MembershipErrors.FamilyMemberNotFound;
 
-            _familyMembers.Remove(familyMember);
+        //    _FamilyMembers.Remove(familyMember);
 
-            RaiseDomainEvent(new FamilyMemberRemovedDomainEvent(
-                Id,
-                familyMemberId,
-                familyMember.FullName,
-                DateTime.UtcNow,
-                DateTime.UtcNow));
+        //    RaiseDomainEvent(new FamilyMemberRemovedDomainEvent(
+        //        Id,
+        //        familyMemberId,
+        //        familyMember.FullName,
+        //        DateTime.UtcNow));
 
-            return Result.Success;
-        }
+        //    return Result.Success;
+        //}
 
-        #endregion
+        //#endregion
 
         #region Query Methods
 
@@ -368,11 +411,46 @@ namespace EaseClub.Domain.Memberships
             return (Period.EndDate - DateTime.UtcNow).Days;
         }
 
-        public bool HasFamilyMembers()
-        {
-            return _familyMembers.Any();
-        }
+        //public bool HasFamilyMembers()
+        //{
+        //    return _FamilyMembers.Any();
+        //}
 
         #endregion
+
+
+        public Result<Success> GenerateInstallments(InstallmentTemplate template,decimal totalPrice)
+        {
+            // 1. Verify the link between Plan and Template
+            if (!MembershipPlan.SupportsTemplate(template.Id))
+                return Error.Conflict(description:"Membership.Plan.DoesNotSupportTemplate");
+
+            // 2. Calculate the installments using the current logic
+            var result = InstallmentEngine.GenerateMembershipInstallments(template.Installments,totalPrice);
+            if (result.IsError) return result.TopError;
+
+            // 3. Clear existing PENDING installments 
+            // (We keep the PAID ones for history!)
+            var pending = _MembershipInstallments.Where(i => i.Status == InstallmentStatus.Pending).ToList();
+            foreach (var item in pending) _MembershipInstallments.Remove(item);
+
+            // 4. Add the new ones
+            // IMPORTANT: Store the snapshot of the rule used
+            _MembershipInstallments.AddRange(result.Value.Select(bp =>
+                MembershipInstallment.Create(
+                    this.Id,
+                    ClubId,
+                    MembershipTypeId,
+                    MembershipPlan.Id,
+                    template.Id, // Link to the definition
+                    bp.Order,
+                    bp.Amount,
+                    bp.DueDate
+                ).Value
+            ));
+
+            return Result.Success;
+        }
+
     }
 }
