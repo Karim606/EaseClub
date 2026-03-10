@@ -40,7 +40,7 @@ namespace EaseClub.Infrastructure.Data.Configurations
             // 3. Relationships
             // Linked to the Application. Usually, one application has many reviews (history)
             builder.HasOne<MembershipApplication>()
-                .WithMany() // You could add a 'Reviews' collection to MembershipApplication if needed
+                .WithMany(a => a.Reviews) // You could add a 'Reviews' collection to MembershipApplication if needed
                 .HasForeignKey(r => r.ApplicationId)
                 .OnDelete(DeleteBehavior.Cascade);
 

@@ -22,6 +22,7 @@ using EaseClub.Domain.MembershipPlans;
 using EaseClub.Domain.ApplicationTemplates;
 using EaseClub.Domain.MembershipApplications;
 using EaseClub.Domain.PricingPolices;
+using EaseClub.Domain.Memberships;
 
 namespace EaseClub.Infrastructure.Data
 {
@@ -45,8 +46,7 @@ namespace EaseClub.Infrastructure.Data
             builder.Entity<IdentityUserToken<Guid>>().ToTable("UserTokens");
 
             builder.Entity<UserBase>()
-            .ToTable("Users")       // base table
-            .HasKey(u => u.Id);
+            .ToTable("Users");       // base table
 
             // MemberUser table
             builder.Entity<MemberUser>()
@@ -100,6 +100,8 @@ namespace EaseClub.Infrastructure.Data
         public DbSet<ApplicationAnswer> ApplicationAnswers { get; set; }
         public DbSet<ApplicationReview> ApplicationReviews { get; set; }
         public DbSet<PricingPolicy> PricingPolicies { get; set; }
+
+        public DbSet<Membership>Memberships { get; set; }
        
 
      }

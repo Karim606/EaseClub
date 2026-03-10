@@ -104,6 +104,9 @@ namespace EaseClub.Infrastructure.Data.Configurations
             builder.Navigation(x => x.Answers).HasField("_Answers")
                 .UsePropertyAccessMode(PropertyAccessMode.Field);
 
+            builder.Navigation(x => x.Reviews).HasField("_Reviews")
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
+
             builder.Property(a => a.CompletedStepOrders)
             .HasField("_CompletedStepOrders")
             .UsePropertyAccessMode(PropertyAccessMode.Field);
@@ -113,7 +116,8 @@ namespace EaseClub.Infrastructure.Data.Configurations
                 .HasForeignKey(ans => ans.ApplicationId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-
+            builder.HasOne(a => a.MembershipType).WithMany().HasForeignKey(a=> a.MembershipTypeId).OnDelete(DeleteBehavior.Restrict);
+            builder.HasOne(a => a.MembershipPlan).WithMany().HasForeignKey(a => a.MembershipPlanId).OnDelete(DeleteBehavior.Restrict);
             // 4. Indexes
             builder.HasIndex(a => a.TrackingNumber).IsUnique();
             builder.HasIndex(a => a.UserId);
