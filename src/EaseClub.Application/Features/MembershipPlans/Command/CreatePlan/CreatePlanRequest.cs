@@ -11,7 +11,7 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.CreatePlan
         public Guid MembershipTypeId { get; init; }
         public string Name { get; init; }
         public decimal Price { get; init; }
-
+        public int SubscriptionValidityInYears { get; init; }
         public int DurationInDays { get; init; }
     }
 }

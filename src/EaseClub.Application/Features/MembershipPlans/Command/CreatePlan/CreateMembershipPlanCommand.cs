@@ -16,12 +16,13 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.CreatePlan
     Guid MembershipTypeId,
     string Name,
     decimal Price,
-    int DurationInDays
+    int DurationInDays,
+    int subscriptionValidityInYears
     ) : IRequest<Result<Guid>>, IRequireClubAdmin, IRequireClubOwnershipValidation
     {
         public IEnumerable<OwnershipRule> Rules()
         {
-            yield return new OwnershipRule((auth, clubId) => auth.DoesResourceBelongToClubAsync<MembershipType>(MembershipTypeId, clubId),
+            yield return new OwnershipRule( async(auth, clubId) => await auth.DoesResourceBelongToClubAsync<MembershipType>(MembershipTypeId, clubId),
                 nameof(MembershipType),
                 MembershipTypeId
             );

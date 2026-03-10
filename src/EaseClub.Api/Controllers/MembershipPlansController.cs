@@ -63,7 +63,8 @@ namespace EaseClub.Api.Controllers
                 request.MembershipTypeId,
                 request.Name,
                 request.Price,
-                request.DurationInDays);
+                request.DurationInDays,
+                request.SubscriptionValidityInYears);
 
             var result = await sender.Send(command);
             return result.Match(
@@ -117,6 +118,8 @@ namespace EaseClub.Api.Controllers
 
             return result.Match(_ => NoContent(), Problem);
         }
+
+
 
         //[Authorize(Roles = "ClubAdmin")]
         //[HttpPost("{planId}/templates/{templateId}")]
