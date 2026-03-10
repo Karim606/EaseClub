@@ -1,6 +1,7 @@
 ﻿using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.MembershipApplications.ValueObjects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,6 +20,7 @@ namespace EaseClub.Domain.MembershipPlans
 
         public decimal TotalPrice { get; private set; }
         public int DurationInDays { get; private set; }
+        public int SubscriptionValidityInYears { get; private set; }
         public bool IsActive { get; private set; } = true;
 
         private readonly List<PlanInstallmentTemplate> _InstallmentTemplates = new();
@@ -26,7 +28,8 @@ namespace EaseClub.Domain.MembershipPlans
 
         private MembershipPlan() { } // EF
 
-        private MembershipPlan(Guid id,Guid clubId, Guid membershipTypeId, string name, decimal totalPrice, int durationInDays):base(id)
+        private MembershipPlan(Guid id,Guid clubId, Guid membershipTypeId,int subscriptionValidityInYears, string name, 
+            decimal totalPrice, int durationInDays):base(id)
         {
             
             ClubId = clubId;
@@ -34,6 +37,7 @@ namespace EaseClub.Domain.MembershipPlans
             Name = name;
             TotalPrice = totalPrice;
             DurationInDays = durationInDays;
+            SubscriptionValidityInYears = subscriptionValidityInYears;
             IsActive = true;
         }
 
@@ -69,56 +73,9 @@ namespace EaseClub.Domain.MembershipPlans
             return Result.Success;
         }
 
-        /// <summary>
-        /// Generate membership installments for a specific membership
-        /// </summary>
-        public Result<List<MembershipInstallment>> GenerateMembershipInstallments(Guid membershipId, InstallmentTemplate template)
-        {
-            if (_InstallmentTemplates.All(x => x.InstallmentTemplateId != template.Id))
-                return MembershipPlanErrors.InstallmentTemplateDoesntExist;
-
-            var installmentsOfTemplate = template.Installments;
-
-            if(installmentsOfTemplate == null)
-                return MembershipPlanErrors.TemplateInstallmentsDontExist;
-
-            var membershipInstallments = new List<MembershipInstallment>();
-            decimal runningTotal = 0;
-
-            for ( int i=0; i< installmentsOfTemplate.Count; i++)
-            {
-                var item = installmentsOfTemplate[i];
-
-                decimal installmentAmount;
-
-                if (i == installmentsOfTemplate.Count - 1)
-                {
-                    // Calculate the last one based on the remaining money balance
-                    installmentAmount = TotalPrice - runningTotal;
-                }
-                else
-                {
-                    // Round to 2 decimal places for currency
-                    installmentAmount = Math.Round((TotalPrice * item.PercentageOfAmount) / 100, 2);
-                    runningTotal += installmentAmount;
-                }
-
-
-                var membershipInstallment = new MembershipInstallment(
-                    membershipId,
-                    ClubId,
-                    item.OrderIndex,
-                    installmentAmount,
-                    DateTime.UtcNow.AddDays(item.DueAfterDays)
-                    );
-
-                 membershipInstallments.Add(membershipInstallment);
-            }
-            
-            return membershipInstallments;
-        }
-
-        public static Result<MembershipPlan> Create(Guid id,Guid clubId, Guid membershipTypeId, string name, decimal totalPrice, int durationInDays)
+      
+        public static Result<MembershipPlan> Create(Guid id,Guid clubId, Guid membershipTypeId,
+            int subscriptionValidityInYears,string name, decimal totalPrice, int durationInDays)
         {
             if (string.IsNullOrWhiteSpace(name))
                 return MembershipPlanErrors.MembershipPlanNameMustNotBeEmpty;
@@ -126,12 +83,15 @@ namespace EaseClub.Domain.MembershipPlans
                 return MembershipPlanErrors.MembershipPlanTotalPriceMustBeGreaterThanZero;
             if (durationInDays <= 0)
                 return MembershipPlanErrors.MembershipPlanDurationMustBeGreaterThanZero;
+            if (subscriptionValidityInYears <= 0)
+                return Error.Validation(description:"MembershipPlan.SubscriptionValidityInYearsMustBeGreaterThanZero");
+
             if (membershipTypeId == Guid.Empty)
                 return MembershipPlanErrors.MembershipTypeIdMustBeProvided;
             if (clubId == Guid.Empty)
                 return MembershipPlanErrors.ClubIdMustBeProvided;
 
-            var membershipPlan = new MembershipPlan(id, clubId, membershipTypeId, name, totalPrice, durationInDays);
+            var membershipPlan = new MembershipPlan(id, clubId, membershipTypeId, subscriptionValidityInYears, name, totalPrice, durationInDays);
             return membershipPlan;
         }
 
@@ -172,5 +132,11 @@ namespace EaseClub.Domain.MembershipPlans
             return Result.Success;
         }
 
+        public bool SupportsTemplate(Guid templateId)
+        {
+            return _InstallmentTemplates.Any(it => it.InstallmentTemplateId == templateId);
+        }
+
+        public MembershipPlanSnapshot ToSnapshot() => MembershipPlanSnapshot.FromDomain(this);
     }
 }
