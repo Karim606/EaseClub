@@ -75,6 +75,8 @@ namespace EaseClub.Application
             {
                 var typeOfDB = env.IsDevelopment() ? "Dev" : "Prod";
                 var connectionString = configuration.GetConnectionString(typeOfDB);
+                services.AddScoped<AuditableEntityInterceptor>();
+                services.AddScoped<DispatchDomainEventsInterceptor>();
 
             services.AddDbContext<AppDbContext>((sp, options) => {
                 options.UseSqlServer(connectionString)
