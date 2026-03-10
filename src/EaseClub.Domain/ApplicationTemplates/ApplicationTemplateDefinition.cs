@@ -241,14 +241,18 @@ namespace EaseClub.Domain.ApplicationTemplates
         }
 
         //ToSnapShot 
-        public ApplicationTemplateSnapshot ToSnapshot(decimal BaseFee, List<PricingPolicySnapshot> policies)
+        public ApplicationTemplateSnapshot ToSnapshot(decimal BaseFee, List<PricingPolicySnapshot> policies,MembershipPlanSnapshot membershipPlan,
+           List<InstallmentRuleSnapshot>installmentRules )
         {
+             policies = policies.Where(p => p.Conditions.Any(c => FieldKeys.Contains(c.DependsOnFieldKey))).ToList();
             return new ApplicationTemplateSnapshot(
                 Id,
                 Name,
                 BaseFee,
+                membershipPlan,
                 policies, // Passed in from the Application Layer
-                _Steps.OrderBy(s => s.Order).Select(s => s.ToSnapshot()).ToList()
+                _Steps.OrderBy(s => s.Order).Select(s => s.ToSnapshot()).ToList(),
+                installmentRules
             );
         }
 

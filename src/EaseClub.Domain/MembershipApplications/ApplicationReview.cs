@@ -14,20 +14,23 @@ namespace EaseClub.Domain.MembershipApplications
             Guid applicationId,
             Guid reviewerId,
             DecisionsAboutApplication decision,
-            string reason) : base(id)
+            string? reason,
+            string? note) : base(id)
         {
             ApplicationId = applicationId;
             ReviewerId = reviewerId;
             Decision = decision;
             Reason = reason;
             Date = DateTime.UtcNow;
+            Note = note;
         }
 
         public Guid ApplicationId { get; private set; }
         public Guid ReviewerId { get; private set; }
 
         public DecisionsAboutApplication Decision { get; private set; }
-        public string Reason { get; private set; }
+        public string? Reason { get; private set; }
+        public string? Note { get; private set; }
         public DateTime Date { get; private set; }
 
         #region Factory
@@ -37,7 +40,8 @@ namespace EaseClub.Domain.MembershipApplications
             Guid applicationId,
             Guid reviewerId,
             DecisionsAboutApplication decision,
-            string? reason)
+            string? reason=null,
+            string? note = null)
         {
             if (applicationId == Guid.Empty)
                 return ApplicationReviewErrors.ApplicationRequired;
@@ -48,16 +52,23 @@ namespace EaseClub.Domain.MembershipApplications
             if (!Enum.IsDefined(typeof(DecisionsAboutApplication), decision))
                 return ApplicationReviewErrors.InvalidDecision;
 
-            if (decision == DecisionsAboutApplication.Reject &&
+            if (decision == DecisionsAboutApplication.Rejected &&
                 string.IsNullOrWhiteSpace(reason))
                 return ApplicationReviewErrors.RejectionReasonRequired;
+
+            if (decision == DecisionsAboutApplication.Rejected && !string.IsNullOrEmpty(note))
+                return ApplicationReviewErrors.NoteNotAllowedForRejection;
+
+            if (decision == DecisionsAboutApplication.NeedsCorrection && string.IsNullOrWhiteSpace(note))
+                return ApplicationReviewErrors.NeedsCorrectionNoteRequired;
 
             var review = new ApplicationReview(
                 id,
                 applicationId,
                 reviewerId,
                 decision,
-                reason ?? string.Empty);
+                reason,
+                note);
 
             return review;
         }

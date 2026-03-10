@@ -1,8 +1,11 @@
 ﻿using EaseClub.Domain.Common;
+using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipApplications.Enums;
 using EaseClub.Domain.MembershipApplications.Errors;
 using EaseClub.Domain.MembershipApplications.ValueObjects;
+using EaseClub.Domain.MembershipPlans;
+using EaseClub.Domain.MembershipTypes;
 using EaseClub.Domain.PricingPolices;
 using System;
 using System.Collections.Generic;
@@ -13,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Domain.MembershipApplications
 {
-    public class MembershipApplication : AuditableEntity
+    public class MembershipApplication : AuditableEntity,IHaveClub,IBelongToUser
     {
         private MembershipApplication() { }
 
@@ -25,6 +28,7 @@ namespace EaseClub.Domain.MembershipApplications
             Guid clubId,
             Guid membershipTypeId,
             Guid membershipPlanId,
+            Guid installmentTemplateId,
             Guid templateId
            )
             : base(id)
@@ -35,6 +39,7 @@ namespace EaseClub.Domain.MembershipApplications
             ClubId = clubId;
             MembershipTypeId = membershipTypeId;
             MembershipPlanId = membershipPlanId;
+            InstallmentTemplateId = installmentTemplateId;
             TemplateId = templateId;
             Status = ApplicationStatus.Draft;
             PricingState = PricingState.Estimated;
@@ -49,10 +54,17 @@ namespace EaseClub.Domain.MembershipApplications
         private readonly List<ApplicationAnswer> _Answers = new List<ApplicationAnswer>();
         public IReadOnlyList<ApplicationAnswer> Answers => _Answers.AsReadOnly();
 
+        private readonly List<ApplicationReview> _Reviews = new();
+        public IReadOnlyList<ApplicationReview> Reviews => _Reviews.AsReadOnly();
+
+
         public Guid UserId { get; private set; }
         public Guid ClubId { get; private set; }
+        public Guid InstallmentTemplateId { get; private set; }
         public Guid MembershipTypeId { get; private set; }
         public Guid MembershipPlanId { get; private set; }
+        public MembershipType MembershipType { get; private set; }
+        public MembershipPlan MembershipPlan { get; private set; }
         public Guid TemplateId { get; private set; }// frozen template
         public ApplicationStatus Status { get; private set; }// Draft, Submitted, Paid
         public PricingState PricingState { get; private set; }// Estimated / Locked
@@ -72,14 +84,19 @@ namespace EaseClub.Domain.MembershipApplications
             ApplicationTemplateSnapshot templateSnapshot,
             Guid userId,
             Guid clubId,
-            Guid membershipTypeId,
-            Guid membershipPlanId,
+            MembershipPlan plan,
+            InstallmentTemplate installmentTemplate,
+            MembershipType membershipType,
             Guid templateId
             )
         {
             if (string.IsNullOrWhiteSpace(trackingNumber))
                 return MembershipApplicationErrors.TrackingNumberRequired;
 
+            if(plan.MembershipTypeId != membershipType.Id) return Error.Conflict(description: "MembershipPlan isnt associated with this MembershipType");
+
+            if(plan.InstallmentTemplates.All(i => i.InstallmentTemplateId != installmentTemplate.Id)) return Error.Conflict(description:"InstallmentTemplate isnt associated with this MembershipPlan");
+            
             if (userId == Guid.Empty)
                 return MembershipApplicationErrors.UserIdRequired;
 
@@ -93,8 +110,9 @@ namespace EaseClub.Domain.MembershipApplications
                 templateSnapshot,
                 userId,
                 clubId,
-                membershipTypeId,
-                membershipPlanId,
+                membershipType.Id,
+                plan.Id,
+                installmentTemplate.Id,
                 templateId
                 );
         }
@@ -209,6 +227,27 @@ namespace EaseClub.Domain.MembershipApplications
             return RefreshPrice();
         }
 
+        public Result<List<Installment>>GetPaymentSchedule(){
+            
+            var res = GetPricePreview();
+
+            if (res.IsError) return res.TopError;
+
+            var finalPrice= FinalPriceSummary!.TotalPrice;
+
+            List<Installment> installments = new();
+            foreach(var inst in TemplateSnapshot.InstallmentRules)
+            {
+                installments.Add(inst.ToDomain());
+            }
+           var resultedInstallments = InstallmentEngine.GenerateMembershipInstallments(installments, finalPrice, DateTime.Now);
+
+            if(resultedInstallments.IsError) return resultedInstallments.TopError;
+
+            return InstallmentBlueprint.ToInstallments(resultedInstallments.Value);
+
+        }
+
         // --- Business Logic: Submission ---
         public Result<Success> Submit()
         {
@@ -249,5 +288,38 @@ namespace EaseClub.Domain.MembershipApplications
                 CurrentStepOrder = stepOrder;
             }
         }
+
+
+        // Add a new review (approval or rejection)
+        public Result<Success> AddReview(ApplicationReview review)
+        {
+            // Business rules
+            if (Status != ApplicationStatus.Submitted)
+                return Error.Conflict(description:"Only submitted applications can be reviewed");
+
+            
+
+            // Add review to collection
+            _Reviews.Add(review);
+
+            // Update status based on decision
+            Status = review.Decision switch
+            {
+                DecisionsAboutApplication.Approved => ApplicationStatus.Approved,
+                DecisionsAboutApplication.Rejected => ApplicationStatus.Rejected,
+                _ => Status
+            };
+
+            // Raise domain events
+
+            if (review.Decision == DecisionsAboutApplication.Approved)
+                RaiseDomainEvent(new ApplicationApprovedEvent(Id, review.Id,review.Note));
+
+            if (review.Decision == DecisionsAboutApplication.Rejected)
+                RaiseDomainEvent(new ApplicationRejectedEvent(Id, review.Id, review.Reason!));
+
+            return Result.Success;
+        }
+
     }
 }

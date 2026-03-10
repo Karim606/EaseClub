@@ -8,6 +8,8 @@ namespace EaseClub.Domain.MembershipApplications.Enums
 {
     public enum DecisionsAboutApplication
     {
-        Approve,Reject
+        Approved,
+        Rejected,
+        NeedsCorrection // Excellent for user experience
     }
 }

@@ -24,5 +24,14 @@ namespace EaseClub.Domain.MembershipApplications.Errors
         public static Error RejectionReasonRequired =>
             Error.Validation("ApplicationReview.RejectionReasonRequired",
                 "Reason is required when application is rejected.");
+
+        public static Error NeedsCorrectionNoteRequired =>
+            Error.Validation("ApplicationReview.NeedsCorrectionNoteRequired",
+                "Note is required when application NeedCorrection.");
+        public static Error NoteNotAllowedForRejection =>
+        Error.Validation("ApplicationReview.NoteNotAllowedForRejection",
+        "Note is not allowed when application is rejected.");
+
+
     }
 }
