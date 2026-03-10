@@ -1,4 +1,5 @@
 ﻿using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.MembershipApplications.ValueObjects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,6 +34,17 @@ namespace EaseClub.Domain.MembershipPlans
 
             return new Installment(percentageOfAmount, dueAfterDays,orderIndex);
         }
-       
+
+        public InstallmentRuleSnapshot ToSnapshot() => InstallmentRuleSnapshot.FromDomain(this);
+
+        public static List<InstallmentRuleSnapshot> ListToSnapshot(IEnumerable<Installment> list) {
+            List<InstallmentRuleSnapshot> listOfSnapshots = new();
+            foreach (var item in list)
+            {
+                listOfSnapshots.Add(item.ToSnapshot());
+            }
+            return listOfSnapshots;
+            }
+
     }
 }
