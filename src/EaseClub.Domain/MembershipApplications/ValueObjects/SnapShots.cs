@@ -3,6 +3,8 @@ using EaseClub.Domain.ApplicationTemplates.ValueObjects.ConditionExpression;
 using EaseClub.Domain.ApplicationTemplates.ValueObjects.RepeatRule;
 using EaseClub.Domain.ApplicationTemplates.ValueObjects.ValidationRulesSet;
 using EaseClub.Domain.Common;
+using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.MembershipPlans;
 using EaseClub.Domain.PricingPolices;
 using System;
 using System.Collections.Generic;
@@ -23,21 +25,27 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
             Guid id,
             string name,
             decimal baseFee,
+            MembershipPlanSnapshot membershipPlan,
             List<PricingPolicySnapshot> policies,
-            List<StepSnapshot> steps)
+            List<StepSnapshot> steps,
+            List<InstallmentRuleSnapshot> installmentRules)
         {
             Id = id;
             Name = name;
             BaseFee = baseFee;
+            MembershipPlan = membershipPlan;
             Policies = policies ?? new();
             Steps = steps ?? new();
+            InstallmentRules = installmentRules ?? new();
         }
 
         public Guid Id { get; private set; }
         public string Name { get; private set; }
         public decimal BaseFee { get; private set; }
-        public List<PricingPolicySnapshot> Policies { get; init; } = new();
-        public List<StepSnapshot> Steps { get; init; } = new();
+        public List<PricingPolicySnapshot> Policies { get; init; }
+        public List<StepSnapshot> Steps { get; init; }
+        public List<InstallmentRuleSnapshot> InstallmentRules { get; init; }
+        public MembershipPlanSnapshot MembershipPlan { get; init; }
     }
 
     public record StepSnapshot
@@ -250,4 +258,66 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
 
         public RepeatRule ToDomain() => RepeatRule.Create(DependsOnFieldKey, Mode).Value;
     }
+
+    public record InstallmentRuleSnapshot
+    {
+        [JsonConstructor]
+        public InstallmentRuleSnapshot(int orderIndex, decimal percentageOfAmount, int dueAfterDays)
+        {
+            OrderIndex = orderIndex;
+            PercentageOfAmount = percentageOfAmount;
+            DueAfterDays = dueAfterDays;
+        }
+
+        public int OrderIndex { get; init; }
+        public decimal PercentageOfAmount { get; init; }
+        public int DueAfterDays { get;  init; }
+
+        // Helper to map from Domain Entity to Snapshot
+        public static InstallmentRuleSnapshot FromDomain(Installment domain) =>
+            new(domain.OrderIndex, domain.PercentageOfAmount, domain.DueAfterDays);
+
+        public Installment ToDomain() =>
+            Installment.Create(PercentageOfAmount,DueAfterDays,OrderIndex).Value;
+
+        public static Result<List<Installment>> ListToDomain(List<InstallmentRuleSnapshot>installments)
+        {
+            List<Installment>list = new();
+            installments = installments.OrderBy(x => x.OrderIndex).ToList();
+            foreach(var inst in installments)
+            {
+                var res = Installment.Create(inst.PercentageOfAmount, inst.DueAfterDays, inst.OrderIndex);
+                if (res.IsError) return res.TopError;
+
+                list.Add(res.Value);
+            }
+
+            return list;
+        }
+    }
+
+    public record MembershipPlanSnapshot
+    {
+        [JsonConstructor]
+        public MembershipPlanSnapshot (Guid id,string name,int duraitonInDays,decimal price,int subscriptionValidityInYears)
+        {
+            Id = id;
+            Name = name;
+            DurationInDays = duraitonInDays;
+            Price = price;
+            SubscriptionValidityInYears = subscriptionValidityInYears;
+        }
+
+        public Guid Id { get; init; }
+        public string Name { get; init; }
+        public int DurationInDays { get; init; }
+        public decimal Price { get; init; }
+        public int SubscriptionValidityInYears { get; init; }
+
+        public static MembershipPlanSnapshot FromDomain(MembershipPlan domain) =>
+            new(domain.Id, domain.Name, domain.DurationInDays, domain.TotalPrice, domain.SubscriptionValidityInYears);
+
+
+    }
+
 }
