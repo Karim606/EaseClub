@@ -10,5 +10,6 @@ namespace EaseClub.Domain.Memberships
     public interface IMembershipRepository:IRepository<Membership>
     {
         public Task<Membership> GetByApplicationIdAsync(Guid applicationId,CancellationToken ct = default);
+        public Task<List<Membership>> GetByUserIdAsync(Guid userId, CancellationToken ct = default);
     }
 }

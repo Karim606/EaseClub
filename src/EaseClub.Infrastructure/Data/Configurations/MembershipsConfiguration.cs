@@ -20,7 +20,7 @@ namespace EaseClub.Infrastructure.Data.Configurations
             builder.HasIndex(m => new { m.MembershipTypeId, m.ClubId, m.UserId }).IsUnique();
 
             builder.HasOne(m => m.MembershipType).WithMany().HasForeignKey(m => m.MembershipTypeId).OnDelete(DeleteBehavior.Restrict);
-            builder.HasOne<Club>().WithMany().HasForeignKey(m => m.ClubId).OnDelete(DeleteBehavior.Restrict);
+            builder.HasOne(m => m.Club).WithMany(c => c.Memberships).HasForeignKey(m => m.ClubId).OnDelete(DeleteBehavior.Restrict);
             builder.HasOne(m => m.MembershipPlan).WithMany().HasForeignKey(m => m.MembershipPlanId).OnDelete(DeleteBehavior.Restrict);
 
             builder.Property(m => m.Status).HasConversion<string>(); // Enum

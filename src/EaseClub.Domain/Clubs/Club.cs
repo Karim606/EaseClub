@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using EaseClub.Domain.ClubAdmin;
+using EaseClub.Domain.Memberships;
 
 namespace EaseClub.Domain.Clubs
 {
@@ -30,6 +31,9 @@ namespace EaseClub.Domain.Clubs
 
         private readonly List<ClubAdminUser> _ClubAdmins = new List<ClubAdminUser>();
         public IReadOnlyList<ClubAdminUser> ClubAdmins => _ClubAdmins.AsReadOnly();
+
+        private readonly List<Membership> _Memberships = new List<Membership>();
+        public IReadOnlyList<Membership> Memberships => _Memberships.AsReadOnly();
 
         public static Result<Club> Create(Guid id, string name)
         {

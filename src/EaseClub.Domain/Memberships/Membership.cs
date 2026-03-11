@@ -38,6 +38,7 @@ namespace EaseClub.Domain.Memberships
         // Properties
         public Guid UserId { get; private set; }
         public Guid ClubId { get; private set; }
+        public Club Club { get; private set; }
         public Guid MembershipTypeId { get; private set; }
         public MembershipType MembershipType { get; private set; }
         public Guid MembershipPlanId { get; private set; }
