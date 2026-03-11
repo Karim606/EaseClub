@@ -1,7 +1,6 @@
 ﻿using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
-using EaseClub.Domain.Membership;
 using EaseClub.Domain.MembershipApplications;
 using EaseClub.Domain.MembershipApplications.ValueObjects;
 using EaseClub.Domain.MembershipPlans;
@@ -45,6 +44,7 @@ namespace EaseClub.Domain.Memberships
         public MembershipPlan MembershipPlan { get; private set; }
         public MembershipPeriod Period { get; private set; }
         public MembershipStatus Status { get; private set; }
+        public Guid? MembershipApplicationId { get; private set; } = Guid.Empty;
 
         public string? ExtraDataJson { get; private set; }
 
@@ -153,6 +153,7 @@ namespace EaseClub.Domain.Memberships
                 ).Value);
             }
             membership.Status = MembershipStatus.Suspended;
+            membership.MembershipApplicationId = app.Id;
             return membership;
         }
 

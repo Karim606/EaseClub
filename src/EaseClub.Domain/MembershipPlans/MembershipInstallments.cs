@@ -2,6 +2,7 @@
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.Memberships;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,6 +19,7 @@ namespace EaseClub.Domain.MembershipPlans
         public Guid MembershipPlanId { get; private set; }
         public Guid InstallmentTemplateId { get; private set; }
 
+        public Membership Membership { get; private set; }
         public Club Club { get; private set; }
         public int Order { get; private set; }
         public decimal Amount { get; private set; }

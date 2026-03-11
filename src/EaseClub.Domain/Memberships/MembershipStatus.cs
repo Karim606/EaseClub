@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EaseClub.Domain.Membership
+namespace EaseClub.Domain.Memberships
 {
    public enum MembershipStatus { Active, Expired, Cancelled ,Suspended}
 }
