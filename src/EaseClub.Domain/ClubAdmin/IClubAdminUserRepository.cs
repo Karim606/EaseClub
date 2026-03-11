@@ -9,5 +9,6 @@ namespace EaseClub.Domain.ClubAdmin
 {
     public interface IClubAdminUserRepository:IRepository<ClubAdminUser>
     {
+        public Task<ClubAdminUser> GetWithClubAsync(Guid userId,CancellationToken ct = default);
     }
 }
