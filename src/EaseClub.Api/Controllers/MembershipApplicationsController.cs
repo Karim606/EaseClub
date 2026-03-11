@@ -39,6 +39,23 @@ namespace EaseClub.Api.Controllers
         public async Task<IActionResult> Submit(Guid id) =>
             (await sender.Send(new SubmitApplicationCommand(id))).Match(_ => Ok(), Problem);
 
+        [Authorize(Roles ="ClubAdmin,SuperAdmin")]
+        [HttpPost("{id}/reviews")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [EndpointName("ReviewApplication")]
+        [EndpointSummary("Approves or rejects a submitted application.")]
+        public async Task<IActionResult> Review(Guid id, [FromBody] ReviewApplicationDto dto)
+        {
+            var command = new ReviewApplicationCommand(
+                id,
+                dto.Decision,
+                dto.Reason
+            );
+
+            var result = await sender.Send(command);
+
+            return result.Match(_ => NoContent(), Problem);
+        }
 
         // Update an answer (The one we built in the previous step)
         //[HttpPatch("{id}/answers")]
