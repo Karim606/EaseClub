@@ -18,5 +18,10 @@ namespace EaseClub.Infrastructure.Data.Repositories
         {
            return await _context.Memberships.FirstOrDefaultAsync(x => x.MembershipApplicationId == applicationId ,ct);
         }
+
+        public async Task<List<Membership>> GetByUserIdAsync(Guid userId, CancellationToken ct = default)
+        {
+            return await _context.Memberships.Where(x => x.UserId == userId).Include(m => m.Club).ToListAsync(ct);
+        }
     }
 }
