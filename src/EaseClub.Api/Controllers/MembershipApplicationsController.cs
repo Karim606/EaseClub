@@ -1,11 +1,15 @@
-﻿using EaseClub.Application.Features.MembershipApplications.Commands.CompleteStep;
+﻿using EaseClub.Application.Common.Pagination;
+using EaseClub.Application.Features.MembershipApplications;
+using EaseClub.Application.Features.MembershipApplications.Commands.CompleteStep;
 using EaseClub.Application.Features.MembershipApplications.Commands.CreateApplication;
 using EaseClub.Application.Features.MembershipApplications.Commands.RemoveAnswer;
+using EaseClub.Application.Features.MembershipApplications.Commands.ReviewApplication;
 using EaseClub.Application.Features.MembershipApplications.Commands.SubmitApplication;
 using EaseClub.Application.Features.MembershipApplications.Commands.UpdateAnswer;
-using EaseClub.Application.Features.MembershipApplications.Queries;
 using EaseClub.Application.Features.MembershipApplications.Queries.GetApplication;
+using EaseClub.Application.Features.MembershipApplications.Queries.GetApplications;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,6 +19,9 @@ namespace EaseClub.Api.Controllers
     public class MembershipApplicationsController(ISender sender) : ApiController
     {
         [HttpPost]
+        [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
+        [EndpointName("CreateApplication")]
+        [EndpointSummary("Starts a new membership application.")]
         public async Task<IActionResult> Create([FromBody] CreateApplicationCommand command,CancellationToken ct)
         {
             var result = await sender.Send(command,ct);
@@ -23,6 +30,9 @@ namespace EaseClub.Api.Controllers
 
         // Get the application structure and answers
         [HttpGet("{id}")]
+        [ProducesResponseType(typeof(ApplicationResponse), StatusCodes.Status200OK)]
+        [EndpointName("GetApplication")]
+        [EndpointSummary("Retrieves the details of a specific application.")]
         public async Task<IActionResult> Get(Guid id)
         {
             var result = await sender.Send(new GetApplicationQuery(id));
@@ -43,11 +53,18 @@ namespace EaseClub.Api.Controllers
                 (apps) => Ok(apps),
                 Problem);
         }
+
         [HttpPost("{id}/steps/{order}/complete")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [EndpointName("CompleteStep")]
+        [EndpointSummary("Submits answers for a specific application step.")]
         public async Task<IActionResult> CompleteStep(Guid id, int order, [FromBody] List<AnswerDto> answers) =>
         (await sender.Send(new CompleteStepCommand(id, order, answers))).Match(_ => NoContent(), Problem);
 
         [HttpPost("{id}/submit")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [EndpointName("SubmitApplication")]
+        [EndpointSummary("Finalizes and submits the application for review.")]
         public async Task<IActionResult> Submit(Guid id) =>
             (await sender.Send(new SubmitApplicationCommand(id))).Match(_ => Ok(), Problem);
 
@@ -68,6 +85,7 @@ namespace EaseClub.Api.Controllers
 
             return result.Match(_ => NoContent(), Problem);
         }
+
 
         // Update an answer (The one we built in the previous step)
         //[HttpPatch("{id}/answers")]
