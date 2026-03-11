@@ -31,6 +31,18 @@ namespace EaseClub.Api.Controllers
                 Problem);
         }
 
+        [Authorize(Roles = "ClubAdmin,SuperAdmin")]
+        [HttpGet]
+        [ProducesResponseType(typeof(List<UnifiedPaginatedResponse<MembershipAppDto>>), StatusCodes.Status200OK)]
+        [EndpointName("GetApplications")]
+        [EndpointSummary("Lists applications based on filter criteria.")]
+        public async Task<IActionResult> GetApplications([FromQuery] GetApplicationsQuery query)
+        {
+            var result = await sender.Send(query);
+            return result.Match(
+                (apps) => Ok(apps),
+                Problem);
+        }
         [HttpPost("{id}/steps/{order}/complete")]
         public async Task<IActionResult> CompleteStep(Guid id, int order, [FromBody] List<AnswerDto> answers) =>
         (await sender.Send(new CompleteStepCommand(id, order, answers))).Match(_ => NoContent(), Problem);
