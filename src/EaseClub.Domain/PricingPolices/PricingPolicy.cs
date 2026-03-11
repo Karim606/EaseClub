@@ -1,6 +1,7 @@
 ﻿using EaseClub.Domain.ApplicationTemplates.ValueObjects.ConditionExpression;
 using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Common;
+using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Common.ValueObjects;
 using EaseClub.Domain.MembershipApplications.Enums;
@@ -14,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Domain.PricingPolices
 {
-    public class PricingPolicy : AuditableEntity, IPricingPolicy
+    public class PricingPolicy : AuditableEntity, IPricingPolicy,IHaveClub
     {
         public Guid ClubId { get; private set; }
         public string Name { get; private set; } = default!;
@@ -85,6 +86,41 @@ namespace EaseClub.Domain.PricingPolices
             if (conditions != null) policy._Conditions.AddRange(conditions);
 
             return policy;
+        }
+
+        public Result<Success> Update(
+        string name,
+        int priority,
+        bool isIncrease,
+        decimal? fixedAmount,
+        decimal? percentageValue,
+        string? multiplierKey,
+        List<ConditionExpression> conditions)
+        {
+            // 1. Maintain Business Invariants
+            if (string.IsNullOrWhiteSpace(name))
+                return PricingPolicyErrors.NameRequired;
+
+            if (fixedAmount.HasValue && percentageValue.HasValue)
+                return PricingPolicyErrors.CantCombinePercentageAndFixedAmount;
+
+            if (!fixedAmount.HasValue && !percentageValue.HasValue)
+                return PricingPolicyErrors.PercentageAndFixedAmountCantBothBeNull;
+
+            // 2. Apply Updates
+            Name = name;
+            Priority = priority;
+            IsIncrease = isIncrease;
+            FixedAmount = fixedAmount;
+            PercentageValue = percentageValue;
+            MultiplierSourceKey = multiplierKey;
+
+            // 3. Reconcile Condition List
+            // We clear and re-add to ensure the state perfectly matches the new requested configuration
+            _Conditions.Clear();
+            _Conditions.AddRange(conditions);
+
+            return Result.Success;
         }
 
         public PricingPolicySnapshot ToSnapshot() =>
