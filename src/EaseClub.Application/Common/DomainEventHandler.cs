@@ -1,31 +1,49 @@
 ﻿using MediatR;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace EaseClub.Application.Common
 {
-    public abstract class DomainEventHandler<TEvent> : INotificationHandler<TEvent>
+    public abstract class DomainEventHandler<TEvent,THandler> : INotificationHandler<TEvent>
     where TEvent : DomainEvent
     {
         //protected readonly INotificationService _notificationService;
-        //protected readonly IAuditLogger _auditLogger;
+        protected readonly ILogger<THandler> _logger;
 
-        //public DomainEventHandler(INotificationService notificationService,
-        //                          IAuditLogger auditLogger)
-        //{
-        //    _notificationService = notificationService;
-        //    _auditLogger = auditLogger;
-        //}
+        protected DomainEventHandler(ILogger<THandler> logger)
+        {
+            _logger = logger;
+        }
 
-        public abstract Task Handle(TEvent evt, CancellationToken ct);
+        public async Task Handle(TEvent evt, CancellationToken ct)
+        {
+            LogEvent(evt);
 
-        //protected async Task LogEventAsync(TEvent evt)
-        //{
-        //    await _auditLogger.LogAsync(evt.EventId, evt.GetType().Name, evt.OccurredOn);
-        //}
+            try
+            {
+                await HandleEvent(evt, ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing event {EventId}", evt.EventId);
+                throw;
+            }
+        }
+
+        protected abstract Task HandleEvent(TEvent evt, CancellationToken ct);
+
+
+        protected void LogEvent(TEvent evt)
+        {
+             _logger.LogInformation(GetType().Name + " - " + $", event with Id:{evt.EventId} of type:{evt.GetType().Name} that ocuured on:" +
+                 $"{evt.OccurredOn}" +
+                 "is currently processed");
+        }
 
         //protected async Task NotifyUserAsync(Guid userId, string message)
         //{
