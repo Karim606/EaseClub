@@ -3,6 +3,7 @@ using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Features.ApplicationTemplates.Queries;
 using EaseClub.Application.Features.Auth.Common.Interfaces;
 using EaseClub.Application.Features.InstallmentTemplates.Queries;
+using EaseClub.Application.Features.MembershipApplications.Queries;
 using EaseClub.Application.Features.MembershipPlans.Queries;
 using EaseClub.Domain.ApplicationTemplates.Repositories;
 using EaseClub.Domain.Branches;
@@ -13,6 +14,7 @@ using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Member;
 using EaseClub.Domain.MembershipApplications.Repositories;
 using EaseClub.Domain.MembershipPlans.Repositories;
+using EaseClub.Domain.Memberships;
 using EaseClub.Domain.MembershipTypes;
 using EaseClub.Domain.PricingPolices;
 using EaseClub.Infrastructure.Auth.Entities;
@@ -78,13 +80,13 @@ namespace EaseClub.Application
                 services.AddScoped<AuditableEntityInterceptor>();
                 services.AddScoped<DispatchDomainEventsInterceptor>();
 
-            services.AddDbContext<AppDbContext>((sp, options) => {
-                options.UseSqlServer(connectionString)
-                .AddInterceptors(
-                    sp.GetRequiredService<AuditableEntityInterceptor>(),
-                    sp.GetRequiredService<DispatchDomainEventsInterceptor>()
-                ); 
-            }
+                services.AddDbContext<AppDbContext>((sp, options) => {
+                    options.UseSqlServer(connectionString)
+                    .AddInterceptors(
+                        sp.GetRequiredService<AuditableEntityInterceptor>(),
+                        sp.GetRequiredService<DispatchDomainEventsInterceptor>()
+                    ); 
+                  }
                 );
 
             }
@@ -151,6 +153,7 @@ namespace EaseClub.Application
             services.AddScoped<IMembershipPlanQueryService, MembershipPlanQueryService>();
             services.AddScoped<IApplicationTemplateQueryService, ApplicationTemplateQueryService>();
             services.AddScoped<IInstallmentTemplateQueryService, InstallmentTemplateQueryService>();
+            services.AddScoped<IMembershipApplicationQueryService, MembershipApplicationQueryService>();
             return services;
         }
         private static IServiceCollection AddRepositories(this IServiceCollection Services)
@@ -172,6 +175,7 @@ namespace EaseClub.Application
             Services.AddScoped<IMembershipApplicationRepository,MembershipApplicationsRepository>();
             Services.AddScoped<IApplicationFieldRepository, ApplicationFieldRepository>();
             Services.AddScoped<IPricingPolicyRepository,PricingPolicyRepository>();
+            Services.AddScoped<IMembershipRepository, MembershipRepository>();
 
             return Services;
         }

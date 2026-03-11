@@ -32,6 +32,13 @@ namespace EaseClub.Infrastructure.Data.Configurations
                     period.Property(p => p.EndDate).IsRequired();
                 });
 
+            builder.HasMany(x => x.MembershipInstallments)
+            .WithOne(x => x.Membership)
+            .HasForeignKey(x => x.MembershipId);
+
+            builder.Metadata
+            .FindNavigation(nameof(Membership.MembershipInstallments))!
+            .SetPropertyAccessMode(PropertyAccessMode.Field);
         }
     }
 }

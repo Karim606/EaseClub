@@ -15,7 +15,7 @@ namespace EaseClub.Infrastructure.Data.Configurations
         {
             builder.HasKey(x => x.Id);
 
-            builder.Property(x => x.Amount).HasPrecision(18, 2);
+            builder.Property(x => x.Amount).HasPrecision(18, 2).IsRequired();
 
             // Enum conversion to string or int
             builder.Property(x => x.Status)
@@ -25,6 +25,15 @@ namespace EaseClub.Infrastructure.Data.Configurations
             builder.HasIndex(x => x.MembershipId);
 
             builder.HasOne(x=>x.Club).WithMany().HasForeignKey(x => x.ClubId).OnDelete(DeleteBehavior.Restrict);
+
+            builder.Property(x => x.DueDate)
+            .IsRequired();
+
+            builder.HasIndex(x => new { x.MembershipId, x.Order })
+            .IsUnique();
+
+            builder.HasIndex(x => new { x.MembershipId, x.Status });
+            builder.HasIndex(x => x.DueDate);
         }
     }
 }
