@@ -106,7 +106,7 @@ namespace EaseClub.Api.Controllers
             return result.Match(_ => NoContent(), Problem);
         }
 
-        [HttpPut("{templateId}/membership-types")]
+        [HttpPut("{templateId}/membership-plans")]
         [MapToApiVersion("1.0")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -114,11 +114,11 @@ namespace EaseClub.Api.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        [EndpointName("SyncTemplateMembershipTypes")]
-        [EndpointSummary("Synchronizes the membership types connected to a template by replacing the existing list with the provided membership type IDs.")]
-        public async Task<IActionResult> SyncMembershipTypes(
+        [EndpointName("SyncTemplateMembershipPlans")]
+        [EndpointSummary("Synchronizes the membership plans connected to a template by replacing the existing list with the provided membership plan IDs.")]
+        public async Task<IActionResult> SyncMembershipPlans(
         Guid templateId,
-        [FromBody] SyncTemplateMembershipTypesCommand command,
+        [FromBody] SyncTemplateMembershipPlansCommand command,
         CancellationToken ct)
         {
             var result = await sender.Send(command with { TemplateId = templateId }, ct);

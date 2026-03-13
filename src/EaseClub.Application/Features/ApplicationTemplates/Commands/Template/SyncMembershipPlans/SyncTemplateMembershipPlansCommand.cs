@@ -2,6 +2,7 @@
 using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.ApplicationTemplates;
 using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.MembershipPlans;
 using EaseClub.Domain.MembershipTypes;
 using MediatR;
 using System;
@@ -12,9 +13,9 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.ApplicationTemplates.Commands.Template.SyncMembershipTypes
 {
-    public record SyncTemplateMembershipTypesCommand(
+    public record SyncTemplateMembershipPlansCommand(
         Guid TemplateId,
-        List<Guid> MembershipTypeIds
+        List<Guid> MembershipPlansIds
         ) : IRequest<Result<Success>>, IRequireClubOwnershipValidation
     {
         public IEnumerable<OwnershipRule> Rules()
@@ -26,13 +27,13 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Commands.Template.S
 
             yield return new OwnershipRule(
                 async (auth, clubId) => {
-                    foreach (var id in MembershipTypeIds) {
-                       var res = await auth.DoesResourceBelongToClubAsync<MembershipType>(id, clubId);
+                    foreach (var id in MembershipPlansIds) {
+                       var res = await auth.DoesResourceBelongToClubAsync<MembershipPlan>(id, clubId);
                         if (!res) return false;
                     }
                     return true;
                 },
-                nameof(MembershipType),
+                nameof(MembershipPlan),
                 Guid.Empty);
         }
     }

@@ -64,7 +64,8 @@ namespace EaseClub.Api.Controllers
                 request.Name,
                 request.Price,
                 request.DurationInDays,
-                request.SubscriptionValidityInYears);
+                request.SubscriptionValidityInYears,
+                request.MaxFamilyMembers);
 
             var result = await sender.Send(command);
             return result.Match(
