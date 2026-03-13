@@ -31,6 +31,7 @@ namespace EaseClub.Domain.ApplicationTemplates
             ValidationRuleSet validationRules,
             ConditionExpression? visibilityCondition,
             bool persistToMembership,
+            bool isSystem,
             List<string>? allowedValues=null) : base(id)
         {
             SectionId = sectionId;
@@ -57,7 +58,7 @@ namespace EaseClub.Domain.ApplicationTemplates
 
         public int Order { get; internal set; } // Allow the Section to re-order fields
         public bool PersistToMembership { get; private set; }
-
+        public bool IsSystemField { get; init; } //
         public List<string>? AllowedValues { get; private set; }
 
 
@@ -73,6 +74,7 @@ namespace EaseClub.Domain.ApplicationTemplates
             ConditionExpression? visibilityCondition,
             bool persistToMembership,
             int order,
+            bool isSystemField=false,
             List<string>? allowedValues=null)
         {
             if (sectionId == Guid.Empty) return ApplicationFieldErrors.SectionIdRequired;
@@ -93,6 +95,7 @@ namespace EaseClub.Domain.ApplicationTemplates
                 type,
                 validationRules,
                 visibilityCondition,
+                isSystemField,
                 persistToMembership
             );
 
@@ -109,6 +112,7 @@ namespace EaseClub.Domain.ApplicationTemplates
             List<string>? allowedValues=null
             )
         {
+            if(IsSystemField) return ApplicationFieldErrors.SystemFieldCannotBeUpdated;
             if (string.IsNullOrWhiteSpace(label)) return ApplicationFieldErrors.LabelRequired;
             if (validationRules == null) return ApplicationFieldErrors.ValidationRulesRequired;
             if (Type == FieldType.Enum && (allowedValues == null || !allowedValues.Any()))
@@ -153,7 +157,8 @@ namespace EaseClub.Domain.ApplicationTemplates
                 Type, // Enum (Text, Number, Date, etc.)
                 ValidationRules.ToSnapshot(),      // Value Object
                 VisibilityCondition?.ToSnapshot(),   // Value Object
-                Order
+                Order,
+                IsSystemField
             );
         }
     }
