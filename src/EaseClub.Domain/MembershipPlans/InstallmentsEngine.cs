@@ -67,7 +67,7 @@ namespace EaseClub.Domain.MembershipPlans
             var sorted = installments.OrderBy(x => x.OrderIndex).ToList();
             for (int i = 0; i < sorted.Count; i++)
             {
-                if (sorted[i].OrderIndex != i + 1)
+                if (sorted[i].OrderIndex != i )
                     return Error.Validation("Installments.InvalidOrder", "Order indexes must be sequential (1, 2, 3...).");
             }
 
