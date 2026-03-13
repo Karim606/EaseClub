@@ -27,10 +27,10 @@ namespace EaseClub.Domain.ApplicationTemplates.ValueObjects.RepeatRule
                 description: "Repeat rule requires a numeric field value."
             );
 
-        public static Error NegativeRepeatCount =>
+        public static Error NonPositiveRepeatCount =>
             Error.Validation(
-                code: "Repeat.Count.Negative",
-                description: "Repeat count cannot be negative."
+                code: "Repeat.Count.NonPositive",
+                description: "Repeat count cannot be non positive."
             );
 
         public static Error RepeatRuleNotAllowed =>
