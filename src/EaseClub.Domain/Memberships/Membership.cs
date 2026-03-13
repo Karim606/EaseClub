@@ -1,14 +1,17 @@
-﻿using EaseClub.Domain.Clubs;
+﻿using EaseClub.Domain.ApplicationTemplates;
+using EaseClub.Domain.ApplicationTemplates.SystemSections;
+using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipApplications;
+using EaseClub.Domain.MembershipApplications.Enums;
 using EaseClub.Domain.MembershipApplications.ValueObjects;
 using EaseClub.Domain.MembershipPlans;
 using EaseClub.Domain.Memberships.Errors;
 using EaseClub.Domain.Memberships.Events;
-using EaseClub.Domain.MembershipApplications.Enums;
 using EaseClub.Domain.Memberships.ValueObjects;
 using EaseClub.Domain.MembershipTypes;
+using System.Linq;
 
 namespace EaseClub.Domain.Memberships
 {
@@ -50,8 +53,8 @@ namespace EaseClub.Domain.Memberships
         public string? ExtraDataJson { get; private set; }
 
         // Family members
-        //private readonly List<FamilyMemberInfo> _FamilyMembers = new();
-        //public IReadOnlyList<FamilyMemberInfo> FamilyMembers => _FamilyMembers.AsReadOnly();
+        private readonly List<FamilyMember> _FamilyMembers = new();
+        public IReadOnlyList<FamilyMember> FamilyMembers => _FamilyMembers.AsReadOnly();
 
         //public int FamilyMemberCount => _FamilyMembers.Count;
 
@@ -132,32 +135,78 @@ namespace EaseClub.Domain.Memberships
                 membershipPeriod.Value
                 );
 
+            var installmentResult = SetupInstallments(membership, app);
+            if (installmentResult.IsError) return installmentResult.TopError;
+
+            var familyResult = MapFamilyMembers(membership, app);
+            if (familyResult.IsError) return familyResult.TopError;
+
+            membership.Status = MembershipStatus.Suspended;
+            membership.MembershipApplicationId = app.Id;
+
+
+            return membership;
+        }
+        private static Result<Success> SetupInstallments(Membership membership, MembershipApplication app)
+        {
             var installmentRules = InstallmentRuleSnapshot.ListToDomain(app.TemplateSnapshot.InstallmentRules);
+            if (installmentRules.IsError) return installmentRules.TopError;
 
-            if(installmentRules.IsError) return installmentRules.TopError;
+            var instBluePrint = InstallmentEngine.GenerateMembershipInstallments(
+                installmentRules.Value,
+                app.FinalPriceSummary!.TotalPrice);
 
-            var instBluePrint = InstallmentEngine.GenerateMembershipInstallments(installmentRules.Value,app.FinalPriceSummary!.TotalPrice);
+            if (instBluePrint.IsError) return instBluePrint.TopError;
 
-            if(instBluePrint.IsError) return instBluePrint.TopError;
-            // Directly stamp the frozen installments from the snapshot
             foreach (var bp in instBluePrint.Value)
             {
-                membership._MembershipInstallments.Add(MembershipInstallment.Create(
+                var installment = MembershipInstallment.Create(
                     membership.Id,
                     app.ClubId,
                     app.MembershipTypeId,
                     app.MembershipPlanId,
-                    app.TemplateId, // Use the ID from the frozen application
+                    app.TemplateId,
                     bp.Order,
                     bp.Amount,
                     bp.DueDate
-                ).Value);
+                );
+
+                if (installment.IsError) return installment.TopError;
+
+                membership._MembershipInstallments.Add(installment.Value);
             }
-            membership.Status = MembershipStatus.Suspended;
-            membership.MembershipApplicationId = app.Id;
-            return membership;
+
+            return Result.Success;
         }
 
+        private static Result<Success> MapFamilyMembers(Membership membership, MembershipApplication app)
+        {
+            var familySection = app.TemplateSnapshot.Steps
+                .SelectMany(s => s.Sections)
+                .FirstOrDefault(sec => sec.Intent == SectionIntent.FamilyMembers);
+
+            if (familySection == null) return Result.Success;
+
+            var groupedMembers = app.Answers
+                .Where(a => familySection.Fields.Any(f => f.Id == a.FieldDefinitionId))
+                .GroupBy(a => a.InstanceIndex);
+
+            foreach (var group in groupedMembers)
+            {
+                var fullName = group.FirstOrDefault(a => a.FieldKey == FamilyMemberField.FullName)?.Value;
+                var relationshipStr = group.FirstOrDefault(a => a.FieldKey == FamilyMemberField.Relationship)?.Value;
+                var dobStr = group.FirstOrDefault(a => a.FieldKey == FamilyMemberField.DateOfBirth)?.Value;
+
+                var dob  = DateOnly.TryParse(dobStr, out var parsedDob) ? parsedDob : default;
+                var rel  = Enum.TryParse<FamilyRelationship>(relationshipStr, true, out var parsedRel) ? parsedRel : default;
+
+                var member = FamilyMember.Create(membership.Id,fullName, rel, dob);
+                if(member.IsError) return member.TopError;
+
+                 membership._FamilyMembers.Add(member.Value);
+            }
+            return Result.Success;
+        }
         #endregion
 
         #region Lifecycle Commands

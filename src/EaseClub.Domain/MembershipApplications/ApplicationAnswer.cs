@@ -38,6 +38,8 @@ namespace EaseClub.Domain.MembershipApplications
         // 0 for standard fields, 1+ for repeatable section entries (e.g., Child 1, Child 2)
         public int InstanceIndex { get; private set; }
 
+       // public string? FileName { get; private set; }
+
         #region Factory
 
         public static Result<ApplicationAnswer> Create(
