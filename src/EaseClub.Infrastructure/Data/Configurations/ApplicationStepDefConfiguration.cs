@@ -21,10 +21,7 @@ namespace EaseClub.Infrastructure.Data.Configurations
                 .IsRequired()
                 .HasMaxLength(200);
 
-            builder.Property(s => s.Category)
-                .IsRequired()
-                .HasMaxLength(50); // e.g., "IDENTITY", "DOCUMENTS"
-
+          
             builder.Property(s => s.Order)
                 .IsRequired();
 
