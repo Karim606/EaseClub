@@ -47,6 +47,7 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.CreatePlan
                 request.ClubId,
                 request.MembershipTypeId,
                 request.subscriptionValidityInYears,
+                request.maxFamilyMembers,
                 request.Name,
                 request.Price,
                 request.DurationInDays

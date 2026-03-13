@@ -32,11 +32,9 @@ namespace EaseClub.Application.Features.MembershipTypes.Queries.GetTypeById
                 type.Id,
                 type.Name,
                 type.Description,
-                type.FamilyAllowed,
-                type.MaxFamilyMembers,
                 type.AllBranchesPermitted,
                 type.PermittedBranches.Select(pb => new BranchDto(pb.BranchId, pb.Branch.Name)).ToList(),
-                plans.Select(p => new MembershipPlanDto(p.Id, p.Name, p.DurationInDays,p.TotalPrice,p.Description)).ToList()
+                plans.Select(p => new MembershipPlanDto(p.Id, p.Name, p.MaxPaymentPeriodInDays,p.TotalPrice,p.Description)).ToList()
             );
         }
     }

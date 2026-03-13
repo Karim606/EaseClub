@@ -9,21 +9,17 @@ namespace EaseClub.Application.Features.MembershipTypes
 {
     public class MembershipTypeDto
     {
-        public MembershipTypeDto(Guid id, string name, string? description, bool familyAllowed, int? maxFamilyMembers, bool allBranchesPermitted)
+        public MembershipTypeDto(Guid id, string name, string? description, bool allBranchesPermitted)
         {
             Id = id;
             Name = name;
             Description = description;
-            FamilyAllowed = familyAllowed;
-            MaxFamilyMembers = maxFamilyMembers;
             AllBranchesPermitted = allBranchesPermitted;
         }
 
         public Guid Id { get; set; }
         public string Name { get; set; }
         public string? Description { get; set; }
-        public bool FamilyAllowed { get; set; }
-        public int? MaxFamilyMembers { get; set; }
         public bool AllBranchesPermitted { get; set; }
         // public List<BranchDto>? Branches { get; set; }
 
@@ -39,14 +35,11 @@ namespace EaseClub.Application.Features.MembershipTypes
     public class MembershipTypeDetailsDto
     {
         public MembershipTypeDetailsDto(Guid id, string name, string? description,
-            bool familyAllowed, int? maxFamilyMembers, bool allBranchesPermitted,
-            List<BranchDto>? branches, List<MembershipPlanDto>? membershipPlans)
+             bool allBranchesPermitted,List<BranchDto>? branches, List<MembershipPlanDto>? membershipPlans)
         {
             Id = id;
             Name = name;
             Description = description;
-            FamilyAllowed = familyAllowed;
-            MaxFamilyMembers = maxFamilyMembers;
             AllBranchesPermitted = allBranchesPermitted;
             Branches = branches;
             MembershipPlans = membershipPlans;

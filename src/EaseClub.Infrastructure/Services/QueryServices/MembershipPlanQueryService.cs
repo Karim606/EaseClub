@@ -47,7 +47,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                 selector: p => new MembershipPlanDto(
                     p.Id,
                     p.Name,
-                    p.DurationInDays,
+                    p.MaxPaymentPeriodInDays,
                     p.TotalPrice,
                     p.Description),
                 orderSelector: p => p.Name, // Default sorting by Name

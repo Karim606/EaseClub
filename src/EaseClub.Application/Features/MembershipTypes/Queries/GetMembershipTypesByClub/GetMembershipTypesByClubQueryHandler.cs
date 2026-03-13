@@ -20,8 +20,6 @@ namespace EaseClub.Application.Features.MembershipTypes.Queries.GetMembershipTyp
                     mt.Id,
                     mt.Name,
                     mt.Description,
-                    mt.FamilyAllowed,
-                    mt.MaxFamilyMembers,
                     mt.AllBranchesPermitted
                     )).ToList();
             return membershipTypes;

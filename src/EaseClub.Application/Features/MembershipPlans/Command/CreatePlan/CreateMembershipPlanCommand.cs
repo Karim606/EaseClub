@@ -17,7 +17,8 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.CreatePlan
     string Name,
     decimal Price,
     int DurationInDays,
-    int subscriptionValidityInYears
+    int subscriptionValidityInYears,
+    int maxFamilyMembers
     ) : IRequest<Result<Guid>>, IRequireClubAdmin, IRequireClubOwnershipValidation
     {
         public IEnumerable<OwnershipRule> Rules()

@@ -10,7 +10,7 @@ namespace EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPla
     Guid Id,
     string Name,
     string? Description,
-    int DurationInDays,
+    int MaxPaymentPeriodInDays,
     decimal Price,
     bool IsActive,
     List<InstallmentsTemplateDto> Templates);

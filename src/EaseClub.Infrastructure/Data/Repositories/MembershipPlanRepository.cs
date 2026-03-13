@@ -37,5 +37,11 @@ namespace EaseClub.Infrastructure.Data.Repositories
             return await _context.MembershipPlans.Where(mp => mp.MembershipTypeId == typeId).ToListAsync(cancellationToken);
         }
 
+        public async Task<List<MembershipPlan>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
+        {
+            return await _context.MembershipPlans
+               .Where(x => ids.Contains(x.Id))
+               .ToListAsync(ct);
+        }
     }
 }
