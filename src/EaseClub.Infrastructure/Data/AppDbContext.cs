@@ -102,7 +102,8 @@ namespace EaseClub.Infrastructure.Data
         public DbSet<PricingPolicy> PricingPolicies { get; set; }
 
         public DbSet<Membership>Memberships { get; set; }
-       
+        public DbSet<FamilyMember> FamilyMembers { get; set; }
 
-     }
+
+    }
 }
