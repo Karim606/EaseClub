@@ -1,24 +1,12 @@
 ﻿using EaseClub.Application.Common.Pagination.Parameters;
 using EaseClub.Application.Common.Pagination.Results;
-using EaseClub.Application.Features.ApplicationTemplates;
-using EaseClub.Application.Features.ApplicationTemplates.Commands.Field.AddField;
-using EaseClub.Application.Features.ApplicationTemplates.Commands.Field.RemoveField;
-using EaseClub.Application.Features.ApplicationTemplates.Commands.Field.UpdateField;
-using EaseClub.Application.Features.ApplicationTemplates.Commands.Section.AddSection;
-using EaseClub.Application.Features.ApplicationTemplates.Commands.Section.RemoveSection;
-using EaseClub.Application.Features.ApplicationTemplates.Commands.Section.UpdateSection;
-using EaseClub.Application.Features.ApplicationTemplates.Commands.Step.AddStep;
-using EaseClub.Application.Features.ApplicationTemplates.Commands.Step.RemoveStep;
-using EaseClub.Application.Features.ApplicationTemplates.Commands.Step.UpdateStep;
-using EaseClub.Application.Features.ApplicationTemplates.Commands.Template.CreateTemplate;
+using EaseClub.Application.Features.ApplicationTemplates.Commands;
 using EaseClub.Application.Features.ApplicationTemplates.Commands.Template.DeleteTemplate;
 using EaseClub.Application.Features.ApplicationTemplates.Commands.Template.SyncMembershipTypes;
-using EaseClub.Application.Features.ApplicationTemplates.Commands.Template.UpdateTemplate;
 using EaseClub.Application.Features.ApplicationTemplates.Commands.Template.UpsertTemplate;
-using EaseClub.Application.Features.ApplicationTemplates.Queries.GetStepByOrder;
+using EaseClub.Application.Features.ApplicationTemplates.Queries;
 using EaseClub.Application.Features.ApplicationTemplates.Queries.GetTemplateById;
 using EaseClub.Application.Features.ApplicationTemplates.Queries.GetTemplates;
-using EaseClub.Application.Features.MembershipTypes.Queries.GetMembershipTypesByClub;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -37,7 +25,7 @@ namespace EaseClub.Api.Controllers
 
         [HttpGet]
         [MapToApiVersion("1.0")]
-        [ProducesResponseType(typeof(OffsetPaginatedResult<TemplateSummaryDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(OffsetPaginatedResult<TemplateTreeQuery>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]

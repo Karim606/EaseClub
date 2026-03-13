@@ -1,5 +1,6 @@
 ﻿using EaseClub.Application.Common;
 using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Features.ApplicationTemplates.Commands;
 using EaseClub.Application.Features.ApplicationTemplates.Queries.GetTemplates;
 using EaseClub.Domain.ApplicationTemplates;
 using EaseClub.Domain.Common.Results;
@@ -13,7 +14,7 @@ using System.Threading.Tasks;
 namespace EaseClub.Application.Features.ApplicationTemplates.Queries.GetTemplateById
 {
     public record GetTemplateByIdQuery(Guid TemplateId)
-    : IRequest<Result<TemplateDetailsDto>>,IRequireClubOwnershipValidation
+    : IRequest<Result<TemplateTreeQuery>>,IRequireClubOwnershipValidation
     {
         public IEnumerable<OwnershipRule> Rules()
         {

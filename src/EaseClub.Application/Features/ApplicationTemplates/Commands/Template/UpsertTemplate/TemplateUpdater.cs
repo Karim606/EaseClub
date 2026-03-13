@@ -1,4 +1,7 @@
-﻿using EaseClub.Domain.ApplicationTemplates;
+﻿using EaseClub.Application.Features.ApplicationTemplates.Commands;
+using EaseClub.Domain.ApplicationTemplates;
+using EaseClub.Domain.ApplicationTemplates.SystemSections;
+using EaseClub.Domain.ApplicationTemplates.ValueObjects.RepeatRule;
 using EaseClub.Domain.Common.Results;
 using System;
 using System.Collections.Generic;
@@ -47,7 +50,7 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Services
 
             if (existingSteps.TryGetValue(stepDto.Id, out step))
             {
-                var updateResult = step.Update(stepDto.Category, stepDto.Title);
+                var updateResult = step.Update(stepDto.Title);
                 if (updateResult.IsError) return updateResult.TopError;
 
                 existingSteps.Remove(stepDto.Id);
@@ -90,17 +93,29 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Services
             ApplicationSectionDefinition> existingSections)
         {
             ApplicationSectionDefinition section;
+            RepeatRule? repeatRule = null;
+
+            if(secDto.RepeatRule!=null) repeatRule = secDto.RepeatRule.ToDomain().IsSuccess ? secDto.RepeatRule.ToDomain().Value : null;
+
+            if (secDto.Intent != SectionIntent.General)
+            {
+                var comparer = new SystemSectionIntegrityComparer();
+                // We pass the section's fields to verify against the registry
+                var integrityResult = comparer.Validate(secDto.Intent, secDto.Fields.Select(f=> f.ToFieldSpecification()).ToList());
+                if (integrityResult.IsError) return integrityResult;
+            }
 
             if (existingSections.TryGetValue(secDto.Id, out section))
             {
-                var updateResult = section.Update(secDto.Title);
+                if(repeatRule == null) repeatRule = section.RepeatRule;
+                var updateResult = section.Update(secDto.Title,repeatRule);
                 if (updateResult.IsError) return updateResult.TopError;
 
                 existingSections.Remove(secDto.Id);
             }
             else
             {
-                var secResult = step.AddNewSection(secDto.Title, secDto.Order, secDto.RepeatRule);
+                var secResult = step.AddNewSection(secDto.Title, secDto.Order, repeatRule, secDto.Intent);
                 if (secResult.IsError) return secResult.TopError;
                 section = secResult.Value;
             }
@@ -134,12 +149,15 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Services
 
         private Result<Success> UpsertField(ApplicationSectionDefinition section, FieldDetailsDto fieldDto, Dictionary<Guid, ApplicationFieldDefinition> existingFields)
         {
+            var validationRules = fieldDto.ValidationRules.ToDomain();
+            if(validationRules.IsError) return validationRules.TopError;
+
             if (existingFields.TryGetValue(fieldDto.Id, out var field))
             {
                 var updateResult = field.Update(
                     fieldDto.Label,
-                    fieldDto.ValidationRules,
-                    fieldDto.VisibilityConditions,
+                    validationRules.Value,
+                    null,
                     field.PersistToMembership,
                     field.Type == FieldType.Enum ? field.AllowedValues : null
                 );
@@ -156,9 +174,10 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Services
                     string.IsNullOrWhiteSpace(fieldDto.Key) ? null : fieldDto.Key,
                     fieldDto.Label,
                     fieldDto.FieldType,
-                    fieldDto.ValidationRules,
-                    fieldDto.VisibilityConditions,
-                    persistToMembership: false
+                    validationRules.Value,
+                    null,
+                    persistToMembership: false,
+                    fieldDto.AllowedValues
                 );
 
                 if (addResult.IsError) return addResult.TopError;
