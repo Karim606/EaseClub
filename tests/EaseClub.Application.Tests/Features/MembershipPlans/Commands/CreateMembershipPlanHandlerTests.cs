@@ -41,7 +41,7 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
                 Guid.NewGuid(),
                 "Gold",
                 2000,
-                60);
+                60,1,2);
 
             _membershipTypeRepo
                 .Setup(x => x.GetByIdAsync(command.MembershipTypeId, CancellationToken.None))
@@ -63,7 +63,7 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
                 membershipType.Id,
                 "Gold",
                 2000,
-                60);
+                60,1,2);
 
             _membershipTypeRepo
                 .Setup(x => x.GetByIdAsync(command.MembershipTypeId, CancellationToken.None))
@@ -89,7 +89,7 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
                 membershipType.Id,
                 "Gold",
                 2000,
-                60);
+                60,1,2);
 
             _membershipTypeRepo
                 .Setup(x => x.GetByIdAsync(command.MembershipTypeId, CancellationToken.None))
