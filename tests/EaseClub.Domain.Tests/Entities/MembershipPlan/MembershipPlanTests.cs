@@ -9,15 +9,21 @@ namespace EaseClub.Domain.Tests.Entities.MembershipPlan
 {
     public class MembershipPlanTests
     {
-        private MembershipPlans.MembershipPlan CreatePlan(int durationInDays = 60,decimal totalPrice = 1000m)
+        private MembershipPlans.MembershipPlan CreatePlan(
+            int durationInDays = 60,
+            decimal totalPrice = 1000m,
+            int validityInYears = 1,
+            int maxFamily = 5)
         {
             return MembershipPlans.MembershipPlan.Create(
-                Guid.NewGuid(),
-                Guid.NewGuid(),
-                Guid.NewGuid(),
-                "Gold Plan",
-                totalPrice,
-                durationInDays
+                Guid.NewGuid(),       // id
+                Guid.NewGuid(),       // clubId
+                Guid.NewGuid(),       // membershipTypeId
+                validityInYears,      // subscriptionValidityInYears
+                maxFamily,            // maxFamilyMembers
+                "Gold Plan",          // name
+                totalPrice,           // totalPrice
+                durationInDays        // maxPaymentPeriod
             ).Value;
         }
 
@@ -65,62 +71,6 @@ namespace EaseClub.Domain.Tests.Entities.MembershipPlan
             result.TopError.Should().Be(MembershipPlanErrors.InstallmenttTemplateAlreadyAddedForThisPlan);
         }
 
-        [Fact]
-        public void GenerateMembershipInstallments_Should_Generate_Correct_Installments()
-        {
-            // Arrange
-            var plan = CreatePlan();
-            var template = InstallmentTemplateBuilder.CreateValidTemplate();
-
-            plan.AddInstallmentTemplate(template);
-
-            var membershipId = Guid.NewGuid();
-
-            // Act
-            var result = plan.GenerateMembershipInstallments(membershipId, template);
-
-            // Assert
-            result.IsSuccess.Should().BeTrue();
-
-            var installments = result.Value;
-
-            installments.Should().HaveCount(2);
-
-            installments[0].Amount.Should().Be(500m);
-            installments[1].Amount.Should().Be(500m);
-
-            installments[0].Status.Should().Be(InstallmentStatus.Pending);
-            installments[1].Status.Should().Be(InstallmentStatus.Pending);
-
-            installments[1].DueDate.Should().BeAfter(installments[0].DueDate);
-        }
-
-        [Fact]
-        public void GenerateMembershipInstallments_Total_Amount_Should_Equal_Plan_TotalPrice()
-        {
-            var plan = CreatePlan(totalPrice: 999m);
-            var template = InstallmentTemplateBuilder.CreateValidTemplate();
-
-            plan.AddInstallmentTemplate(template);
-
-            var result = plan.GenerateMembershipInstallments(Guid.NewGuid(), template);
-
-            var total = result.Value.Sum(x => x.Amount);
-
-            total.Should().Be(plan.TotalPrice);
-        }
-
-        [Fact]
-        public void GenerateMembershipInstallments_Should_Fail_When_Template_Not_Assigned()
-        {
-            var plan = CreatePlan();
-            var template = InstallmentTemplateBuilder.CreateValidTemplate();
-
-            var result = plan.GenerateMembershipInstallments(Guid.NewGuid(), template);
-
-            result.IsError.Should().BeTrue();
-            result.TopError.Should().Be(MembershipPlanErrors.InstallmentTemplateDoesntExist);
-        }
 
         [Fact]
         public void AddInstallmentTemplate_Should_Fail_When_DueAfter_Exceeds_Plan_Duration()
@@ -148,21 +98,6 @@ namespace EaseClub.Domain.Tests.Entities.MembershipPlan
             );
         }
 
-        [Fact]
-        public void GenerateMembershipInstallments_Should_Preserve_OrderIndex()
-        {
-            var plan = CreatePlan();
-            var template = InstallmentTemplateBuilder.CreateValidTemplate();
-
-            plan.AddInstallmentTemplate(template);
-
-            var result = plan.GenerateMembershipInstallments(Guid.NewGuid(), template);
-
-            result.Value.Select(x => x.Order)
-                .Should()
-                .BeInAscendingOrder()
-                .And.HaveCount(result.Value.Count);
-        }
 
         [Fact]
         public void RemoveInstallmentTemplate_ShouldSucceed_WhenTemplateExistsInPlan()

@@ -11,73 +11,59 @@ namespace EaseClub.Domain.Tests.Entities.ApplicationTemplates.ValueObjects
     public class RepeatRuleTests
     {
         [Fact]
-        public void Create_ShouldReturnError_WhenFieldCodeIsEmpty()
+        public void Create_ShouldReturnError_WhenNumberOfRepeatsIsNonPositive()
         {
             // Act
-            var result = RepeatRule.Create("", RepeatMode.ExactValue);
+            var result = RepeatRule.Create(0, RepeatMode.ExactValue);
 
             // Assert
             result.IsError.Should().BeTrue();
-            result.Errors.Should().Contain(RepeatErrors.FieldKeyRequired);
+            result.TopError.Should().Be(RepeatErrors.NonPositiveRepeatCount);
         }
 
         [Theory]
-        [InlineData("3", 3)]
-        [InlineData("0", 0)]
-        [InlineData("-5", -5)] // Domain check: does your UI handle negative repeats?
-        [InlineData("not_a_number", 0)]
-        public void Evaluate_ExactValueMode_ShouldReturnParsedNumber(string input, int expected)
+        [InlineData(3, 3, true)]  // 3 matches Exact 3
+        [InlineData(2, 3, false)] // 2 does not match Exact 3
+        public void Evaluate_ExactValueMode_ShouldValidateCorrectly(int actualInstances, int ruleCount, bool expected)
         {
             // Arrange
-            var rule = RepeatRule.Create("children_count", RepeatMode.ExactValue).Value;
+            var rule = RepeatRule.Create(ruleCount, RepeatMode.ExactValue).Value;
 
             // Act
-            var result = rule.Evaluate(input);
+            var result = rule.Evaluate(actualInstances);
 
             // Assert
             result.Should().Be(expected);
         }
 
         [Theory]
-        [InlineData("0", 1)] // Should bump 0 up to 1
-        [InlineData("3", 3)] // Should stay 3
-        [InlineData("not_a_number", 0)] // Parse failure usually returns 0 in your code
-        public void Evaluate_AtLeastOneMode_ShouldReturnMinimumOfOne(string input, int expected)
+        [InlineData(1, 3, true)]  // 1 is within [1, 3]
+        [InlineData(3, 3, true)]  // 3 is within [1, 3]
+        [InlineData(0, 3, false)] // 0 is not >= 1
+        [InlineData(4, 3, false)] // 4 is > 3
+        public void Evaluate_AtLeastOneMode_ShouldValidateRange(int actualInstances, int ruleCount, bool expected)
         {
             // Arrange
-            var rule = RepeatRule.Create("guest_count", RepeatMode.AtLeastOne).Value;
+            var rule = RepeatRule.Create(ruleCount, RepeatMode.AtLeastOne).Value;
 
             // Act
-            var result = rule.Evaluate(input);
+            var result = rule.Evaluate(actualInstances);
 
             // Assert
             result.Should().Be(expected);
         }
 
         [Fact]
-        public void Evaluate_NoneMode_ShouldAlwaysReturnZero()
+        public void Evaluate_DefaultMode_ShouldReturnFalse()
         {
-            // Arrange
-            var rule = RepeatRule.Create("any_field", RepeatMode.None).Value;
+            // Arrange - Assuming a case not covered by the switch
+            var rule = RepeatRule.Create(1, (RepeatMode)99).Value;
 
             // Act
-            var result = rule.Evaluate("99");
+            var result = rule.Evaluate(1);
 
             // Assert
-            result.Should().Be(0);
-        }
-
-        [Fact]
-        public void Evaluate_ShouldReturnZero_WhenInputIsNull()
-        {
-            // Arrange
-            var rule = RepeatRule.Create("field", RepeatMode.ExactValue).Value;
-
-            // Act
-            var result = rule.Evaluate(null);
-
-            // Assert
-            result.Should().Be(0);
+            result.Should().BeFalse();
         }
     }
 }

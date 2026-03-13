@@ -225,7 +225,8 @@ namespace EaseClub.Domain.MembershipApplications
             {
                 return FinalPriceSummary != null ? FinalPriceSummary : Error.NotFound(description: "Locked price summary not found.");
             }
-            return RefreshPrice();
+            FinalPriceSummary = RefreshPrice();
+            return FinalPriceSummary;
         }
 
         public Result<List<Installment>>GetPaymentSchedule(){
