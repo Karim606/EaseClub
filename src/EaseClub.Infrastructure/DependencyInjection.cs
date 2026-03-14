@@ -11,6 +11,7 @@ using EaseClub.Domain.ClubAdmin;
 using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Interfaces;
+using EaseClub.Domain.Files;
 using EaseClub.Domain.Member;
 using EaseClub.Domain.MembershipApplications.Repositories;
 using EaseClub.Domain.MembershipPlans.Repositories;
@@ -145,6 +146,8 @@ namespace EaseClub.Application
             services.AddScoped<IClubAuthorizationService, ClubAuthorizationService>();
 
             services.AddScoped<IEmailService, TurboEmailService>();
+            services.AddScoped<IFileStorageService, ImageKitFileStorageService>();
+
             return services;
         }
 
@@ -176,6 +179,7 @@ namespace EaseClub.Application
             Services.AddScoped<IApplicationFieldRepository, ApplicationFieldRepository>();
             Services.AddScoped<IPricingPolicyRepository,PricingPolicyRepository>();
             Services.AddScoped<IMembershipRepository, MembershipRepository>();
+            Services.AddScoped<IFileRepository, FileRepository>();
 
             return Services;
         }

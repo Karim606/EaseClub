@@ -23,6 +23,7 @@ using EaseClub.Domain.ApplicationTemplates;
 using EaseClub.Domain.MembershipApplications;
 using EaseClub.Domain.PricingPolices;
 using EaseClub.Domain.Memberships;
+using EaseClub.Domain.Files;
 
 namespace EaseClub.Infrastructure.Data
 {
@@ -103,7 +104,7 @@ namespace EaseClub.Infrastructure.Data
 
         public DbSet<Membership>Memberships { get; set; }
         public DbSet<FamilyMember> FamilyMembers { get; set; }
-
+        public DbSet<FileResource> FileResources { get; set; }
 
     }
 }
