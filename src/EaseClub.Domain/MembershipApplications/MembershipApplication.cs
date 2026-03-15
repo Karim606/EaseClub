@@ -315,10 +315,10 @@ namespace EaseClub.Domain.MembershipApplications
             // Raise domain events
 
             if (review.Decision == DecisionsAboutApplication.Approved)
-                RaiseDomainEvent(new ApplicationApprovedEvent(Id, review.Id,review.Note));
+                RaiseDomainEvent(new ApplicationApprovedEvent(UserId,Id, review.Id,review.Note));
 
             if (review.Decision == DecisionsAboutApplication.Rejected)
-                RaiseDomainEvent(new ApplicationRejectedEvent(Id, review.Id, review.Reason!));
+                RaiseDomainEvent(new ApplicationRejectedEvent(UserId,Id, review.Id, review.Reason!));
 
             return Result.Success;
         }
