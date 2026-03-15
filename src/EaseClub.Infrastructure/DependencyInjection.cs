@@ -5,6 +5,8 @@ using EaseClub.Application.Features.Auth.Common.Interfaces;
 using EaseClub.Application.Features.InstallmentTemplates.Queries;
 using EaseClub.Application.Features.MembershipApplications.Queries;
 using EaseClub.Application.Features.MembershipPlans.Queries;
+using EaseClub.Application.Features.Notifications;
+using EaseClub.Application.Features.Notifications.Queries;
 using EaseClub.Domain.ApplicationTemplates.Repositories;
 using EaseClub.Domain.Branches;
 using EaseClub.Domain.ClubAdmin;
@@ -17,6 +19,7 @@ using EaseClub.Domain.MembershipApplications.Repositories;
 using EaseClub.Domain.MembershipPlans.Repositories;
 using EaseClub.Domain.Memberships;
 using EaseClub.Domain.MembershipTypes;
+using EaseClub.Domain.Notifications;
 using EaseClub.Domain.PricingPolices;
 using EaseClub.Infrastructure.Auth.Entities;
 using EaseClub.Infrastructure.Auth.interfaces;
@@ -25,6 +28,8 @@ using EaseClub.Infrastructure.Auth.Services;
 using EaseClub.Infrastructure.Data;
 using EaseClub.Infrastructure.Data.Interceptors;
 using EaseClub.Infrastructure.Data.Repositories;
+using EaseClub.Infrastructure.Notifications;
+using EaseClub.Infrastructure.Notifications.UserDevices;
 using EaseClub.Infrastructure.Services;
 using EaseClub.Infrastructure.Services.QueryServices;
 using EaseClub.Infrastructure.Settings;
@@ -148,6 +153,13 @@ namespace EaseClub.Application
             services.AddScoped<IEmailService, TurboEmailService>();
             services.AddScoped<IFileStorageService, ImageKitFileStorageService>();
 
+            services.AddScoped<IRealtimeNotificationService, SignalRNotificationService>();
+            services.AddScoped<IPushNotificationService, FirebaseNotificationService>();
+            services.AddScoped<INotificationDispatcher, NotificationDispatcher>();
+
+            services.AddSignalR();
+            services.AddHostedService<FcmTokenCleanupWorker>();
+
             return services;
         }
 
@@ -157,6 +169,7 @@ namespace EaseClub.Application
             services.AddScoped<IApplicationTemplateQueryService, ApplicationTemplateQueryService>();
             services.AddScoped<IInstallmentTemplateQueryService, InstallmentTemplateQueryService>();
             services.AddScoped<IMembershipApplicationQueryService, MembershipApplicationQueryService>();
+            services.AddScoped<INotificationQueryService, NotificationQueryService>();
             return services;
         }
         private static IServiceCollection AddRepositories(this IServiceCollection Services)
@@ -180,6 +193,9 @@ namespace EaseClub.Application
             Services.AddScoped<IPricingPolicyRepository,PricingPolicyRepository>();
             Services.AddScoped<IMembershipRepository, MembershipRepository>();
             Services.AddScoped<IFileRepository, FileRepository>();
+            Services.AddScoped<IDeviceRepository, DeviceRepository>();
+            Services.AddScoped<INotificationRepository, NotificationRepository>();
+
 
             return Services;
         }
@@ -189,6 +205,7 @@ namespace EaseClub.Application
 
             services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
 
+            services.Configure<FirebaseSettings>(configuration.GetSection("Firebase"));
             return services;
         }
     }
