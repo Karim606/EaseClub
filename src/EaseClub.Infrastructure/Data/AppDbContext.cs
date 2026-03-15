@@ -24,6 +24,8 @@ using EaseClub.Domain.MembershipApplications;
 using EaseClub.Domain.PricingPolices;
 using EaseClub.Domain.Memberships;
 using EaseClub.Domain.Files;
+using EaseClub.Domain.Notifications;
+using EaseClub.Infrastructure.Notifications.UserDevices;
 
 namespace EaseClub.Infrastructure.Data
 {
@@ -105,6 +107,9 @@ namespace EaseClub.Infrastructure.Data
         public DbSet<Membership>Memberships { get; set; }
         public DbSet<FamilyMember> FamilyMembers { get; set; }
         public DbSet<FileResource> FileResources { get; set; }
+       
+        public DbSet<Notification> Notifications { get; set; }
+        public DbSet<UserDevice> UserDevices { get; set; }
 
     }
 }
