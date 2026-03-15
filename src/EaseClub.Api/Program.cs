@@ -1,12 +1,13 @@
+using BetterStack.Logs.Serilog;
 using DotNetEnv;
 using EaseClub.Application;
-using Serilog;
-using BetterStack.Logs.Serilog;
-using Microsoft.OpenApi;
-using Serilog.Core;
-using System.Text.Json;
-using System.Text;
 using EaseClub.Infrastructure.Data;
+using EaseClub.Infrastructure.Notifications.RealTime;
+using Microsoft.OpenApi;
+using Serilog;
+using Serilog.Core;
+using System.Text;
+using System.Text.Json;
 namespace EaseClub.Api
 {
     public class Program
@@ -65,6 +66,8 @@ namespace EaseClub.Api
             await app.Init();
 
             app.UseCoreMiddlewares(builder.Configuration);
+
+            app.MapHub<NotificationHub>("/hubs/notification");
 
             app.MapControllers();
 
