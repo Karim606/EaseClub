@@ -1,5 +1,8 @@
 ﻿using EaseClub.Application.Common;
+using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Features.Notifications;
 using EaseClub.Domain.MembershipApplications;
+using EaseClub.Domain.Notifications;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using System;
@@ -13,14 +16,15 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.ReviewAp
     public class ApplicationRejectedEventHandler
          : DomainEventHandler<ApplicationRejectedEvent, ApplicationRejectedEventHandler>
     {
-        //private readonly INotificationService _notificationService;
 
         public ApplicationRejectedEventHandler(
-            //INotificationService notificationService,
+            INotificationDispatcher dispatcher,
+            INotificationRepository notificationRepo,
+            IUnitOfWork unitOfWork,
             ILogger<ApplicationRejectedEventHandler> logger
-        ) : base(logger)
+        ) : base(dispatcher,notificationRepo,unitOfWork,logger)
         {
-            //_notificationService = notificationService;
+
         }
 
         protected override async Task HandleEvent(ApplicationRejectedEvent evt, CancellationToken ct)
@@ -34,18 +38,13 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.ReviewAp
             //    return;
             //}
 
-            // Example future notification
-            /*
-            await _notificationService.SendAsync(
-                evt.ApplicationId,
-                $"Your membership application has been rejected. Reason: {evt.RejectionReason}"
-            );
-            */
-
             _logger.LogInformation(
                 "Application {ApplicationId} rejected. Reason: {Reason}",
                 evt.ApplicationId,
                 evt.RejectionReason);
+
+            var notification = Notification.ForUser(evt.ApplicationOwnerId,"Application rejected", $"Application {evt.ApplicationId} rejected. Reason: {evt.RejectionReason}",NotificationType.MembershipApplicationRejected);
+            await DispatchNotification(notification);
         }
     }
 }
