@@ -7,18 +7,20 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.MembershipPlans.Command.UpdatePlan
 {
     public record UpdateMembershipPlanCommand(
-    Guid PlanId,
     string Name,
     string? Description,
     decimal TotalPrice,
     List<Guid> InstallmentTemplateIds
         ) : IRequest<Result<Success>>, IRequireClubOwnershipValidation
     {
+        [JsonIgnore]
+        public Guid PlanId { get; init; }
         public IEnumerable<OwnershipRule> Rules()
         {
             yield return new OwnershipRule(
