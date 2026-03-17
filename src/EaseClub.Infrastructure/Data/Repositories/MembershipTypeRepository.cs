@@ -19,19 +19,28 @@ namespace EaseClub.Infrastructure.Data.Repositories
                 .FirstOrDefaultAsync(mt => mt.ClubId == clubId && mt.Name == name);
         }
 
-        public Task<List<MembershipType>> GetByClubIdAsync(Guid clubId)
-        {
-            return _context.MembershipTypes
-                .Where(mt => mt.ClubId == clubId)
-                .Include(mt => mt.PermittedBranches)
-                .ToListAsync();
-        }
+
 
         public async Task<List<MembershipType>> GetByIdsAsync(IEnumerable<Guid> ids,CancellationToken ct = default)
         {
             return await _context.MembershipTypes
                 .Where(x => ids.Contains(x.Id))
                 .ToListAsync(ct);
+        }
+
+        public async Task<List<MembershipType>> GetTypesAsync(Guid? clubId, Guid? branchId, bool? allPermitted, bool? isActive, CancellationToken ct = default)
+        {
+            var membershipTypes = _context.MembershipTypes.AsQueryable();
+
+            if(clubId.HasValue) membershipTypes = membershipTypes.Where(mt => mt.ClubId == clubId.Value);
+
+            if (branchId.HasValue) membershipTypes = membershipTypes.Where(mt => mt.PermittedBranches.Any(pb => pb.BranchId == branchId.Value));
+
+            if (allPermitted.HasValue) membershipTypes = membershipTypes.Where(mt => mt.AllBranchesPermitted == allPermitted.Value);
+
+            if(isActive.HasValue) membershipTypes = membershipTypes.Where(mt => mt.IsActive == isActive.Value);
+
+             return await membershipTypes.ToListAsync(ct);
         }
     }
 }

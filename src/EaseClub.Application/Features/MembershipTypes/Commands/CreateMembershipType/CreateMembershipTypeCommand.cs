@@ -10,10 +10,6 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.MembershipTypes.Commands.CreateMembershipType
 {
-    public record CreateMembershipTypeCommand(string Name,string? Description,bool FamilyAllowed, int? MaxFamilyMembers,
-    bool AllBranchesPermitted, List<Guid> BranchIds) : IRequest<Result<Guid>>, IRequireClubAdmin
-    {
-        [JsonIgnore]
-        public Guid ClubId { get; init; }
-    }
+    public record CreateMembershipTypeCommand(Guid ClubId,string Name,string? Description,
+    bool AllBranchesPermitted, List<Guid>? BranchIds) : IRequest<Result<Guid>>, IRequireClubAdmin;
 }
