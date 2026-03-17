@@ -12,7 +12,7 @@ namespace EaseClub.Domain.MembershipPlans.Repositories
     {
         public Task<bool> ExistsByNameAsync(Guid clubId, string name, CancellationToken cancellationToken=default);
 
-        public Task<List<MembershipPlan>> GetPlansByClubAsync(Guid clubId,CancellationToken cancellationToken=default);
+        public Task<List<MembershipPlan>> GetPlansAsync(Guid? clubId,Guid? membershipTypeId,bool? isActive,CancellationToken cancellationToken=default);
 
         public Task<MembershipPlan> GetPlanWithDetailsAsync(Guid id,CancellationToken cancellationToken=default);
 

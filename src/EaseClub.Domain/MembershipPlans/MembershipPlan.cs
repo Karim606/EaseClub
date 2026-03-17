@@ -2,6 +2,7 @@
 using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipApplications.ValueObjects;
+using EaseClub.Domain.MembershipTypes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +15,7 @@ namespace EaseClub.Domain.MembershipPlans
     {
         public Guid ClubId { get; private set; }
         public Guid MembershipTypeId { get; private set; }
+        public MembershipType MembershipType { get; private set; }
 
         public string Name { get; private set; }
         public string? Description { get; private set; }

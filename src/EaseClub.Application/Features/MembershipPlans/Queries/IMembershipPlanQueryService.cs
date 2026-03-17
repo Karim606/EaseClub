@@ -1,6 +1,8 @@
-﻿using EaseClub.Application.Common.Pagination.Parameters;
+﻿using EaseClub.Application.Common.Pagination;
+using EaseClub.Application.Common.Pagination.Parameters;
 using EaseClub.Application.Common.Pagination.Results;
-using EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPlansByClub;
+using EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPlansForMember;
+using EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPlansForAdmin;
 using EaseClub.Domain.Common.Results;
 using System;
 using System.Collections.Generic;
@@ -12,10 +14,17 @@ namespace EaseClub.Application.Features.MembershipPlans.Queries
 {
     public interface IMembershipPlanQueryService
     {
-        Task<Result<TResult>> GetMembershipPlansByClubAsync<TResult>(
-            Guid clubId,
+        Task<Result<UnifiedPaginatedResponse<MembershipPlanDto>>> GetMembershipPlansForMemberAsync(
+            Guid? clubId,
             Guid? membershipTypeId,
-            PaginationParameters parameters,
-            CancellationToken ct) where TResult : PaginatedResult<MembershipPlanDto>, new();
+            PaginationRequest parameters,
+            CancellationToken ct);
+
+        Task<Result<UnifiedPaginatedResponse<MembershipPlanAdminDto>>> GetMembershipPlansForAdminAsync(
+            Guid? clubId,
+            Guid? membershipTypeId,
+            bool? isActive,
+            PaginationRequest parameters,
+            CancellationToken ct);
     }
 }
