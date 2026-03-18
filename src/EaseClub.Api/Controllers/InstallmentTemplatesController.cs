@@ -108,10 +108,10 @@ namespace EaseClub.Api.Controllers
         [ProducesResponseType(StatusCodes.Status409Conflict)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [EndpointName("UpdateInstallmentList")]
-        [EndpointSummary("Updates the list of installments for a specific template.")]
-        public async Task<IActionResult> UpdateList(Guid id, [FromBody] List<InstallmentDto> installments)
+        [EndpointSummary("Updates the list of installments by sending new percentages, the number of installments & due after days won't change.")]
+        public async Task<IActionResult> UpdateList(Guid id, [FromBody] List<decimal> newPercentages)
         {
-            var result = await sender.Send(new UpdateInstallmentListCommand(id, installments));
+            var result = await sender.Send(new UpdateInstallmentListCommand(id, newPercentages));
             return result.Match( _ => NoContent()
                 , Problem);
         }
