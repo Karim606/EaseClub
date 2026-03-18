@@ -65,12 +65,12 @@ namespace EaseClub.Api.Controllers
         [EndpointName("CreateBranch")]
         [EndpointSummary("Creates a new branch for a specific club.")]
 
-        public async Task<IActionResult> Create(Guid clubId, [FromBody] CreateBranchRequest request)
+        public async Task<IActionResult> Create([FromBody] CreateBranchRequest request)
         {
-            var result = await sender.Send(new CreateBranchCommand(clubId,request.Name));
+            var result = await sender.Send(new CreateBranchCommand(request.clubId,request.Name));
 
            return result.Match(
-                (id) =>{return CreatedAtAction(nameof(GetByClub), new { version = "1.0", clubId }, id);},
+                (id) =>{return CreatedAtAction(nameof(GetByClub), new { version = "1.0", request.clubId }, id);},
                 Problem);
         }
 
