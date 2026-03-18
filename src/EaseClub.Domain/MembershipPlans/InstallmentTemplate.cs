@@ -17,6 +17,8 @@ namespace EaseClub.Domain.MembershipPlans
         public Guid ClubId { get; private set; }
         public Club Club { get; private set; }
 
+        public bool IsActive { get; private set; } = true;
+
         private readonly List<Installment>_Installments = new();
         public  IReadOnlyList<Installment> Installments => _Installments.AsReadOnly();
 

@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 namespace EaseClub.Application.Features.InstallmentTemplates.Queries.GetTemplates
 {
     public record GetInstallmentTemplatesByClubQuery(
-    Guid ClubId,
-    PaginationRequest Parameters) : IRequest<Result<UnifiedPaginatedResponse<TemplatesResponse>>>;
+    Guid? ClubId,
+    Guid? PlanId
+    ) : IRequest<Result<List<TemplatesResponse>>>;
 }
