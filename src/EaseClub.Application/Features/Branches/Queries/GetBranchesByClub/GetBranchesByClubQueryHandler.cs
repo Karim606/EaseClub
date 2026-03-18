@@ -12,17 +12,12 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.Branches.Queries.GetBranchesByClub
 {
-    public class GetBranchesByClubQueryHandler(IBranchRepository branchRepository,ILogger<GetBranchesByClubQueryHandler>logger)
+    public class GetBranchesByClubQueryHandler(IBranchRepository branchRepository)
         :IRequestHandler<GetBranchesByClubQuery, Result<List<BranchResponse>>>
     {
         public async Task<Result<List<BranchResponse>>> Handle(GetBranchesByClubQuery request, CancellationToken cancellationToken)
         {
-            var branches = await branchRepository.GetBranchesByClubIdAsync(request.ClubId);
-            if(branches.Count==0)
-            {
-                logger.LogWarning("No branches found for Club with Id {ClubId}", request.ClubId);
-                return Error.NotFound(description: $"No branches found for Club with Id {request.ClubId}");
-            }
+            var branches = await branchRepository.GetBranchesByClubIdAsync(request.ClubId,true);
             var response = branches.Select(b => new BranchResponse(b.Id,b.ClubId,b.Name,DateOnly.FromDateTime(b.CreatedAt))).ToList();
             return response;
         }

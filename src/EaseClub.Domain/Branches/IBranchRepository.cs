@@ -9,7 +9,7 @@ namespace EaseClub.Domain.Branches
 {
     public interface IBranchRepository:IRepository<Branch>
     {
-        public Task<List<Branch>> GetBranchesByClubIdAsync(Guid clubId);
+        public Task<List<Branch>> GetBranchesByClubIdAsync(Guid clubId,bool?Active,CancellationToken cancellationToken=default);
         public Task<bool> IsExistByName(Guid clubId,string name);
         public Task<HashSet<Guid>> GetExistingBranchIdsAsync(IEnumerable<Guid> ids);
 
