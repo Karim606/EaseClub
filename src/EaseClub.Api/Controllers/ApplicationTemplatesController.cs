@@ -23,7 +23,7 @@ namespace EaseClub.Api.Controllers
         #region Template Shell
 
 
-        [HttpGet]
+        [HttpGet("/api/v{version:ApiVersion}/clubs/{clubId}/application-templates")]
         [MapToApiVersion("1.0")]
         [ProducesResponseType(typeof(OffsetPaginatedResult<TemplateTreeQuery>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

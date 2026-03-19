@@ -35,7 +35,7 @@ namespace EaseClub.Api.Controllers
         }
 
         [Authorize(Roles = "ClubAdmin,SuperAdmin")]
-        [HttpGet("management")]
+        [HttpGet("/api/v{version:ApiVersion}/clubs/{clubId}/branches")]
         [MapToApiVersion("1.0")]
 
         [ProducesResponseType(typeof(List<BranchAdminDto>), StatusCodes.Status200OK)]
