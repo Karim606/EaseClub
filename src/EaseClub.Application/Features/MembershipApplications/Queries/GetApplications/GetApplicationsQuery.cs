@@ -12,7 +12,6 @@ namespace EaseClub.Application.Features.MembershipApplications.Queries.GetApplic
 {
     public class GetApplicationsQuery : IRequest<Result<UnifiedPaginatedResponse<MembershipAppDto>>>
     {
-        public Guid? UserId { get; init; }
         public Guid? ClubId { get; init; }
         public ApplicationStatus? Status { get; init; }
 

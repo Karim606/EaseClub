@@ -1,4 +1,5 @@
 ﻿using EaseClub.Application.Common.Pagination;
+using EaseClub.Application.Common.Pagination.Results;
 using EaseClub.Application.Features.MembershipApplications;
 using EaseClub.Application.Features.MembershipApplications.Commands.CompleteStep;
 using EaseClub.Application.Features.MembershipApplications.Commands.CreateApplication;
@@ -8,6 +9,7 @@ using EaseClub.Application.Features.MembershipApplications.Commands.SubmitApplic
 using EaseClub.Application.Features.MembershipApplications.Commands.UpdateAnswer;
 using EaseClub.Application.Features.MembershipApplications.Queries.GetApplication;
 using EaseClub.Application.Features.MembershipApplications.Queries.GetApplications;
+using EaseClub.Application.Features.MembershipApplications.Queries.GetApplicationsForManagement;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -41,9 +43,8 @@ namespace EaseClub.Api.Controllers
                 Problem);
         }
 
-        [Authorize(Roles = "ClubAdmin,SuperAdmin")]
         [HttpGet]
-        [ProducesResponseType(typeof(List<UnifiedPaginatedResponse<MembershipAppDto>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(UnifiedPaginatedResponse<MembershipAppDto>), StatusCodes.Status200OK)]
         [EndpointName("GetApplications")]
         [EndpointSummary("Lists applications based on filter criteria.")]
         public async Task<IActionResult> GetApplications([FromQuery] GetApplicationsQuery query)
@@ -53,6 +54,19 @@ namespace EaseClub.Api.Controllers
                 (apps) => Ok(apps),
                 Problem);
         }
+
+        [HttpGet("/api/v{version:ApiVersion}/clubs/{clubId}/membership-applications")]
+        [ProducesResponseType(typeof(OffsetPaginatedResult<MembershipAppDto>), StatusCodes.Status200OK)]
+        [EndpointName("GetApplicationsForManagement")]
+        [EndpointSummary("Lists applications for admins based on filters criteria.")]
+        public async Task<IActionResult> GetApplicationsForManagement([FromQuery] GetApplicationsForManagementQuery query)
+        {
+            var result = await sender.Send(query);
+            return result.Match(
+                (apps) => Ok(apps),
+                Problem);
+        }
+
 
         [HttpPost("{id}/steps/{order}/complete")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
