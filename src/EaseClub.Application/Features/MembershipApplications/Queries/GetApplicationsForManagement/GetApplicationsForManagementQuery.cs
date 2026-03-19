@@ -1,4 +1,5 @@
-﻿using EaseClub.Application.Common.Pagination.Parameters;
+﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Pagination.Parameters;
 using EaseClub.Application.Common.Pagination.Results;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipApplications.Enums;
@@ -11,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.MembershipApplications.Queries.GetApplicationsForManagement
 {
-    public record GetApplicationsForManagementQuery(Guid clubId,GetApplicationsQueryFilters filters,OffsetPaginationParameters pagination):IRequest<Result<OffsetPaginatedResult<MembershipAppAdminDto>>>;
+    public record GetApplicationsForManagementQuery(Guid ClubId,GetApplicationsQueryFilters filters,OffsetPaginationParameters pagination):IRequest<Result<OffsetPaginatedResult<MembershipAppAdminDto>>>,IRequireClubAdmin;
 
     public class GetApplicationsQueryFilters {
         public AppStatus? Status { get; set; }

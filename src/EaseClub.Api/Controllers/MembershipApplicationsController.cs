@@ -55,6 +55,7 @@ namespace EaseClub.Api.Controllers
                 Problem);
         }
 
+        [Authorize(Roles = "ClubAdmin,SuperAdmin")]
         [HttpGet("/api/v{version:ApiVersion}/clubs/{clubId}/membership-applications")]
         [ProducesResponseType(typeof(OffsetPaginatedResult<MembershipAppDto>), StatusCodes.Status200OK)]
         [EndpointName("GetApplicationsForManagement")]
