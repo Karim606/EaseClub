@@ -8,17 +8,19 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.MembershipApplications.Commands.ReviewApplication
 {
     public record ReviewApplicationCommand(
-        Guid ApplicationId,
         DecisionsAboutApplication Decision,
-        string? Reason = null
+        string? RejectionReason = null
     //bool VisibleToUser = true
     ) : IRequest<Result<Success>>, IRequireClubOwnershipValidation
     {
+        [JsonIgnore]
+        public Guid ApplicationId { get; init; }
         public IEnumerable<OwnershipRule> Rules()
         {
             yield return new OwnershipRule(

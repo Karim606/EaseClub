@@ -57,7 +57,7 @@ namespace EaseClub.Api.Controllers
 
         [Authorize(Roles = "ClubAdmin,SuperAdmin")]
         [HttpGet("/api/v{version:ApiVersion}/clubs/{clubId}/membership-applications")]
-        [ProducesResponseType(typeof(OffsetPaginatedResult<MembershipAppDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(OffsetPaginatedResult<MembershipAppAdminDto>), StatusCodes.Status200OK)]
         [EndpointName("GetApplicationsForManagement")]
         [EndpointSummary("Lists applications for admins based on filters criteria.")]
         public async Task<IActionResult> GetApplicationsForManagement([FromQuery] GetApplicationsForManagementQuery query)
@@ -88,15 +88,12 @@ namespace EaseClub.Api.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [EndpointName("ReviewApplication")]
         [EndpointSummary("Approves or rejects a submitted application.")]
-        public async Task<IActionResult> Review(Guid id, [FromBody] ReviewApplicationDto dto)
+        [EndpointDescription("Approves or rejects a submitted application, " +
+            "values you can send for decision enum are  Approved or Rejected")]
+        public async Task<IActionResult> Review([FromRoute]Guid id, [FromBody] ReviewApplicationCommand cmd)
         {
-            var command = new ReviewApplicationCommand(
-                id,
-                dto.Decision,
-                dto.Reason
-            );
 
-            var result = await sender.Send(command);
+            var result = await sender.Send(cmd with { ApplicationId = id });
 
             return result.Match(_ => NoContent(), Problem);
         }

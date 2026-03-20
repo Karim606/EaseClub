@@ -1,6 +1,7 @@
 ﻿using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.Member;
 using EaseClub.Domain.MembershipApplications.Enums;
 using EaseClub.Domain.MembershipApplications.Errors;
 using EaseClub.Domain.MembershipApplications.ValueObjects;
@@ -59,6 +60,7 @@ namespace EaseClub.Domain.MembershipApplications
 
 
         public Guid UserId { get; private set; }
+        public MemberUser User { get; private set; }
         public Guid ClubId { get; private set; }
         public Guid InstallmentTemplateId { get; private set; }
         public Guid MembershipTypeId { get; private set; }

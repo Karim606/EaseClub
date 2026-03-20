@@ -54,6 +54,8 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                     UserId = p.UserId,
                     TrackingNumber = p.TrackingNumber,
                     MembershipType = p.MembershipType.Name,
+                    Email = p.User.Email.Value,
+                    UserName = p.User.FirstName + " " + p.User.LastName,
                     MembershipPlanName = p.MembershipPlan.Name,
                     SubmittedAt = p.SubmittedAt!.Value,
                     Status = p.Status,
