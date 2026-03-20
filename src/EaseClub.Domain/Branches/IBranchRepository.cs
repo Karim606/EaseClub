@@ -13,6 +13,6 @@ namespace EaseClub.Domain.Branches
         public Task<bool> IsExistByName(Guid clubId,string name);
         public Task<HashSet<Guid>> GetExistingBranchIdsAsync(IEnumerable<Guid> ids);
 
-        public Task<Branch> GetBranchesByMembershipType(Guid typeId, CancellationToken ct = default);
+        public Task<List<Branch>> GetBranchesByMembershipType(Guid typeId, CancellationToken ct = default);
     }
 }

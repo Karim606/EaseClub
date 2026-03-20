@@ -90,7 +90,7 @@ This endpoint supports two modes of pagination:
 
         [HttpGet("{id:guid}")]
         [MapToApiVersion("1.0")]
-        [ProducesResponseType(typeof(MembershipTypeDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(MembershipTypeDetails), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [EndpointName("GetMembershipType")]

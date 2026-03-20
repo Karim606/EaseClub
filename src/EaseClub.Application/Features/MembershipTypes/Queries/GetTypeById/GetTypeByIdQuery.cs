@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.MembershipTypes.Queries.GetTypeById
 {
-    public record GetMembershipTypeByIdQuery(Guid MembershipTypeId) : IRequest<Result<MembershipTypeDto>>;
+    public record GetMembershipTypeByIdQuery(Guid MembershipTypeId) : IRequest<Result<MembershipTypeDetails>>;
 
  
 }
