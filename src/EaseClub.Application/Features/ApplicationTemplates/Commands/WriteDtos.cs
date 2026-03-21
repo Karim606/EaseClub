@@ -18,13 +18,11 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Commands
     Guid Id,
     string Title,
     string Category,
-    int Order,
     List<SectionDetailsDto> Sections);
 
     public record SectionDetailsDto(
         Guid Id,
         string Title,
-        int Order,
         SectionIntent Intent,
         List<FieldDetailsDto> Fields,
         RepeatRuleSetDto? RepeatRule=null );

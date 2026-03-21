@@ -48,7 +48,7 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Commands.Template.U
 
             // 2️⃣ Delegate all upsert logic to TemplateUpdater
             var updater = new TemplateUpdater(template);
-            var upsertResult = updater.UpsertSteps(request.Steps);
+            var upsertResult = updater.ApplySteps(request.Steps);
             if (upsertResult.IsError) return upsertResult.TopError;
 
             // 3️⃣ Persist changes
