@@ -33,35 +33,9 @@ namespace EaseClub.Application.Features.MembershipApplications.Queries.GetApplic
                 return Error.Unauthorized();
             }
 
-            var roles = currentUserService.GetRoles();
-
-            if (roles.Contains("ClubAdmin"))
-            {
-                if (request.ClubId != null) {
-                    var adminOfClub = await clubAuthorizationService.IsUserAdminOfClubAsync(userId, request.ClubId.Value);
-
-                    if (adminOfClub == false)
-                    {
-                        return Error.Forbidden();
-                    }
-
-                    if(request.UserId != null)
-                    {
-                        var memberOfClub = await clubAuthorizationService.IsUserMemberOfClubAsync(request.UserId.Value,request.ClubId.Value);
-                    }
-
-                    if(request.Status == ApplicationStatus.Draft) return Error.Forbidden();
-                }
-
-            }
-
-            else if (roles.Contains("Member"))
-            {
-                if(userId != request.UserId) { return Error.Forbidden(); }
-            }
 
                 return await queryService.GetMembershipApplicationSummaryAsync(request.ClubId,
-                     request.UserId, request.Status, request.PaginationRequest, cancellationToken);
+                     userId, request.Status, request.PaginationRequest, cancellationToken);
         }
     }
 }

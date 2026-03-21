@@ -1,6 +1,4 @@
-﻿using EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPlansByClub;
-using EaseClub.Application.Features.MembershipTypes.Queries.GetMembershipTypesByClub;
-using EaseClub.Domain.Branches;
+﻿using EaseClub.Domain.Branches;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipPlans.Repositories;
@@ -15,28 +13,23 @@ using System.Threading.Tasks;
 namespace EaseClub.Application.Features.MembershipTypes.Queries.GetTypeById
 {
     public class GetMembershipTypeByIdQueryHandler(IMembershipTypeRepository repository,
-        IMembershipPlanRepository planRepository,
-        IBranchRepository branchRepository)
-       : IRequestHandler<GetMembershipTypeByIdQuery, Result<MembershipTypeDetailsDto>>
+       IBranchRepository branchRepository)
+       : IRequestHandler<GetMembershipTypeByIdQuery, Result<MembershipTypeDetails>>
     {
-        public async Task<Result<MembershipTypeDetailsDto>> Handle(GetMembershipTypeByIdQuery request, CancellationToken ct)
+        public async Task<Result<MembershipTypeDetails>> Handle(GetMembershipTypeByIdQuery request, CancellationToken ct)
         {
             var type = await repository.GetByIdAsync(request.MembershipTypeId, ct);
+
             if (type is null)
                 return Error.NotFound("Membership type not found.");
+            var branches = await branchRepository.GetBranchesByMembershipType(type.Id, ct);
 
-            var plans = await planRepository.GetPlansByMembershipTypeAsync(type.Id, ct);
-
-            var permittedBranches = branchRepository.GetBranchesByMembershipType(type.Id, ct);
-            return new MembershipTypeDetailsDto(
+            return new MembershipTypeDetails(
                 type.Id,
                 type.Name,
                 type.Description,
-                type.FamilyAllowed,
-                type.MaxFamilyMembers,
                 type.AllBranchesPermitted,
-                type.PermittedBranches.Select(pb => new BranchDto(pb.BranchId, pb.Branch.Name)).ToList(),
-                plans.Select(p => new MembershipPlanDto(p.Id, p.Name, p.DurationInDays,p.TotalPrice,p.Description)).ToList()
+                branches.Select(b => new BranchesDto(b.Id,b.Name)).ToList()
             );
         }
     }

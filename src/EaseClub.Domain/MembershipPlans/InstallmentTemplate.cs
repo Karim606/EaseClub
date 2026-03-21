@@ -17,6 +17,8 @@ namespace EaseClub.Domain.MembershipPlans
         public Guid ClubId { get; private set; }
         public Club Club { get; private set; }
 
+        public bool IsActive { get; private set; } = true;
+
         private readonly List<Installment>_Installments = new();
         public  IReadOnlyList<Installment> Installments => _Installments.AsReadOnly();
 
@@ -112,12 +114,25 @@ namespace EaseClub.Domain.MembershipPlans
 
         //---------------------------Update Installments--------------------------//
 
-        public Result<Success> UpdateInstallments(List<Installment> installments)
+        public Result<Success> UpdateInstallments(List<decimal> newPercentages)
         {
-            ValidateInstallments(installments);
+            if (newPercentages.Count != _Installments.Count) return Error.Validation(description: "list of new percentages should has equal length of current installment template list.");
+            var totalPercentage = newPercentages.Sum(i => i);
+            if (totalPercentage != 100m)
+                return InstallmentTemplateErrors.TotalPercentageOfInstallmentsMustEqual100Percent;
+            
+            var currentInstallments = _Installments.OrderBy(i => i.OrderIndex).ToList();
 
             _Installments.Clear();
-            _Installments.AddRange(installments);
+            for (int i = 0; i < currentInstallments.Count; i++)
+            {
+                var inst = Installment.Create(newPercentages[i], currentInstallments[i].DueAfterDays, currentInstallments[i].OrderIndex);
+                
+                if (inst.IsError) return inst.TopError;
+
+                _Installments.Add(inst.Value);
+            }
+
             return Result.Success;
         }
         //---------------------------Private Methods--------------------------//
@@ -130,6 +145,12 @@ namespace EaseClub.Domain.MembershipPlans
             var totalPercentage = installments.Sum(i => i.PercentageOfAmount);
             if (totalPercentage != 100m)
                 return InstallmentTemplateErrors.TotalPercentageOfInstallmentsMustEqual100Percent;
+
+            for(int i = 1; i < installments.Count; i++)
+            {
+                if (installments[i].DueAfterDays < installments[i - 1].DueAfterDays)
+                    return Error.Validation(description: "DueAfterDays must be in increasing sequence");
+            }
 
             return true;
         }

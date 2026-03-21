@@ -1,6 +1,9 @@
 ﻿using EaseClub.Application.Common.Pagination;
+using EaseClub.Application.Common.Pagination.Parameters;
+using EaseClub.Application.Common.Pagination.Results;
 using EaseClub.Application.Features.MembershipApplications;
 using EaseClub.Application.Features.MembershipApplications.Queries;
+using EaseClub.Application.Features.MembershipApplications.Queries.GetApplicationsForManagement;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipApplications;
 using EaseClub.Domain.MembershipApplications.Enums;
@@ -21,6 +24,47 @@ namespace EaseClub.Infrastructure.Services.QueryServices
     {
         public MembershipApplicationQueryService(AppDbContext context, ILogger<MembershipApplicationQueryService> logger) : base(context, logger)
         {
+        }
+
+        public async Task<Result<OffsetPaginatedResult<MembershipAppAdminDto>>> GetMembershipApplicationsForManagementAsync(Guid clubId, GetApplicationsQueryFilters filters, OffsetPaginationParameters parameters, CancellationToken ct = default)
+        {
+            var query = Query().Where(p => p.ClubId == clubId);
+
+            if(filters.TrackingNumber!=null) query = query.Where(p => p.TrackingNumber.ToLower() == filters.TrackingNumber.ToLower());
+
+            if (filters.Status.HasValue) {
+                var status = (ApplicationStatus)filters.Status.Value;
+                query = query.Where(p => p.Status == status); 
+            }
+
+            var from = filters.SubmittedFrom?.ToDateTime(TimeOnly.MinValue);
+            var to = filters.SubmittedTo?.ToDateTime(TimeOnly.MaxValue);
+
+            if (from.HasValue&&to.HasValue) query = query.Where(p => p.CreatedAt >= from.Value && p.CreatedAt <= to.Value);
+            else if (from.HasValue) query = query.Where(p => p.CreatedAt >= from.Value);
+            else if (to.HasValue) query = query.Where(p => p.CreatedAt <= to.Value);
+
+            return await GetPaginatedAsync<MembershipAppAdminDto, DateTime,OffsetPaginatedResult<MembershipAppAdminDto>>(
+                query,
+                parameters,
+                selector: p => new MembershipAppAdminDto()
+                {
+                    Id = p.Id,
+                    ClubId = p.ClubId,
+                    UserId = p.UserId,
+                    TrackingNumber = p.TrackingNumber,
+                    MembershipType = p.MembershipType.Name,
+                    Email = p.User.Email.Value,
+                    UserName = p.User.FirstName + " " + p.User.LastName,
+                    MembershipPlanName = p.MembershipPlan.Name,
+                    SubmittedAt = p.SubmittedAt!.Value,
+                    Status = p.Status,
+                },
+                orderSelector: p => p.CreatedAt,
+                ct
+                );
+
+
         }
 
         public async Task<Result<UnifiedPaginatedResponse<MembershipAppDto>>> GetMembershipApplicationSummaryAsync(Guid? clubId,

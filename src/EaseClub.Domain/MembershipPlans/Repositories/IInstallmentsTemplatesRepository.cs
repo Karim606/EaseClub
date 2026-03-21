@@ -14,5 +14,7 @@ namespace EaseClub.Domain.MembershipPlans.Repositories
         public Task<List<InstallmentTemplate>> GetByClubIdAsync(Guid clubId,CancellationToken ct);
 
         public Task<List<InstallmentTemplate>> GetByPlanIdAsync(Guid planId, CancellationToken ct);
+
+        public Task<List<InstallmentTemplate>>GetTemplatesAsync(Guid?clubId,Guid? planId,bool? isActive,CancellationToken ct);
     }
 }

@@ -1,10 +1,13 @@
 ﻿using EaseClub.Domain.ApplicationTemplates.Errors;
+using EaseClub.Domain.ApplicationTemplates.SystemSections;
 using EaseClub.Domain.ApplicationTemplates.ValueObjects.ConditionExpression;
+using EaseClub.Domain.ApplicationTemplates.ValueObjects.RepeatRule;
 using EaseClub.Domain.ApplicationTemplates.ValueObjects.ValidationRulesSet;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipApplications.ValueObjects;
+using EaseClub.Domain.MembershipPlans;
 using EaseClub.Domain.MembershipTypes;
 using System;
 using System.Collections.Generic;
@@ -12,6 +15,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Collections.Specialized.BitVector32;
 
 namespace EaseClub.Domain.ApplicationTemplates
 {
@@ -37,8 +41,8 @@ namespace EaseClub.Domain.ApplicationTemplates
         private readonly List<ApplicationStepDefinition> _Steps = new();
         public IReadOnlyList<ApplicationStepDefinition> Steps => _Steps.AsReadOnly();
 
-        private readonly List<MembershipType> _ConnectedMembershipTypes = new();
-        public IReadOnlyList<MembershipType> ConnectedMembershipTypes => _ConnectedMembershipTypes.AsReadOnly();
+        private readonly List<MembershipPlan> _ConnectedMembershipPlans = new();
+        public IReadOnlyList<MembershipPlan> ConnectedMembershipPlans => _ConnectedMembershipPlans.AsReadOnly();
 
         private HashSet<string>? _fieldKeys;
 
@@ -94,12 +98,6 @@ namespace EaseClub.Domain.ApplicationTemplates
 
             if (stepResult.IsError) return stepResult.TopError;
 
-            // 3. SHIFTING LOGIC: Move existing steps forward
-            foreach (var existingStep in _Steps.Where(s => s.Order >= order))
-            {
-                existingStep.UpdateOrder(existingStep.Order + 1);
-            }
-
             _Steps.Add(stepResult.Value);
 
             return stepResult.Value;
@@ -107,19 +105,11 @@ namespace EaseClub.Domain.ApplicationTemplates
 
         public Result<Success> RemoveStep(Guid stepId)
         {
-            var existingStep = _Steps.FirstOrDefault(s => s.Id == stepId);
+            var step = _Steps.FirstOrDefault(s => s.Id == stepId);
 
-            if (existingStep == null)
-                return ApplicationTemplateDefinitionErrors.StepDoesntExist;
-
-            int removedOrder = existingStep.Order;
-
-            _Steps.Remove(existingStep);
-
-            // 3. SHIFTING LOGIC: Close the gap
-            foreach (var remainingStep in _Steps.Where(s => s.Order > removedOrder))
+            if (step != null)
             {
-                remainingStep.UpdateOrder(remainingStep.Order - 1);
+                _Steps.Remove(step);
             }
 
             return Result.Success;
@@ -143,6 +133,7 @@ namespace EaseClub.Domain.ApplicationTemplates
 
             var finalKey = ResolveKey(key, label);
 
+            var isSystemField = section.Intent != SectionIntent.General && SystemSectionRegistry.ResolveKeys(finalKey, section.Intent);
             // enforce uniqueness
             if (!FieldKeys.Add(finalKey))
                 return Error.Conflict("Template.DuplicateKey",
@@ -157,6 +148,7 @@ namespace EaseClub.Domain.ApplicationTemplates
                 rules,
                 visibilityCondition,
                 persistToMembership,
+                isSystemField,
                 allowedValues
             );
 
@@ -169,6 +161,7 @@ namespace EaseClub.Domain.ApplicationTemplates
             return fieldResult.Value;
         }
 
+
         public Result<Success> RemoveField(Guid sectionId, Guid fieldId)
         {
             // 1. Find the section
@@ -180,19 +173,31 @@ namespace EaseClub.Domain.ApplicationTemplates
             var field = section.Fields.FirstOrDefault(f => f.Id == fieldId);
             if (field == null) return Error.NotFound("Template.FieldNotFound");
 
+            if (field.IsSystemField)
+            {
+                return Error.Validation("Template.FieldLocked",
+                    $"Field '{field.Key}' is a system-required field and cannot be removed.");
+            }
+
             // 4. If safe, tell the section to remove it
-            return section.RemoveField(fieldId);
+            var res =  section.RemoveField(fieldId);
+
+            if(res.IsError) return res.TopError;
+
+            FieldKeys.Remove(field.Key);
+
+            return Result.Success;
         }
-        public Result<Success> ReorderFieldsInSection(Guid sectionId, List<Guid> newOrderIds)
+
+        public Result<Success> ReorderSteps(List<Guid> stepIdsInOrder)
         {
-            // 1. Find the section
-            var section = _Steps.SelectMany(s => s.Sections)
-                                .FirstOrDefault(s => s.Id == sectionId);
-
-            if (section == null) return Error.NotFound("Template.SectionNotFound");
-
-            // 2. Delegate the physical reordering to the section
-            return section.ReorderFields(newOrderIds);
+            for (int i = 0; i < stepIdsInOrder.Count; i++)
+            {
+                var step = _Steps.FirstOrDefault(s => s.Id == stepIdsInOrder[i]);
+                if (step == null) return ApplicationTemplateDefinitionErrors.StepDoesntExist;
+                step.UpdateOrder(i + 1);
+            }
+            return Result.Success;
         }
 
         //GenerateUniqueKey
@@ -221,31 +226,35 @@ namespace EaseClub.Domain.ApplicationTemplates
             return uniqueKey;
         }
 
-        public Result<Success> SyncMembershipTypes(List<MembershipType> newTypes)
+        public Result<Success> SyncMembershipPlans(List<MembershipPlan> newTypes)
         {
             var newIds = newTypes.Select(t => t.Id).ToHashSet();
 
             // remove old ones
-            _ConnectedMembershipTypes.RemoveAll(t => !newIds.Contains(t.Id));
+            _ConnectedMembershipPlans.RemoveAll(t => !newIds.Contains(t.Id));
 
             // add new ones
             foreach (var type in newTypes)
             {
-                if (_ConnectedMembershipTypes.All(t => t.Id != type.Id))
+                if (_ConnectedMembershipPlans.All(t => t.Id != type.Id))
                 {
-                    _ConnectedMembershipTypes.Add(type);
+                    _ConnectedMembershipPlans.Add(type);
                 }
             }
 
             return Result.Success;
         }
 
+
+
         //ToSnapShot 
         public ApplicationTemplateSnapshot ToSnapshot(decimal BaseFee, List<PricingPolicySnapshot> policies,MembershipPlanSnapshot membershipPlan,
            List<InstallmentRuleSnapshot>installmentRules )
         {
-             policies = policies.Where(p => p.Conditions.Any(c => FieldKeys.Contains(c.DependsOnFieldKey))).ToList();
-            return new ApplicationTemplateSnapshot(
+ 
+
+            policies = policies.Where(p => p.Conditions.Any(c => FieldKeys.Contains(c.DependsOnFieldKey))).ToList();
+            var snapshot = new ApplicationTemplateSnapshot(
                 Id,
                 Name,
                 BaseFee,
@@ -254,6 +263,18 @@ namespace EaseClub.Domain.ApplicationTemplates
                 _Steps.OrderBy(s => s.Order).Select(s => s.ToSnapshot()).ToList(),
                 installmentRules
             );
+
+            var familySec = snapshot.Steps.SelectMany(s => s.Sections).FirstOrDefault(sec => sec.Intent == SectionIntent.FamilyMembers);
+            if (familySec != null && membershipPlan.MaxFamilyMembers > 0)
+            {
+                var repeatRule = RepeatRule
+                    .Create(membershipPlan.MaxFamilyMembers, RepeatMode.AtLeastOne)
+                    .Value;
+
+                familySec.SetRepeatRule(repeatRule);
+            }
+
+            return snapshot;
         }
 
 
@@ -272,4 +293,5 @@ namespace EaseClub.Domain.ApplicationTemplates
             return GenerateUniqueKey(label);
         }
     }
+
 }

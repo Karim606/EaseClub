@@ -1,4 +1,8 @@
-﻿using EaseClub.Domain.ApplicationTemplates;
+﻿using EaseClub.Application.Features.ApplicationTemplates.Commands;
+using EaseClub.Application.Features.ApplicationTemplates.Commands.Template.UpsertTemplate;
+using EaseClub.Domain.ApplicationTemplates;
+using EaseClub.Domain.ApplicationTemplates.SystemSections;
+using EaseClub.Domain.ApplicationTemplates.ValueObjects.RepeatRule;
 using EaseClub.Domain.Common.Results;
 using System;
 using System.Collections.Generic;
@@ -6,6 +10,10 @@ using System.Linq;
 
 namespace EaseClub.Application.Features.ApplicationTemplates.Services
 {
+    // ============================================================
+    // STEP 2: TemplateUpdater — only applies diffs, zero logic
+    // ============================================================
+
     public class TemplateUpdater
     {
         private readonly ApplicationTemplateDefinition _template;
@@ -15,156 +23,173 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Services
             _template = template ?? throw new ArgumentNullException(nameof(template));
         }
 
-        /// <summary>
-        /// Upsert all steps, sections, and fields
-        /// </summary>
-        public Result<Success> UpsertSteps(List<StepDetailsDto> stepDtos)
+        public Result<Success> ApplySteps(List<StepDetailsDto> incomingSteps)
         {
-            var existingSteps = _template.Steps.ToDictionary(s => s.Id, s => s);
+            var diff = TemplateDiff.Compute(_template.Steps, incomingSteps);
 
-            foreach (var stepDto in stepDtos.OrderBy(s => s.Order))
+            // 1. Remove
+            foreach (var step in diff.Removed)
             {
-                var stepResult = UpsertStep(stepDto, existingSteps);
-                if (stepResult.IsError) return stepResult.TopError;
+                var result = _template.RemoveStep(step.Id);
+                if (result.IsError) return result.TopError;
             }
 
-            // Remove steps not in DTO
-            foreach (var removedStep in existingSteps.Values)
+            // 2. Add
+            foreach (var stepDto in diff.Added)
             {
-                var removeResult = _template.RemoveStep(removedStep.Id);
-                if (removeResult.IsError) return removeResult.TopError;
+                var result = _template.AddNewStep(stepDto.Category, stepDto.Title, order: 0);
+                if (result.IsError) return result.TopError;
+
+                var step = result.Value;
+                var sectionsResult = ApplySections(step, stepDto.Sections);
+                if (sectionsResult.IsError) return sectionsResult.TopError;
             }
 
-            return Result.Success;
+            // 3. Update
+            foreach (var (existing, incoming) in diff.Updated)
+            {
+                var result = existing.Update(incoming.Title);
+                if (result.IsError) return result.TopError;
+
+                var sectionsResult = ApplySections(existing, incoming.Sections);
+                if (sectionsResult.IsError) return sectionsResult.TopError;
+            }
+
+            // 4. Reorder once at the end — domain owns order
+            return _template.ReorderSteps(incomingSteps.Select(s => s.Id).ToList());
         }
 
-        // -------------------------------
-        // Step Level
-        // -------------------------------
-        private Result<Success> UpsertStep(StepDetailsDto stepDto, Dictionary<Guid, ApplicationStepDefinition> existingSteps)
+        // --------------------------------------------------------
+        private Result<Success> ApplySections(
+            ApplicationStepDefinition step,
+            List<SectionDetailsDto> incomingSections)
         {
-            ApplicationStepDefinition step;
+            var diff = SectionDiff.Compute(step.Sections, incomingSections);
 
-            if (existingSteps.TryGetValue(stepDto.Id, out step))
+            // 1. Remove
+            foreach (var section in diff.Removed)
             {
-                var updateResult = step.Update(stepDto.Category, stepDto.Title);
-                if (updateResult.IsError) return updateResult.TopError;
-
-                existingSteps.Remove(stepDto.Id);
-            }
-            else
-            {
-                var stepResult = _template.AddNewStep(stepDto.Category, stepDto.Title, stepDto.Order);
-                if (stepResult.IsError) return stepResult.TopError;
-                step = stepResult.Value;
+                var result = step.RemoveSection(section.Id);
+                if (result.IsError) return result.TopError;
             }
 
-            // Upsert sections inside this step
-            return UpsertSections(step, stepDto.Sections);
+            // 2. Add
+            foreach (var secDto in diff.Added)
+            {
+                var repeatRule = ResolveRepeatRule(secDto.RepeatRule);
+                if (repeatRule.IsError) return repeatRule.TopError;
+
+                if (secDto.Intent != SectionIntent.General)
+                {
+                    var integrity = ValidateSystemSection(secDto);
+                    if (integrity.IsError) return integrity.TopError;
+                }
+
+                var result = step.AddNewSection(secDto.Title, repeatRule.Value, secDto.Intent);
+                if (result.IsError) return result.TopError;
+
+                var fieldsResult = ApplyFields(result.Value, secDto.Fields);
+                if (fieldsResult.IsError) return fieldsResult.TopError;
+            }
+
+            // 3. Update
+            foreach (var (existing, incoming) in diff.Updated)
+            {
+                var repeatRule = ResolveRepeatRule(incoming.RepeatRule);
+                if (repeatRule.IsError) return repeatRule.TopError;
+
+                if (incoming.Intent != SectionIntent.General)
+                {
+                    var integrity = ValidateSystemSection(incoming);
+                    if (integrity.IsError) return integrity.TopError;
+                }
+
+                var result = existing.Update(incoming.Title, repeatRule.Value);
+                if (result.IsError) return result.TopError;
+
+                var fieldsResult = ApplyFields(existing, incoming.Fields);
+                if (fieldsResult.IsError) return fieldsResult.TopError;
+            }
+
+            // 4. Reorder once at the end
+            return step.ReorderSections(incomingSections.Select(s => s.Id).ToList());
         }
 
-        // -------------------------------
-        // Section Level
-        // -------------------------------
-        private Result<Success> UpsertSections(ApplicationStepDefinition step, List<SectionDetailsDto> sectionDtos)
+        // --------------------------------------------------------
+        private Result<Success> ApplyFields(
+            ApplicationSectionDefinition section,
+            List<FieldDetailsDto> incomingFields)
         {
-            var existingSections = step.Sections.ToDictionary(s => s.Id, s => s);
+            var diff = FieldDiff.Compute(section.Fields, incomingFields);
 
-            foreach (var secDto in sectionDtos.OrderBy(s => s.Order))
+            // 1. Remove
+            foreach (var field in diff.Removed)
             {
-                var secResult = UpsertSection(step, secDto, existingSections);
-                if (secResult.IsError) return secResult.TopError;
+                var result = _template.RemoveField(section.Id, field.Id);
+                if (result.IsError) return result.TopError;
             }
 
-            // Remove sections not in DTO
-            foreach (var removedSection in existingSections.Values)
+            // 2. Add
+            foreach (var fieldDto in diff.Added)
             {
-                var removeResult = step.RemoveSection(removedSection.Id);
-                if (removeResult.IsError) return removeResult.TopError;
-            }
+                var validationResult = fieldDto.ValidationRules.ToDomain();
+                if (validationResult.IsError) return validationResult.TopError;
 
-            return Result.Success;
-        }
-
-        private Result<Success> UpsertSection(ApplicationStepDefinition step, SectionDetailsDto secDto, Dictionary<Guid, 
-            ApplicationSectionDefinition> existingSections)
-        {
-            ApplicationSectionDefinition section;
-
-            if (existingSections.TryGetValue(secDto.Id, out section))
-            {
-                var updateResult = section.Update(secDto.Title);
-                if (updateResult.IsError) return updateResult.TopError;
-
-                existingSections.Remove(secDto.Id);
-            }
-            else
-            {
-                var secResult = step.AddNewSection(secDto.Title, secDto.Order, secDto.RepeatRule);
-                if (secResult.IsError) return secResult.TopError;
-                section = secResult.Value;
-            }
-
-            // Upsert fields via Template (enforces key uniqueness)
-            return UpsertFields(section, secDto.Fields);
-        }
-
-        // -------------------------------
-        // Field Level
-        // -------------------------------
-        private Result<Success> UpsertFields(ApplicationSectionDefinition section, List<FieldDetailsDto> fieldDtos)
-        {
-            var existingFields = section.Fields.ToDictionary(f => f.Id, f => f);
-
-            foreach (var fieldDto in fieldDtos)
-            {
-                var fieldResult = UpsertField(section, fieldDto, existingFields);
-                if (fieldResult.IsError) return fieldResult.TopError;
-            }
-
-            // Remove fields not in DTO via Template
-            foreach (var removedField in existingFields.Values)
-            {
-                var removeResult = _template.RemoveField(section.Id, removedField.Id);
-                if (removeResult.IsError) return removeResult.TopError;
-            }
-
-            return Result.Success;
-        }
-
-        private Result<Success> UpsertField(ApplicationSectionDefinition section, FieldDetailsDto fieldDto, Dictionary<Guid, ApplicationFieldDefinition> existingFields)
-        {
-            if (existingFields.TryGetValue(fieldDto.Id, out var field))
-            {
-                var updateResult = field.Update(
-                    fieldDto.Label,
-                    fieldDto.ValidationRules,
-                    fieldDto.VisibilityConditions,
-                    field.PersistToMembership,
-                    field.Type == FieldType.Enum ? field.AllowedValues : null
-                );
-                if (updateResult.IsError) return updateResult.TopError;
-
-                existingFields.Remove(fieldDto.Id);
-            }
-            else
-            {
-                // Add new field via Template (handles unique keys)
-                var addResult = _template.AddFieldToSection(
+                var result = _template.AddFieldToSection(
                     fieldDto.Id,
                     section.Id,
                     string.IsNullOrWhiteSpace(fieldDto.Key) ? null : fieldDto.Key,
                     fieldDto.Label,
                     fieldDto.FieldType,
-                    fieldDto.ValidationRules,
-                    fieldDto.VisibilityConditions,
-                    persistToMembership: false
+                    validationResult.Value,
+                    visibilityCondition: null,
+                    persistToMembership: false,
+                    fieldDto.AllowedValues
                 );
-
-                if (addResult.IsError) return addResult.TopError;
+                if (result.IsError) return result.TopError;
             }
 
-            return Result.Success;
+            // 3. Update
+            foreach (var (existing, incoming) in diff.Updated)
+            {
+                var validationResult = incoming.ValidationRules.ToDomain();
+                if (validationResult.IsError) return validationResult.TopError;
+
+                var result = existing.Update(
+                    incoming.Label,
+                    validationResult.Value,
+                    visibilityCondition: null,
+                    existing.PersistToMembership,
+                    existing.Type == FieldType.Enum ? incoming.AllowedValues : null
+                );
+                if (result.IsError) return result.TopError;
+            }
+
+            // 4. Reorder once at the end
+            return section.ReorderFields(incomingFields.Select(f => f.Id).ToList());
+        }
+
+
+        // ============================================================
+        // Private Helpers — small, focused, reusable
+        // ============================================================
+
+        private Result<RepeatRule?> ResolveRepeatRule(RepeatRuleSetDto? dto)
+        {
+            if (dto == null) return null;
+
+            var result = RepeatRule.Create(dto.NumberOfRepeats, dto.Mode);
+            if (result.IsError) return result.TopError;
+
+            return(result.Value);
+        }
+
+        private Result<Success> ValidateSystemSection(SectionDetailsDto secDto)
+        {
+            var comparer = new SystemSectionIntegrityComparer();
+            return comparer.Validate(
+                secDto.Intent,
+                secDto.Fields.Select(f => f.ToFieldSpecification()).ToList());
         }
     }
 }

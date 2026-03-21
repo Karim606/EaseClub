@@ -1,9 +1,11 @@
 ﻿using EaseClub.Application.Common;
 using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Features.MembershipApplications.Queries;
+using EaseClub.Application.Features.Notifications;
 using EaseClub.Domain.MembershipApplications;
 using EaseClub.Domain.MembershipApplications.Repositories;
 using EaseClub.Domain.Memberships;
+using EaseClub.Domain.Notifications;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using System;
@@ -19,24 +21,22 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.ReviewAp
         //private readonly INotificationService _notificationService;
         private readonly IMembershipApplicationRepository _appRepo;
         private readonly IMembershipRepository _membershipRepo;
-        private readonly IUnitOfWork _unitOfWork;
         public ApplicationApprovedEventHandler(
             //INotificationService notificationService,
             IMembershipApplicationRepository appRepo,
             IMembershipRepository membershipRepo,
             IUnitOfWork unitOfWork,
-            ILogger<ApplicationApprovedEventHandler> logger):base(logger)
+            ILogger<ApplicationApprovedEventHandler> logger,
+            INotificationDispatcher notificationDispatcher,
+            INotificationRepository notificationRepo):base(notificationDispatcher,notificationRepo,unitOfWork,logger)
         {
            // _notificationService = notificationService;
             _appRepo = appRepo;
             _membershipRepo = membershipRepo;
-            _unitOfWork = unitOfWork;
         }
 
         protected override async Task HandleEvent(ApplicationApprovedEvent evt, CancellationToken ct)
         {
-            // Send notification
-            //await _notificationService.SendAsync(evt.ApplicationId, "Your application has been approved");
 
             var app = await _appRepo.GetByIdAsync(evt.ApplicationId, ct);
             if (app != null)
@@ -74,6 +74,11 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.ReviewAp
             "Membership {MembershipId} created from application {ApplicationId}",
             membership.Value.Id,
             evt.ApplicationId);
+
+            var notification = Notification.ForUser(evt.ApplicationOwnerId,"Membership Approved",$"Membership {membership.Value.Id} created from application {evt.ApplicationId}" +
+                $"Pay your membership dued payments to activate your membership soon.", NotificationType.MembershipApplicationApproved);
+
+            await DispatchNotification(notification);
         }
     }
 }

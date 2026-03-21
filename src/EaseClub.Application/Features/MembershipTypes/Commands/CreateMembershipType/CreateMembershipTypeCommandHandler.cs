@@ -42,19 +42,6 @@ namespace EaseClub.Application.Features.MembershipTypes.Commands.CreateMembershi
             type = result.Value;
             type.UpdateDescription(request.Description);
 
-            if (request.FamilyAllowed && request.MaxFamilyMembers.HasValue && request.MaxFamilyMembers.Value > 0)
-            {
-                logger.LogInformation("Enabling family membership for membership type {MembershipTypeName} " +
-                    "with max family members {MaxFamilyMembers}",request.Name,request.MaxFamilyMembers.Value);
-                var resultOfEnablingFamily =   type.EnableFamily(request.MaxFamilyMembers.Value);
-
-                if (resultOfEnablingFamily.IsError)
-                {
-                    logger.LogWarning("Failed to enable family membership for membership type {MembershipTypeName}: {reason}",
-                    request.Name,resultOfEnablingFamily.TopError);
-                    return resultOfEnablingFamily.TopError;
-                }
-            }
 
             //  Branch restriction logic
             if (!request.AllBranchesPermitted)

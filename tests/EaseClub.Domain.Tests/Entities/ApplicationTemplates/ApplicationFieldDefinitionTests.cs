@@ -115,6 +115,7 @@ namespace EaseClub.Domain.Tests.Entities.ApplicationTemplates
             var field = ApplicationFieldDefinition.Create(
                 Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
                 "test_key", "Label", FieldType.Enum, _defaultRules, null, false, 0,
+                false,
                 new List<string> { "Option 1" }).Value;
 
             // Act: Update with null/empty values

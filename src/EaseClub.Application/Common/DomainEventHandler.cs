@@ -1,4 +1,7 @@
-﻿using MediatR;
+﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Features.Notifications;
+using EaseClub.Domain.Notifications;
+using MediatR;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -12,11 +15,16 @@ namespace EaseClub.Application.Common
     public abstract class DomainEventHandler<TEvent,THandler> : INotificationHandler<TEvent>
     where TEvent : DomainEvent
     {
-        //protected readonly INotificationService _notificationService;
+        protected readonly INotificationDispatcher _notificationDispatcher;
+        protected readonly INotificationRepository _notificationRepository;
+        protected readonly IUnitOfWork _unitOfWork;
         protected readonly ILogger<THandler> _logger;
 
-        protected DomainEventHandler(ILogger<THandler> logger)
+        protected DomainEventHandler(INotificationDispatcher notificationDispatcher, INotificationRepository notificationRepository, IUnitOfWork unitOfWork,ILogger<THandler> logger)
         {
+            _notificationDispatcher = notificationDispatcher;
+            _notificationRepository = notificationRepository;
+            _unitOfWork = unitOfWork;
             _logger = logger;
         }
 
@@ -45,9 +53,13 @@ namespace EaseClub.Application.Common
                  "is currently processed");
         }
 
-        //protected async Task NotifyUserAsync(Guid userId, string message)
-        //{
-        //    await _notificationService.SendAsync(userId, message);
-        //}
+        protected async Task DispatchNotification(Notification notification)
+        {
+            await _notificationRepository.AddAsync(notification);
+            await _unitOfWork.SaveChangesAsync();
+
+            await _notificationDispatcher.DispatchAsync(notification);
+        }
+
     }
 }

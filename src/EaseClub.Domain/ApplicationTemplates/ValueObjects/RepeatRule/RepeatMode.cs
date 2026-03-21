@@ -8,7 +8,6 @@ namespace EaseClub.Domain.ApplicationTemplates.ValueObjects.RepeatRule
 {
     public enum RepeatMode
     {
-        None = 0,
         ExactValue = 1,
         AtLeastOne = 2
     }

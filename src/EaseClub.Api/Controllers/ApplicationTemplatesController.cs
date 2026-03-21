@@ -1,24 +1,12 @@
 ﻿using EaseClub.Application.Common.Pagination.Parameters;
 using EaseClub.Application.Common.Pagination.Results;
-using EaseClub.Application.Features.ApplicationTemplates;
-using EaseClub.Application.Features.ApplicationTemplates.Commands.Field.AddField;
-using EaseClub.Application.Features.ApplicationTemplates.Commands.Field.RemoveField;
-using EaseClub.Application.Features.ApplicationTemplates.Commands.Field.UpdateField;
-using EaseClub.Application.Features.ApplicationTemplates.Commands.Section.AddSection;
-using EaseClub.Application.Features.ApplicationTemplates.Commands.Section.RemoveSection;
-using EaseClub.Application.Features.ApplicationTemplates.Commands.Section.UpdateSection;
-using EaseClub.Application.Features.ApplicationTemplates.Commands.Step.AddStep;
-using EaseClub.Application.Features.ApplicationTemplates.Commands.Step.RemoveStep;
-using EaseClub.Application.Features.ApplicationTemplates.Commands.Step.UpdateStep;
-using EaseClub.Application.Features.ApplicationTemplates.Commands.Template.CreateTemplate;
+using EaseClub.Application.Features.ApplicationTemplates.Commands;
 using EaseClub.Application.Features.ApplicationTemplates.Commands.Template.DeleteTemplate;
 using EaseClub.Application.Features.ApplicationTemplates.Commands.Template.SyncMembershipTypes;
-using EaseClub.Application.Features.ApplicationTemplates.Commands.Template.UpdateTemplate;
 using EaseClub.Application.Features.ApplicationTemplates.Commands.Template.UpsertTemplate;
-using EaseClub.Application.Features.ApplicationTemplates.Queries.GetStepByOrder;
+using EaseClub.Application.Features.ApplicationTemplates.Queries;
 using EaseClub.Application.Features.ApplicationTemplates.Queries.GetTemplateById;
 using EaseClub.Application.Features.ApplicationTemplates.Queries.GetTemplates;
-using EaseClub.Application.Features.MembershipTypes.Queries.GetMembershipTypesByClub;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -35,7 +23,7 @@ namespace EaseClub.Api.Controllers
         #region Template Shell
 
 
-        [HttpGet]
+        [HttpGet("/api/v{version:ApiVersion}/clubs/{clubId}/application-templates")]
         [MapToApiVersion("1.0")]
         [ProducesResponseType(typeof(OffsetPaginatedResult<TemplateSummaryDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -44,7 +32,7 @@ namespace EaseClub.Api.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [EndpointName("GetTemplates")]
         [EndpointSummary("Retrieves paginated application templates for a specific club.")]
-        public async Task<IActionResult> GetTemplates([FromQuery] Guid clubId, [FromQuery] OffsetPaginationParameters parameters,
+        public async Task<IActionResult> GetTemplates([FromRoute] Guid clubId, [FromQuery] OffsetPaginationParameters parameters,
             CancellationToken ct)
         {
             var result = await sender.Send(new GetApplicationTemplatesQuery(clubId, parameters), ct);
@@ -55,7 +43,7 @@ namespace EaseClub.Api.Controllers
 
         [HttpGet("{templateId:Guid}")]
         [MapToApiVersion("1.0")]
-        [ProducesResponseType(typeof(TemplateDetailsDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(TemplateTreeQuery), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -106,7 +94,7 @@ namespace EaseClub.Api.Controllers
             return result.Match(_ => NoContent(), Problem);
         }
 
-        [HttpPut("{templateId}/membership-types")]
+        [HttpPut("{templateId}/membership-plans")]
         [MapToApiVersion("1.0")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -114,11 +102,11 @@ namespace EaseClub.Api.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        [EndpointName("SyncTemplateMembershipTypes")]
-        [EndpointSummary("Synchronizes the membership types connected to a template by replacing the existing list with the provided membership type IDs.")]
-        public async Task<IActionResult> SyncMembershipTypes(
+        [EndpointName("SyncTemplateMembershipPlans")]
+        [EndpointSummary("Synchronizes the membership plans connected to a template by replacing the existing list with the provided membership plan IDs.")]
+        public async Task<IActionResult> SyncMembershipPlans(
         Guid templateId,
-        [FromBody] SyncTemplateMembershipTypesCommand command,
+        [FromBody] SyncTemplateMembershipPlansCommand command,
         CancellationToken ct)
         {
             var result = await sender.Send(command with { TemplateId = templateId }, ct);

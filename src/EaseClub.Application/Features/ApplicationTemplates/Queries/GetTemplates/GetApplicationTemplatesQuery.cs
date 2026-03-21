@@ -1,6 +1,7 @@
 ﻿using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Common.Pagination.Parameters;
 using EaseClub.Application.Common.Pagination.Results;
+using EaseClub.Application.Features.ApplicationTemplates.Commands;
 using EaseClub.Domain.Common.Results;
 using MediatR;
 using System;

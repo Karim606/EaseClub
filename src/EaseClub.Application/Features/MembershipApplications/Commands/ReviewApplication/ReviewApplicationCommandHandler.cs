@@ -35,7 +35,7 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.ReviewAp
                 request.ApplicationId,
                 reviewerId,
                 request.Decision,
-                request.Reason
+                request.RejectionReason
             );
 
             if (reviewResult.IsError)

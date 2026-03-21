@@ -47,7 +47,7 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
         [Fact]
         public async Task Handle_Should_Return_Error_When_Template_Does_Not_Exist()
         {
-            var plan = MembershipPlan.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "abc", 2000, 60).Value;
+            var plan = MembershipPlan.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),1,2, "abc", 2000, 60).Value;
 
             var command = new AddInstallmentTemplateToPlanCommand(plan.ClubId,plan.Id, Guid.NewGuid());
 
@@ -66,7 +66,7 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
         [Fact]
         public async Task Handle_Should_Save_When_Addition_Is_Successful()
         {
-            var plan = MembershipPlan.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "abc", 2000, 60).Value;
+            var plan = MembershipPlan.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),1,2, "abc", 2000, 60).Value;
             var template = InstallmentTemplate.Create(Guid.NewGuid(), plan.ClubId,"def", 3, 60,null).Value;
 
             

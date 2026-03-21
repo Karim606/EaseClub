@@ -38,6 +38,5 @@ namespace EaseClub.Application.Features.MembershipApplications
     {
         public DecisionsAboutApplication Decision { get; set; }
         public string? Reason { get; set; }
-        public bool VisibleToUser { get; set; } = true;
     }
 }

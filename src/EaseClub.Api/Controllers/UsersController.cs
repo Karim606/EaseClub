@@ -28,6 +28,7 @@ namespace EaseClub.Api.Controllers
         [HttpGet("admin-context")]
         [EndpointSummary("Retrieves the administrative context for the current user.")]
         [EndpointDescription("Returns the ClubAdminId and the associated ManagedClubId, providing necessary context for building administrative requests")]
+        [ProducesResponseType(typeof(ClubAdminContextResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
 
         public async Task<IActionResult> GetMyAdminContext()

@@ -30,9 +30,9 @@ namespace EaseClub.Infrastructure.Data.Configurations
             // We use OwnsOne to flatten it into the Section table
             builder.OwnsOne(s => s.RepeatRule, nav =>
             {
-                nav.Property(r => r.DependsOnFieldKey)
-                    .HasColumnName("Repeat_DependsOnFieldKey")
-                    .HasMaxLength(100)
+                nav.Property(r => r.NumberOfRepeats)
+                    .HasColumnName("NumberOfRepeats")
+                    .HasColumnType("int") // Explicitly tells the DB to use an integer type
                     .IsRequired();
 
                 nav.Property(r => r.Mode)

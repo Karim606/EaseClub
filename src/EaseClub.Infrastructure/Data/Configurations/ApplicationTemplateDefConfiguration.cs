@@ -36,7 +36,7 @@ namespace EaseClub.Infrastructure.Data.Configurations
             builder.Navigation(x=> x.Steps).HasField("_Steps")
                 .UsePropertyAccessMode(PropertyAccessMode.Field);
 
-            builder.Navigation(x => x.ConnectedMembershipTypes).HasField("_ConnectedMembershipTypes")
+            builder.Navigation(x => x.ConnectedMembershipPlans).HasField("_ConnectedMembershipPlans")
                 .UsePropertyAccessMode(PropertyAccessMode.Field);
 
             //builder.Navigation(x => x.Fields).HasField("_Fields")

@@ -1,5 +1,6 @@
 ﻿using EaseClub.Application.Common;
 using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Features.ApplicationTemplates.Commands;
 using EaseClub.Domain.Common.Results;
 using MediatR;
 using System;
@@ -10,5 +11,5 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.ApplicationTemplates.Queries.GetStepByOrder
 {
-    public record GetTemplateStepByOrderQuery(Guid TemplateId,int Order) : IRequest<Result<StepDetailsDto>>;
+    public record GetTemplateStepByOrderQuery(Guid TemplateId,int Order) : IRequest<Result<StepQuery>>;
 }

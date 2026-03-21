@@ -13,19 +13,18 @@ using System.Threading.Tasks;
 namespace EaseClub.Application.Features.InstallmentTemplates.Queries.GetTemplates
 {
     public class GetInstallmentTemplatesByClubQueryHandler(
-    IInstallmentsTemplatesRepository repository,
-    IInstallmentTemplateQueryService queryService) // New Query Service
-    : IRequestHandler<GetInstallmentTemplatesByClubQuery, Result<UnifiedPaginatedResponse<TemplatesResponse>>>
+    IInstallmentsTemplatesRepository repository) // New Query Service
+    : IRequestHandler<GetInstallmentTemplatesByClubQuery, Result<List<TemplatesResponse>>>
     {
-        public async Task<Result<UnifiedPaginatedResponse<TemplatesResponse>>> Handle(
+        public async Task<Result<List<TemplatesResponse>>> Handle(
             GetInstallmentTemplatesByClubQuery request,
             CancellationToken ct)
         {
 
-            return await queryService.GetTemplatesByClubAsync(
-            request.ClubId,
-            request.Parameters,
-            ct);
+            var list = await repository.GetTemplatesAsync(request.ClubId, request.PlanId, true,ct);
+
+            return list.Select(i => new TemplatesResponse(i.Id,i.Name,i.Installments.Count,i.Installments.Max(i => i.DueAfterDays))).ToList();
+
         }
     }
 }

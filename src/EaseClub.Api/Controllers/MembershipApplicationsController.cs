@@ -1,4 +1,5 @@
 ﻿using EaseClub.Application.Common.Pagination;
+using EaseClub.Application.Common.Pagination.Results;
 using EaseClub.Application.Features.MembershipApplications;
 using EaseClub.Application.Features.MembershipApplications.Commands.CompleteStep;
 using EaseClub.Application.Features.MembershipApplications.Commands.CreateApplication;
@@ -8,6 +9,7 @@ using EaseClub.Application.Features.MembershipApplications.Commands.SubmitApplic
 using EaseClub.Application.Features.MembershipApplications.Commands.UpdateAnswer;
 using EaseClub.Application.Features.MembershipApplications.Queries.GetApplication;
 using EaseClub.Application.Features.MembershipApplications.Queries.GetApplications;
+using EaseClub.Application.Features.MembershipApplications.Queries.GetApplicationsForManagement;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -41,9 +43,8 @@ namespace EaseClub.Api.Controllers
                 Problem);
         }
 
-        [Authorize(Roles = "ClubAdmin,SuperAdmin")]
         [HttpGet]
-        [ProducesResponseType(typeof(List<UnifiedPaginatedResponse<MembershipAppDto>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(UnifiedPaginatedResponse<MembershipAppDto>), StatusCodes.Status200OK)]
         [EndpointName("GetApplications")]
         [EndpointSummary("Lists applications based on filter criteria.")]
         public async Task<IActionResult> GetApplications([FromQuery] GetApplicationsQuery query)
@@ -53,6 +54,20 @@ namespace EaseClub.Api.Controllers
                 (apps) => Ok(apps),
                 Problem);
         }
+
+        [Authorize(Roles = "ClubAdmin,SuperAdmin")]
+        [HttpGet("/api/v{version:ApiVersion}/clubs/{clubId}/membership-applications")]
+        [ProducesResponseType(typeof(OffsetPaginatedResult<MembershipAppAdminDto>), StatusCodes.Status200OK)]
+        [EndpointName("GetApplicationsForManagement")]
+        [EndpointSummary("Lists applications for admins based on filters criteria.")]
+        public async Task<IActionResult> GetApplicationsForManagement([FromQuery] GetApplicationsForManagementQuery query)
+        {
+            var result = await sender.Send(query);
+            return result.Match(
+                (apps) => Ok(apps),
+                Problem);
+        }
+
 
         [HttpPost("{id}/steps/{order}/complete")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -73,15 +88,12 @@ namespace EaseClub.Api.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [EndpointName("ReviewApplication")]
         [EndpointSummary("Approves or rejects a submitted application.")]
-        public async Task<IActionResult> Review(Guid id, [FromBody] ReviewApplicationDto dto)
+        [EndpointDescription("Approves or rejects a submitted application, " +
+            "values you can send for decision enum are  Approved or Rejected")]
+        public async Task<IActionResult> Review([FromRoute]Guid id, [FromBody] ReviewApplicationCommand cmd)
         {
-            var command = new ReviewApplicationCommand(
-                id,
-                dto.Decision,
-                dto.Reason
-            );
 
-            var result = await sender.Send(command);
+            var result = await sender.Send(cmd with { ApplicationId = id });
 
             return result.Match(_ => NoContent(), Problem);
         }

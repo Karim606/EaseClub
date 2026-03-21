@@ -21,9 +21,15 @@ namespace EaseClub.Infrastructure.Data.Repositories
                 .AnyAsync(mp => mp.ClubId == clubId && mp.Name == name, cancellationToken);
         }
 
-        public async Task<List<MembershipPlan>> GetPlansByClubAsync(Guid clubId,CancellationToken cancellationToken = default)
+        public async Task<List<MembershipPlan>> GetPlansAsync(Guid? clubId,Guid? membershipTypeId,bool? isActive,CancellationToken cancellationToken = default)
         {
-           return  await _context.MembershipPlans.Where(mp => mp.ClubId == clubId).AsNoTracking().ToListAsync(cancellationToken);
+            var query = _context.MembershipPlans.AsQueryable();
+
+            if (clubId.HasValue) query = query.Where(mp => mp.ClubId == clubId.Value);
+            if (membershipTypeId.HasValue) query = query.Where(mp => mp.MembershipTypeId == membershipTypeId.Value);
+            if (isActive.HasValue) query = query.Where(mp => mp.IsActive == isActive.Value); 
+
+            return await query.ToListAsync(cancellationToken);
         }
 
        public async Task<MembershipPlan> GetPlanWithDetailsAsync(Guid id, CancellationToken cancellationToken)
@@ -37,5 +43,11 @@ namespace EaseClub.Infrastructure.Data.Repositories
             return await _context.MembershipPlans.Where(mp => mp.MembershipTypeId == typeId).ToListAsync(cancellationToken);
         }
 
+        public async Task<List<MembershipPlan>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
+        {
+            return await _context.MembershipPlans
+               .Where(x => ids.Contains(x.Id))
+               .ToListAsync(ct);
+        }
     }
 }

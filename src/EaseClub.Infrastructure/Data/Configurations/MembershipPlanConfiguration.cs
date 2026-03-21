@@ -27,7 +27,7 @@ namespace EaseClub.Infrastructure.Data.Configurations
                    .WithOne(x => x.MembershipPlan)
                    .HasForeignKey(x => x.MembershipPlanId);
 
-            builder.HasOne<MembershipType>() // Plan has one Type
+            builder.HasOne(p => p.MembershipType) // Plan has one Type
                .WithMany(mt => mt.Plans)  // Type has many Plans
                .HasForeignKey(p => p.MembershipTypeId)
                .OnDelete(DeleteBehavior.Restrict); // Prevent deleting a type if plans exist

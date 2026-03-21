@@ -17,9 +17,6 @@ namespace EaseClub.Domain.MembershipTypes
         public string Name { get; private set; }
         public string? Description { get; private set; }
 
-        public bool FamilyAllowed { get; private set; }
-        public int? MaxFamilyMembers { get; private set; }
-
         public bool AllBranchesPermitted { get; private set; }
         public bool IsActive { get; private set; }
 
@@ -58,22 +55,6 @@ namespace EaseClub.Domain.MembershipTypes
                 return MembershipTypeErrors.MembershipTypeNameMustNotBeEmpty;
 
             return new MembershipType(id,clubId, name);
-        }
-
-        public Result<Success> EnableFamily(int maxFamilyMembers)
-        {
-            if (maxFamilyMembers <= 0)
-                return MembershipTypeErrors.MaxFamilyMembersMustBeGreaterThanZero;
-
-            FamilyAllowed = true;
-            MaxFamilyMembers = maxFamilyMembers;
-            return Result.Success;
-        }
-
-        public void DisableFamily()
-        {
-            FamilyAllowed = false;
-            MaxFamilyMembers = null;
         }
 
         public Result<Success> RestrictToBranches(IEnumerable<Guid> branchIds)

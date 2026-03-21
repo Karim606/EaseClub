@@ -39,6 +39,9 @@ namespace EaseClub.Infrastructure.Data.Configurations
             builder.Metadata
             .FindNavigation(nameof(Membership.MembershipInstallments))!
             .SetPropertyAccessMode(PropertyAccessMode.Field);
+
+            builder.HasMany(x => x.FamilyMembers).WithOne(x => x.Membership).HasForeignKey(x => x.MembershipId);
+            builder.Navigation(x => x.FamilyMembers).HasField("_FamilyMembers").UsePropertyAccessMode(PropertyAccessMode.Field);
         }
     }
 }

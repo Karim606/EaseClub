@@ -2,6 +2,7 @@
 using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipApplications.ValueObjects;
+using EaseClub.Domain.MembershipTypes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,13 +15,15 @@ namespace EaseClub.Domain.MembershipPlans
     {
         public Guid ClubId { get; private set; }
         public Guid MembershipTypeId { get; private set; }
+        public MembershipType MembershipType { get; private set; }
 
         public string Name { get; private set; }
         public string? Description { get; private set; }
 
         public decimal TotalPrice { get; private set; }
-        public int DurationInDays { get; private set; }
+        public int MaxPaymentPeriodInDays { get; private set; }
         public int SubscriptionValidityInYears { get; private set; }
+        public int MaxFamilyMembers { get; private set; }
         public bool IsActive { get; private set; } = true;
 
         private readonly List<PlanInstallmentTemplate> _InstallmentTemplates = new();
@@ -28,16 +31,17 @@ namespace EaseClub.Domain.MembershipPlans
 
         private MembershipPlan() { } // EF
 
-        private MembershipPlan(Guid id,Guid clubId, Guid membershipTypeId,int subscriptionValidityInYears, string name, 
-            decimal totalPrice, int durationInDays):base(id)
+        private MembershipPlan(Guid id,Guid clubId, Guid membershipTypeId,int subscriptionValidityInYears,int maxFamilyMembers, string name,
+            decimal totalPrice, int maxPaymentPeriod) :base(id)
         {
             
             ClubId = clubId;
             MembershipTypeId = membershipTypeId;
             Name = name;
             TotalPrice = totalPrice;
-            DurationInDays = durationInDays;
+            MaxPaymentPeriodInDays = maxPaymentPeriod;
             SubscriptionValidityInYears = subscriptionValidityInYears;
+            MaxFamilyMembers = maxFamilyMembers;
             IsActive = true;
         }
 
@@ -51,7 +55,7 @@ namespace EaseClub.Domain.MembershipPlans
 
             var maxDueAfter = template.Installments.Max(i => i.DueAfterDays);
 
-            if (maxDueAfter > DurationInDays)
+            if (maxDueAfter > MaxPaymentPeriodInDays)
                 return MembershipPlanErrors.InstallmentTemplateExceedsPlanDuration;
 
             var planInstallmentTemplate = PlanInstallmentTemplate.Create(this.Id, template.Id);
@@ -75,23 +79,25 @@ namespace EaseClub.Domain.MembershipPlans
 
       
         public static Result<MembershipPlan> Create(Guid id,Guid clubId, Guid membershipTypeId,
-            int subscriptionValidityInYears,string name, decimal totalPrice, int durationInDays)
+            int subscriptionValidityInYears,int maxFamilyMembers,string name, decimal totalPrice, int maxPaymentPeriod)
         {
             if (string.IsNullOrWhiteSpace(name))
                 return MembershipPlanErrors.MembershipPlanNameMustNotBeEmpty;
             if (totalPrice <= 0)
                 return MembershipPlanErrors.MembershipPlanTotalPriceMustBeGreaterThanZero;
-            if (durationInDays <= 0)
+            if (maxPaymentPeriod <= 0)
                 return MembershipPlanErrors.MembershipPlanDurationMustBeGreaterThanZero;
             if (subscriptionValidityInYears <= 0)
                 return Error.Validation(description:"MembershipPlan.SubscriptionValidityInYearsMustBeGreaterThanZero");
+            if (maxFamilyMembers < 0)
+                return Error.Validation(description:"MembershipPlan.MaxFamilyMembersMustBeNonNegative");
 
             if (membershipTypeId == Guid.Empty)
                 return MembershipPlanErrors.MembershipTypeIdMustBeProvided;
             if (clubId == Guid.Empty)
                 return MembershipPlanErrors.ClubIdMustBeProvided;
 
-            var membershipPlan = new MembershipPlan(id, clubId, membershipTypeId, subscriptionValidityInYears, name, totalPrice, durationInDays);
+            var membershipPlan = new MembershipPlan(id, clubId, membershipTypeId, subscriptionValidityInYears,maxFamilyMembers, name, totalPrice, maxPaymentPeriod);
             return membershipPlan;
         }
 

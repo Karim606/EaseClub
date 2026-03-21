@@ -1,7 +1,9 @@
 ﻿using EaseClub.Application.Features.Branches.Commands.CreateBranch;
 using EaseClub.Application.Features.Branches.Commands.DeleteBranch;
 using EaseClub.Application.Features.Branches.Commands.EditBranch;
+using EaseClub.Application.Features.Branches.Queries.GetBranchById;
 using EaseClub.Application.Features.Branches.Queries.GetBranchesByClub;
+using EaseClub.Application.Features.Branches.Queries.GetBranchesForAdmins;
 using EaseClub.Application.Features.Clubs.Queries.GetClubById;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -10,7 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EaseClub.Api.Controllers
 {
-    [Route("api/v{version:ApiVersion}/clubs/{clubId}/branches")]
+    [Route("api/v{version:ApiVersion}/branches")]
     public class BranchesController(ISender sender) : ApiController
     {
 
@@ -33,6 +35,25 @@ namespace EaseClub.Api.Controllers
         }
 
         [Authorize(Roles = "ClubAdmin,SuperAdmin")]
+        [HttpGet("/api/v{version:ApiVersion}/clubs/{clubId}/branches")]
+        [MapToApiVersion("1.0")]
+
+        [ProducesResponseType(typeof(List<BranchAdminDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+
+        [EndpointName("GetBranchesByClubForManagement")]
+        [EndpointSummary("Get Branches by it club's unique identifier for admins.")]
+        public async Task<IActionResult> GetBranchesForManagement(Guid clubId,bool? isActive)
+        {
+            var result = await sender.Send(new GetBranchesForAdminQuery(clubId,isActive));
+
+            return result.Match(
+                (branches) => Ok(branches),
+                Problem);
+        }
+
+        [Authorize(Roles = "ClubAdmin,SuperAdmin")]
         [HttpPost]
         [MapToApiVersion("1.0")]
 
@@ -44,12 +65,26 @@ namespace EaseClub.Api.Controllers
         [EndpointName("CreateBranch")]
         [EndpointSummary("Creates a new branch for a specific club.")]
 
-        public async Task<IActionResult> Create(Guid clubId, [FromBody] CreateBranchRequest request)
+        public async Task<IActionResult> Create([FromBody] CreateBranchRequest request)
         {
-            var result = await sender.Send(new CreateBranchCommand(clubId,request.Name));
+            var result = await sender.Send(new CreateBranchCommand(request.clubId,request.Name));
 
            return result.Match(
-                (id) =>{return CreatedAtAction(nameof(GetByClub), new { version = "1.0", clubId }, id);},
+                (id) =>{return CreatedAtAction(nameof(GetByClub), new { version = "1.0", request.clubId }, id);},
+                Problem);
+        }
+
+        [HttpGet("{id}")]
+        [MapToApiVersion("1.0")]
+        [ProducesResponseType(typeof(BranchDto), StatusCodes.Status200OK)]
+        [EndpointName("GetBranch")]
+        [EndpointSummary("Get Branch by it unique identifier.")]
+        public async Task<IActionResult> Get(Guid id)
+        {
+            var result = await sender.Send(new GetBranchByIdQuery(id));
+
+            return result.Match(
+                (branch) => Ok(branch),
                 Problem);
         }
 

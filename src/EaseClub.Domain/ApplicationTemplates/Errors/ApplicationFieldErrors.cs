@@ -32,6 +32,9 @@ namespace EaseClub.Domain.ApplicationTemplates.Errors
             code: "ApplicationField.ValidationRulesRequired",
             description: "Validation rules must be provided.");
 
+        public static Error SystemFieldCannotBeUpdated => Error.Conflict("ApplicationField.SystemField.Locked",
+            "Cannot delete a system-critical field.");
+
     }
 }
 

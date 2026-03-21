@@ -58,32 +58,6 @@ namespace EaseClub.Domain.Tests.Entities
 
         #endregion
 
-        #region EnableFamily
-
-        [Fact]
-        public void EnableFamily_Should_Fail_When_MaxMembers_Is_Zero()
-        {
-            var type = CreateValidType();
-
-            var result = type.EnableFamily(0);
-
-            result.IsError.Should().BeTrue();
-            result.TopError.Should().Be(MembershipTypeErrors.MaxFamilyMembersMustBeGreaterThanZero);
-        }
-
-        [Fact]
-        public void EnableFamily_Should_Set_Flags_When_Valid()
-        {
-            var type = CreateValidType();
-
-            var result = type.EnableFamily(4);
-
-            result.IsSuccess.Should().BeTrue();
-            type.FamilyAllowed.Should().BeTrue();
-            type.MaxFamilyMembers.Should().Be(4);
-        }
-
-        #endregion
 
         #region RestrictToBranches
 

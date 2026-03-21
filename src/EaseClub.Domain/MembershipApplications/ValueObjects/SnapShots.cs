@@ -51,10 +51,9 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
     public record StepSnapshot
     {
         [JsonConstructor]
-        public StepSnapshot(Guid id, string category, string title, int order, List<SectionSnapshot> sections)
+        public StepSnapshot(Guid id, string title, int order, List<SectionSnapshot> sections)
         {
             Id = id;
-            Category = category;
             Title = title;
             Order = order;
             Sections = sections;
@@ -62,7 +61,6 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
         private StepSnapshot() { }
 
         public Guid Id { get; private set; }
-        public string Category { get; private set; }
         public string Title { get; private set; }
         public int Order { get; private set; }
 
@@ -72,21 +70,25 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
     public record SectionSnapshot
     {
         [JsonConstructor]
-        public SectionSnapshot(Guid id, string title, int order, RepeatRule? repeatRule, List<FieldSnapshot> fields)
+        public SectionSnapshot(Guid id, string title, int order, RepeatRule? repeatRule,SectionIntent intent, List<FieldSnapshot> fields)
         {
             Id = id; // Fix: Ensure parameter names match properties
             Title = title;
             Order = order;
             RepeatRule = repeatRule;
             Fields = fields;
+            Intent = intent;
         }
         private SectionSnapshot() { }
 
         public Guid Id { get; private set; }
         public string Title { get; private set; }
         public int Order { get; private set; }
+        public SectionIntent Intent { get; private set; }
         public RepeatRule? RepeatRule { get; private set; }
         public  List<FieldSnapshot> Fields { get; init; } = new();
+
+        public void SetRepeatRule(RepeatRule? repeatRule) => RepeatRule = repeatRule;
     }
 
 
@@ -102,7 +104,8 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
                 FieldType type,
                 ValidationRuleSetSnapshot validationRules,
                 ConditionExpressionSnapshot? visibilityCondition,
-                int order)
+                int order,
+                bool isSystemField)
         {
             Id = id;
             Key = key;
@@ -111,6 +114,7 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
             ValidationRules = validationRules;
             VisibilityCondition = visibilityCondition;
             Order = order;
+            IsSystemField = isSystemField;
 
         }
 
@@ -118,6 +122,7 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
         public string Key { get; private set; }
         public string Label { get; private set; }
         public FieldType Type { get; private set; }
+        public bool IsSystemField { get; private set; }
         public ValidationRuleSetSnapshot ValidationRules { get; init; } = default!;
         public ConditionExpressionSnapshot? VisibilityCondition { get; init; }
 
@@ -243,20 +248,20 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
 
     public record RepeatRuleSnapshot
     {
-        public string DependsOnFieldKey { get; init; } = default!;
+        public int NumberOfRepeats { get; init; } = default!;
         public RepeatMode Mode { get; init; }
 
         [JsonConstructor]
-        public RepeatRuleSnapshot(string dependsOnFieldKey, RepeatMode mode)
+        public RepeatRuleSnapshot(int numberOfRepeats, RepeatMode mode)
         {
-            DependsOnFieldKey = dependsOnFieldKey;
+            NumberOfRepeats = numberOfRepeats;
             Mode = mode;
         }
 
         public static RepeatRuleSnapshot FromDomain(RepeatRule domain) =>
-            new RepeatRuleSnapshot(domain.DependsOnFieldKey, domain.Mode);
+            new RepeatRuleSnapshot(domain.NumberOfRepeats, domain.Mode);
 
-        public RepeatRule ToDomain() => RepeatRule.Create(DependsOnFieldKey, Mode).Value;
+        public RepeatRule ToDomain() => RepeatRule.Create(NumberOfRepeats,Mode).Value;
     }
 
     public record InstallmentRuleSnapshot
@@ -299,23 +304,26 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
     public record MembershipPlanSnapshot
     {
         [JsonConstructor]
-        public MembershipPlanSnapshot (Guid id,string name,int duraitonInDays,decimal price,int subscriptionValidityInYears)
+        public MembershipPlanSnapshot (Guid id,string name,int maxPaymentPeriod, decimal price,int subscriptionValidityInYears,int maxFamilyMembers)
         {
             Id = id;
             Name = name;
-            DurationInDays = duraitonInDays;
+            MaxPaymentPeriodInDays = maxPaymentPeriod;
             Price = price;
             SubscriptionValidityInYears = subscriptionValidityInYears;
+            MaxFamilyMembers = maxFamilyMembers;
         }
 
         public Guid Id { get; init; }
         public string Name { get; init; }
-        public int DurationInDays { get; init; }
+        public int MaxPaymentPeriodInDays { get; init; }
         public decimal Price { get; init; }
         public int SubscriptionValidityInYears { get; init; }
+        public int MaxFamilyMembers { get; init; }
+
 
         public static MembershipPlanSnapshot FromDomain(MembershipPlan domain) =>
-            new(domain.Id, domain.Name, domain.DurationInDays, domain.TotalPrice, domain.SubscriptionValidityInYears);
+            new(domain.Id, domain.Name, domain.MaxPaymentPeriodInDays, domain.TotalPrice, domain.SubscriptionValidityInYears,domain.MaxFamilyMembers);
 
 
     }

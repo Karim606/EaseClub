@@ -9,36 +9,33 @@ namespace EaseClub.Domain.ApplicationTemplates.ValueObjects.RepeatRule
 {
     public record RepeatRule
     {
-        public string DependsOnFieldKey { get; init; }
         public RepeatMode Mode { get; init; }
+        public int NumberOfRepeats { get; init; }
 
         private RepeatRule() { }
-        private RepeatRule(string fieldKey, RepeatMode mode)
+        private RepeatRule( int number,RepeatMode mode)
         {
-            DependsOnFieldKey = fieldKey;
+            NumberOfRepeats = number;
             Mode = mode;
         }
 
-        public static Result<RepeatRule> Create(string fieldKey, RepeatMode mode)
+        public static Result<RepeatRule> Create(int number, RepeatMode mode)
         {
-            if (string.IsNullOrWhiteSpace(fieldKey))
-                return RepeatErrors.FieldKeyRequired;
-
-            return new RepeatRule(fieldKey, mode);
+            if (number <= 0)
+                return RepeatErrors.NonPositiveRepeatCount;
+            return new RepeatRule(number, mode);
         }
 
-        public int Evaluate(string? actualValue)
+        public bool Evaluate(int actualInstances)
         {
-            if (!int.TryParse(actualValue, out var number))
-                return 0;
 
             return Mode switch
             {
-                RepeatMode.ExactValue => number,
-                RepeatMode.AtLeastOne => Math.Max(1, number),
-                RepeatMode.None => 0,
-                _ => 0
+                RepeatMode.ExactValue => actualInstances == NumberOfRepeats,
+                RepeatMode.AtLeastOne => actualInstances > 0 && actualInstances <= NumberOfRepeats,
+                _ => false
             };
+
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.Member;
 using EaseClub.Domain.MembershipApplications.Enums;
 using EaseClub.Domain.MembershipApplications.Errors;
 using EaseClub.Domain.MembershipApplications.ValueObjects;
@@ -59,6 +60,7 @@ namespace EaseClub.Domain.MembershipApplications
 
 
         public Guid UserId { get; private set; }
+        public MemberUser User { get; private set; }
         public Guid ClubId { get; private set; }
         public Guid InstallmentTemplateId { get; private set; }
         public Guid MembershipTypeId { get; private set; }
@@ -170,17 +172,10 @@ namespace EaseClub.Domain.MembershipApplications
         {
             foreach (var step in TemplateSnapshot.Steps)
             {
+                // Only validate sections that have a RepeatRule
                 foreach (var section in step.Sections.Where(s => s.RepeatRule != null))
                 {
-                    // Find the value of the "Driver" field (e.g., guest_count)
-                    var driverValue = _Answers.FirstOrDefault(a =>
-                        a.FieldKey == section.RepeatRule!.DependsOnFieldKey &&
-                        a.InstanceIndex == 0)?.Value;
-
-                    // Use your Evaluate logic: ExactValue, AtLeastOne, etc.
-                    int expectedCount = section.RepeatRule!.Evaluate(driverValue);
-
-                    // Count unique indices for fields belonging to this section
+                    // 1. Get the actual number of instances the user submitted
                     var sectionFieldIds = section.Fields.Select(f => f.Id).ToList();
                     var actualCount = _Answers
                         .Where(a => sectionFieldIds.Contains(a.FieldDefinitionId))
@@ -188,8 +183,16 @@ namespace EaseClub.Domain.MembershipApplications
                         .Distinct()
                         .Count();
 
-                    if (actualCount != expectedCount)
-                        return MembershipApplicationErrors.SectionCountMismatch(section.Title,actualCount,expectedCount);
+                    // 2. Evaluate the rule directly against actualCount
+                    bool isValid = section.RepeatRule!.Evaluate(actualCount);
+
+                    if (!isValid)
+                    {
+                        return MembershipApplicationErrors.SectionCountMismatch(
+                            section.Title,
+                            actualCount,
+                            section.RepeatRule.NumberOfRepeats);
+                    }
                 }
             }
             return Result.Success;
@@ -224,7 +227,8 @@ namespace EaseClub.Domain.MembershipApplications
             {
                 return FinalPriceSummary != null ? FinalPriceSummary : Error.NotFound(description: "Locked price summary not found.");
             }
-            return RefreshPrice();
+            FinalPriceSummary = RefreshPrice();
+            return FinalPriceSummary;
         }
 
         public Result<List<Installment>>GetPaymentSchedule(){
@@ -313,10 +317,10 @@ namespace EaseClub.Domain.MembershipApplications
             // Raise domain events
 
             if (review.Decision == DecisionsAboutApplication.Approved)
-                RaiseDomainEvent(new ApplicationApprovedEvent(Id, review.Id,review.Note));
+                RaiseDomainEvent(new ApplicationApprovedEvent(UserId,Id, review.Id,review.Note));
 
             if (review.Decision == DecisionsAboutApplication.Rejected)
-                RaiseDomainEvent(new ApplicationRejectedEvent(Id, review.Id, review.Reason!));
+                RaiseDomainEvent(new ApplicationRejectedEvent(UserId,Id, review.Id, review.Reason!));
 
             return Result.Success;
         }

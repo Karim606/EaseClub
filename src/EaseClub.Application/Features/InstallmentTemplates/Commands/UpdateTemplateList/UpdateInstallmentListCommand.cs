@@ -15,7 +15,7 @@ namespace EaseClub.Application.Features.InstallmentTemplates.Commands.UpdateTemp
 {
    public record UpdateInstallmentListCommand(
     Guid TemplateId, 
-    List<InstallmentDto> Installments) : IRequest<Result<Success>>,IRequireClubOwnershipValidation
+    List<decimal> newPercentages) : IRequest<Result<Success>>,IRequireClubOwnershipValidation
     {
 
         public IEnumerable<OwnershipRule> Rules()

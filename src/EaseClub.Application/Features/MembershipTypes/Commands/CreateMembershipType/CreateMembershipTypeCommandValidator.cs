@@ -15,12 +15,6 @@ namespace EaseClub.Application.Features.MembershipTypes.Commands.CreateMembershi
                 .NotEmpty().WithMessage("Membership type name is required.")
                 .MaximumLength(150).WithMessage("Membership type name must not exceed 150 characters.");
 
-            When(x => x.FamilyAllowed, () =>
-            {
-                RuleFor(x => x.MaxFamilyMembers)
-                    .NotNull().WithMessage("Max family members is required when family membership is allowed.")
-                    .GreaterThan(0).WithMessage("Max family members must be greater than zero.");
-            });
             When(x => !x.AllBranchesPermitted, () =>
             {
                 RuleFor(x => x.BranchIds)

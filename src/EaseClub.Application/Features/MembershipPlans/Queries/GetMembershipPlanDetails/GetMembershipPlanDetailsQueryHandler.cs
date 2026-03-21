@@ -30,7 +30,7 @@ namespace EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPla
 
                var temp = await installmentsTemplatesRepository.GetByPlanIdAsync(plan.Id, cancellationToken);
 
-           var dto = new MembershipPlanDetailsDto(plan.Id,plan.Name,plan.Description,plan.DurationInDays,plan.TotalPrice,plan.IsActive,
+           var dto = new MembershipPlanDetailsDto(plan.Id,plan.Name,plan.Description,plan.MaxPaymentPeriodInDays,plan.TotalPrice,plan.IsActive,
                 temp.Select( x => new InstallmentsTemplateDto(x.Id,x.Name)).ToList());
            
             return dto;

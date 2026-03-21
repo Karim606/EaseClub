@@ -14,9 +14,12 @@ namespace EaseClub.Infrastructure.Data.Repositories
     {
         public BranchRepository(AppDbContext dbContext) : base(dbContext) { }
 
-        public async Task<List<Branch>> GetBranchesByClubIdAsync(Guid clubId)
+        public async Task<List<Branch>> GetBranchesByClubIdAsync(Guid clubId, bool? Active, CancellationToken cancellationToken = default)
         {
-            return await _context.Branches.Where(b => b.ClubId == clubId).AsNoTracking().ToListAsync();
+            var query = _context.Branches.AsQueryable().Where(b => b.ClubId == clubId);
+            if(Active.HasValue) query =_context.Branches.Where(b => b.ClubId == clubId && b.IsActive == Active.Value);
+
+            return await query.AsNoTracking().ToListAsync(cancellationToken);
         }
 
         public async Task<HashSet<Guid>> GetExistingBranchIdsAsync(IEnumerable<Guid> ids)
@@ -28,10 +31,9 @@ namespace EaseClub.Infrastructure.Data.Repositories
         {
             return await _context.Branches.AnyAsync(b => b.ClubId == clubId && b.Name == name);
         }
-        public async Task<Branch> GetBranchesByMembershipType(Guid typeId,CancellationToken ct = default)
+        public async Task<List<Branch>> GetBranchesByMembershipType(Guid typeId,CancellationToken ct = default)
         {
-            return await _context.MembershipTypeBranches.Where(b => b.MembershipType.Id == typeId)
-                .Select(b => b.Branch).FirstOrDefaultAsync(ct);
+            return await _context.Branches.Where(b => b.MembershipTypeBranchesList.Any(mp => mp.MembershipTypeId == typeId)).ToListAsync(ct);
                 
         }
 

@@ -13,12 +13,9 @@ using System.Threading.Tasks;
 namespace EaseClub.Application.Features.InstallmentTemplates.Commands.CreateInstallmentTemplate
 {
     public record CreateInstallmentTemplateCommand(
+    Guid ClubId,
     string Name,
     int? NumOfInstallments,
     int?DurationInDays,
-    List<InstallmentDto>? Installments) : IRequest<Result<Guid>>,IRequireClubAdmin
-    {
-        [JsonIgnore]
-        public Guid ClubId { get; init; }
-    }
+    List<InstallmentDto>? Installments) : IRequest<Result<Guid>>,IRequireClubAdmin;
 }
