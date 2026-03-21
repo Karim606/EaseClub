@@ -25,14 +25,14 @@ namespace EaseClub.Api.Controllers
 
         [HttpGet("/api/v{version:ApiVersion}/clubs/{clubId}/application-templates")]
         [MapToApiVersion("1.0")]
-        [ProducesResponseType(typeof(OffsetPaginatedResult<TemplateTreeQuery>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(OffsetPaginatedResult<TemplateSummaryDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [EndpointName("GetTemplates")]
         [EndpointSummary("Retrieves paginated application templates for a specific club.")]
-        public async Task<IActionResult> GetTemplates([FromQuery] Guid clubId, [FromQuery] OffsetPaginationParameters parameters,
+        public async Task<IActionResult> GetTemplates([FromRoute] Guid clubId, [FromQuery] OffsetPaginationParameters parameters,
             CancellationToken ct)
         {
             var result = await sender.Send(new GetApplicationTemplatesQuery(clubId, parameters), ct);
@@ -43,7 +43,7 @@ namespace EaseClub.Api.Controllers
 
         [HttpGet("{templateId:Guid}")]
         [MapToApiVersion("1.0")]
-        [ProducesResponseType(typeof(TemplateDetailsDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(TemplateTreeQuery), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
