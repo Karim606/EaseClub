@@ -56,13 +56,13 @@ namespace EaseClub.Domain.ApplicationTemplates
             Title = title;
             return Result.Success;
         }
-        internal void UpdateOrder(int order)
+        public void UpdateOrder(int order)
         {
             Order = order;
         }
 
         // 4. Factory Method for Child (Section)
-        public Result<ApplicationSectionDefinition> AddNewSection(string title, int order, RepeatRule? repeatRule = null,
+        public Result<ApplicationSectionDefinition> AddNewSection(string title, RepeatRule? repeatRule = null,
             SectionIntent intent = SectionIntent.General)
         {
             // Business Rule: Ensure section title isn't duplicated within this specific step
@@ -72,24 +72,16 @@ namespace EaseClub.Domain.ApplicationTemplates
             if (_Sections.Any(s => s.Intent == SectionIntent.FamilyMembers)&& intent == SectionIntent.FamilyMembers)
                 return Error.Conflict("Can't add more than one family member section.");
 
-
-            if (order < 0 || order > _Sections.Count) return ApplicationStepErrors.InvalidSectionOrder;
-
             var sectionResult = ApplicationSectionDefinition.Create(
                 Guid.NewGuid(),
                 this.Id,
                 title,
-                order,
-                repeatRule
+                _Sections.Count+1,
+                repeatRule,
+                intent
             );
 
             if (sectionResult.IsError) return sectionResult.TopError;
-
-            // 3. SHIFTING LOGIC: Move existing sections forward
-            foreach (var existingSection in _Sections.Where(s => s.Order >= order))
-            {
-                existingSection.UpdateOrder(existingSection.Order + 1);
-            }
 
             _Sections.Add(sectionResult.Value);
      
@@ -106,9 +98,16 @@ namespace EaseClub.Domain.ApplicationTemplates
             var removedOrder = existingSection.Order;
             _Sections.Remove(existingSection);
 
-            foreach (var remainingSection in _Sections.Where(s => s.Order > removedOrder))
+            return Result.Success;
+        }
+
+        public Result<Success> ReorderSections(List<Guid> sectionIdsInOrder)
+        {
+            for (int i = 0; i < sectionIdsInOrder.Count; i++)
             {
-                remainingSection.UpdateOrder(remainingSection.Order - 1);
+                var section = _Sections.FirstOrDefault(s => s.Id == sectionIdsInOrder[i]);
+                if (section == null) return ApplicationStepErrors.SectionDoesntExist;
+                section.UpdateOrder(i + 1);
             }
             return Result.Success;
         }

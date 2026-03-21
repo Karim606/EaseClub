@@ -111,16 +111,10 @@ namespace EaseClub.Domain.ApplicationTemplates
             // 1. Remove the item
             _Fields.Remove(existingField);
 
-            // 2. Re-index: Shift everything above the removed order down by 1
-            foreach (var field in _Fields.Where(f => f.Order > removedOrder))
-            {
-                field.UpdateOrder(field.Order - 1);
-            }
-
             return Result.Success;
         }
 
-        internal Result<Success> ReorderFields(List<Guid> fieldIdsInOrder)
+        public Result<Success> ReorderFields(List<Guid> fieldIdsInOrder)
         {
             if (fieldIdsInOrder.Count != _Fields.Count)
                 return Error.Validation("Section.InvalidReorder", "Count mismatch.");

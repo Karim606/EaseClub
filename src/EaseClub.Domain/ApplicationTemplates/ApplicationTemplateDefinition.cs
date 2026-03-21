@@ -98,12 +98,6 @@ namespace EaseClub.Domain.ApplicationTemplates
 
             if (stepResult.IsError) return stepResult.TopError;
 
-            // 3. SHIFTING LOGIC: Move existing steps forward
-            foreach (var existingStep in _Steps.Where(s => s.Order >= order))
-            {
-                existingStep.UpdateOrder(existingStep.Order + 1);
-            }
-
             _Steps.Add(stepResult.Value);
 
             return stepResult.Value;
@@ -111,19 +105,11 @@ namespace EaseClub.Domain.ApplicationTemplates
 
         public Result<Success> RemoveStep(Guid stepId)
         {
-            var existingStep = _Steps.FirstOrDefault(s => s.Id == stepId);
+            var step = _Steps.FirstOrDefault(s => s.Id == stepId);
 
-            if (existingStep == null)
-                return ApplicationTemplateDefinitionErrors.StepDoesntExist;
-
-            int removedOrder = existingStep.Order;
-
-            _Steps.Remove(existingStep);
-
-            // 3. SHIFTING LOGIC: Close the gap
-            foreach (var remainingStep in _Steps.Where(s => s.Order > removedOrder))
+            if (step != null)
             {
-                remainingStep.UpdateOrder(remainingStep.Order - 1);
+                _Steps.Remove(step);
             }
 
             return Result.Success;
@@ -202,16 +188,16 @@ namespace EaseClub.Domain.ApplicationTemplates
 
             return Result.Success;
         }
-        public Result<Success> ReorderFieldsInSection(Guid sectionId, List<Guid> newOrderIds)
+
+        public Result<Success> ReorderSteps(List<Guid> stepIdsInOrder)
         {
-            // 1. Find the section
-            var section = _Steps.SelectMany(s => s.Sections)
-                                .FirstOrDefault(s => s.Id == sectionId);
-
-            if (section == null) return Error.NotFound("Template.SectionNotFound");
-
-            // 2. Delegate the physical reordering to the section
-            return section.ReorderFields(newOrderIds);
+            for (int i = 0; i < stepIdsInOrder.Count; i++)
+            {
+                var step = _Steps.FirstOrDefault(s => s.Id == stepIdsInOrder[i]);
+                if (step == null) return ApplicationTemplateDefinitionErrors.StepDoesntExist;
+                step.UpdateOrder(i + 1);
+            }
+            return Result.Success;
         }
 
         //GenerateUniqueKey
