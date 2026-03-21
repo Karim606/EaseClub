@@ -4,6 +4,7 @@ using EaseClub.Application.Common.Pagination.Results;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipApplications.Enums;
 using MediatR;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.MembershipApplications.Queries.GetApplicationsForManagement
 {
-    public record GetApplicationsForManagementQuery(Guid ClubId,GetApplicationsQueryFilters filters,OffsetPaginationParameters pagination):IRequest<Result<OffsetPaginatedResult<MembershipAppAdminDto>>>,IRequireClubAdmin;
+    public record GetApplicationsForManagementQuery([FromRoute]Guid ClubId,GetApplicationsQueryFilters filters,OffsetPaginationParameters pagination):IRequest<Result<OffsetPaginatedResult<MembershipAppAdminDto>>>,IRequireClubAdmin;
 
     public class GetApplicationsQueryFilters {
         public AppStatus? Status { get; set; }
