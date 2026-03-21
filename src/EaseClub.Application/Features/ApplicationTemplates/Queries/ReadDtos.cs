@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.ApplicationTemplates.Queries
 {
-    public record TemplateSummaryDto(Guid Id, string Name, DateTime CreatedAt, DateTime? LastModified, List<string> ConnectedMembershipPlans);
+    public record TemplateSummaryDto(Guid Id, string Name,bool IsActive, DateTime CreatedAt, DateTime? LastModified, List<string> ConnectedMembershipPlans);
 
     public record TemplateTreeQuery(
     Guid Id,

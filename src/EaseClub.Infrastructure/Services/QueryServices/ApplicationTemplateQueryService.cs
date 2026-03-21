@@ -37,7 +37,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
             var result = await GetPaginatedAsync<TemplateSummaryDto, string, TResult>(
                  query,
                 parameters,
-                selector: at => new TemplateSummaryDto(at.Id, at.Name, at.CreatedAt,at.UpdatedAt, at.ConnectedMembershipPlans.Select(t=>t.Name).ToList()),
+                selector: at => new TemplateSummaryDto(at.Id, at.Name,at.IsActive, at.CreatedAt,at.UpdatedAt, at.ConnectedMembershipPlans.Select(t=>t.Name).ToList()),
                 orderSelector: at => at.Name,
                 ct
                 );
