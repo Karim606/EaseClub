@@ -26,6 +26,7 @@ namespace EaseClub.Infrastructure.Data.Repositories
         public async Task<ApplicationTemplateDefinition> GetFullTemplateAsync(Guid templateId, CancellationToken ct = default)
         {
             return await _context.ApplicationTemplateDefinitions
+                .Include(t => t.ConnectedMembershipPlans)
                 .Include(t => t.Steps)
                 .ThenInclude(s => s.Sections)
                 .ThenInclude(sec => sec.Fields)

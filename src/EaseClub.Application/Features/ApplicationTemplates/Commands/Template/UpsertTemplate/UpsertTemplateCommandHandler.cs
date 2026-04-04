@@ -51,6 +51,8 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Commands.Template.U
             var upsertResult = updater.ApplySteps(request.Steps);
             if (upsertResult.IsError) return upsertResult.TopError;
 
+            var validation = template.ValidateConsistency();
+            if (validation.IsError) return validation.TopError;
             // 3️⃣ Persist changes
             await unitOfWork.SaveChangesAsync();
 

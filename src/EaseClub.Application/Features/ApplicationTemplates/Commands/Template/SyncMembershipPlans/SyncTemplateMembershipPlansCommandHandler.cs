@@ -30,10 +30,10 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Commands.Template.S
             if (template == null)
                 return Error.NotFound("Template.NotFound");
 
-            var membershipTypes = await planRepo
+            var membershipPlans = await planRepo
                 .GetByIdsAsync(request.MembershipPlansIds,cancellationToken);
 
-            var result = template.SyncMembershipPlans(membershipTypes);
+            var result = template.SyncMembershipPlans(membershipPlans);
 
             if (result.IsError)
                 return result.TopError;
