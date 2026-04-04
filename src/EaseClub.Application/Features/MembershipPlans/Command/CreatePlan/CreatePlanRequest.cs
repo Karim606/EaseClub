@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EaseClub.Domain.MembershipPlans;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,5 +15,7 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.CreatePlan
         public int SubscriptionValidityInYears { get; init; }
         public int MaxFamilyMembers { get; init; }
         public int DurationInDays { get; init; }
+        public EnrollmentMode EnrollmentMode { get; init; }
+        public Guid? ApplicationTemplateId { get; init; } = null;
     }
 }

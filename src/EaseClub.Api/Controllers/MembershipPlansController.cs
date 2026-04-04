@@ -104,11 +104,13 @@ This endpoint supports two modes of pagination:
             var command = new CreateMembershipPlanCommand(
                 clubId,
                 request.MembershipTypeId,
+                request.EnrollmentMode,
                 request.Name,
                 request.Price,
                 request.DurationInDays,
                 request.SubscriptionValidityInYears,
-                request.MaxFamilyMembers);
+                request.MaxFamilyMembers,
+                request.ApplicationTemplateId);
 
             var result = await sender.Send(command);
             return result.Match(

@@ -8,17 +8,20 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using EaseClub.Domain.MembershipPlans;
 
 namespace EaseClub.Application.Features.MembershipPlans.Command.CreatePlan
 {
     public record CreateMembershipPlanCommand(
     Guid ClubId,
     Guid MembershipTypeId,
+    EnrollmentMode EnrollmentMode,
     string Name,
     decimal Price,
     int DurationInDays,
     int subscriptionValidityInYears,
-    int maxFamilyMembers
+    int maxFamilyMembers,
+    Guid? ApplicationTemplateId = null
     ) : IRequest<Result<Guid>>, IRequireClubAdmin, IRequireClubOwnershipValidation
     {
         public IEnumerable<OwnershipRule> Rules()

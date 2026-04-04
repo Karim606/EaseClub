@@ -46,6 +46,8 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.CreatePlan
                 Guid.NewGuid(),
                 request.ClubId,
                 request.MembershipTypeId,
+                request.EnrollmentMode,
+                request.ApplicationTemplateId,
                 request.subscriptionValidityInYears,
                 request.maxFamilyMembers,
                 request.Name,
