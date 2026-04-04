@@ -47,6 +47,10 @@ namespace EaseClub.Infrastructure.Data.Configurations
                 .HasForeignKey(s => s.TemplateId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            builder.HasMany(t => t.ConnectedMembershipPlans)
+                .WithOne()
+                .HasForeignKey(mp => mp.ApplicationTemplateId)
+                .OnDelete(DeleteBehavior.Cascade);
             // 4. Indexes
             // Index for club lookups (Common query)
             builder.HasIndex(t => t.ClubId);
