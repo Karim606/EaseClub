@@ -38,7 +38,7 @@ namespace EaseClub.Api.Controllers
 
         [EndpointName("GetClubs")]
         [EndpointSummary("list clubs for users , supported with cursor pagination")]
-        public async Task<IActionResult> GetClubs(CursorPaginationParameters parameters)
+        public async Task<IActionResult> GetClubs([FromQuery]CursorPaginationParameters parameters)
         {
             var result = await sender.Send(new GetClubsQuery(parameters));
 
