@@ -226,20 +226,20 @@ namespace EaseClub.Domain.ApplicationTemplates
             return uniqueKey;
         }
 
-        public Result<Success> SyncMembershipPlans(List<MembershipPlan> newTypes)
+        public Result<Success> SyncMembershipPlans(List<MembershipPlan> newPlans)
         {
-            var newIds = newTypes.Select(t => t.Id).ToHashSet();
+            var newIds = newPlans.Select(t => t.Id).ToHashSet();
 
             // remove old ones
             _ConnectedMembershipPlans.RemoveAll(t => !newIds.Contains(t.Id));
 
             // add new ones
-            foreach (var type in newTypes)
+            foreach (var plan in newPlans)
             {
-                if (_ConnectedMembershipPlans.All(t => t.Id != type.Id))
-                {
-                    _ConnectedMembershipPlans.Add(type);
-                }
+                var res = plan.AssignApplicationTemplate(this.Id);
+
+                if (res.IsError) return res.TopError;
+                _ConnectedMembershipPlans.Add(plan);
             }
 
             return Result.Success;

@@ -61,5 +61,11 @@ namespace EaseClub.Domain.MembershipPlans
         public static Error NotFound = Error.NotFound(
                 code: "MembershipPlan.Not.Found",
                 description: "The specified membership plan was not found.");
+
+        public static Error AppTemplateRequired = Error.Validation("MembershipPlan.AppTemplate.Required", "App template is required when enrollment mode is ApplicationForm.");
+        
+        public static Error AppTemplateNotAllowed = Error.Validation("MembershipPlan.AppTemplate.NotAllowed", "App template is not allowed when enrollment mode is not ApplicationForm.");
+
+        public static Error AppTemplateGuidMustBeProvided = Error.Validation("MembershipPlan.AppTemplate.Guid.Must.Be.Provided", "App template guid must be provided when enrollment mode is ApplicationForm.");
     }
 }

@@ -16,7 +16,8 @@ namespace EaseClub.Domain.MembershipPlans
         public Guid ClubId { get; private set; }
         public Guid MembershipTypeId { get; private set; }
         public MembershipType MembershipType { get; private set; }
-
+        public EnrollmentMode EnrollmentMode { get; private set; }
+        public Guid? ApplicationTemplateId { get; private set; }
         public string Name { get; private set; }
         public string? Description { get; private set; }
 
@@ -32,7 +33,7 @@ namespace EaseClub.Domain.MembershipPlans
         private MembershipPlan() { } // EF
 
         private MembershipPlan(Guid id,Guid clubId, Guid membershipTypeId,int subscriptionValidityInYears,int maxFamilyMembers, string name,
-            decimal totalPrice, int maxPaymentPeriod) :base(id)
+            decimal totalPrice, int maxPaymentPeriod,EnrollmentMode mode) :base(id)
         {
             
             ClubId = clubId;
@@ -43,6 +44,7 @@ namespace EaseClub.Domain.MembershipPlans
             SubscriptionValidityInYears = subscriptionValidityInYears;
             MaxFamilyMembers = maxFamilyMembers;
             IsActive = true;
+            EnrollmentMode = mode;
         }
 
         public Result<Success> AddInstallmentTemplate(InstallmentTemplate template)
@@ -79,10 +81,18 @@ namespace EaseClub.Domain.MembershipPlans
 
       
         public static Result<MembershipPlan> Create(Guid id,Guid clubId, Guid membershipTypeId,
+            EnrollmentMode mode,Guid? templateId,
             int subscriptionValidityInYears,int maxFamilyMembers,string name, decimal totalPrice, int maxPaymentPeriod)
         {
             if (string.IsNullOrWhiteSpace(name))
                 return MembershipPlanErrors.MembershipPlanNameMustNotBeEmpty;
+            if (mode == EnrollmentMode.ApplicationForm && templateId == null)
+                return MembershipPlanErrors.AppTemplateRequired;
+
+            // Invariant: Other modes must NOT have a template
+            if (mode != EnrollmentMode.ApplicationForm && templateId != null)
+                return MembershipPlanErrors.AppTemplateNotAllowed;
+
             if (totalPrice <= 0)
                 return MembershipPlanErrors.MembershipPlanTotalPriceMustBeGreaterThanZero;
             if (maxPaymentPeriod <= 0)
@@ -97,7 +107,9 @@ namespace EaseClub.Domain.MembershipPlans
             if (clubId == Guid.Empty)
                 return MembershipPlanErrors.ClubIdMustBeProvided;
 
-            var membershipPlan = new MembershipPlan(id, clubId, membershipTypeId, subscriptionValidityInYears,maxFamilyMembers, name, totalPrice, maxPaymentPeriod);
+            var membershipPlan = new MembershipPlan(id, clubId, membershipTypeId, subscriptionValidityInYears,maxFamilyMembers, name, totalPrice, maxPaymentPeriod,mode);
+
+            membershipPlan.ApplicationTemplateId = templateId;
             return membershipPlan;
         }
 
@@ -141,6 +153,16 @@ namespace EaseClub.Domain.MembershipPlans
         public bool SupportsTemplate(Guid templateId)
         {
             return _InstallmentTemplates.Any(it => it.InstallmentTemplateId == templateId);
+        }
+        public Result<Success> AssignApplicationTemplate(Guid templateId)
+        {
+            if(EnrollmentMode != EnrollmentMode.ApplicationForm) return MembershipPlanErrors.AppTemplateNotAllowed;
+
+            if (templateId == Guid.Empty)
+                return MembershipPlanErrors.AppTemplateGuidMustBeProvided;
+
+            ApplicationTemplateId = templateId;
+            return Result.Success;
         }
 
         public MembershipPlanSnapshot ToSnapshot() => MembershipPlanSnapshot.FromDomain(this);
