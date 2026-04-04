@@ -12,6 +12,7 @@ using EaseClub.Domain.Memberships.Events;
 using EaseClub.Domain.Memberships.ValueObjects;
 using EaseClub.Domain.MembershipTypes;
 using System.Linq;
+using System.Numerics;
 
 namespace EaseClub.Domain.Memberships
 {
@@ -116,6 +117,62 @@ namespace EaseClub.Domain.Memberships
             return membership;
         }
 
+        public static Result<Membership> CreateFromDirectPay(
+            Guid id,
+            Guid userId,
+            Guid clubId,
+            MembershipPlan plan,
+            InstallmentTemplate? template)
+        {
+
+            var subYears = plan.SubscriptionValidityInYears;
+            var membershipPeriod = MembershipPeriod.Create(DateTime.UtcNow, DateTime.UtcNow.AddYears(subYears));
+            if (membershipPeriod.IsError) return membershipPeriod.TopError;
+
+            var membership = new Membership(
+                Guid.NewGuid(),
+                userId,
+                clubId,
+                plan.MembershipTypeId,
+                plan.Id,
+                membershipPeriod.Value
+                );
+
+            List<Installment> installments = new List<Installment>();
+            Guid? instTemplateId = null;
+            
+            if(template != null)
+            {
+                installments = template.Installments.ToList();
+
+            }
+            else
+            {
+                // If no template, create a single installment for the full amount
+                installments = new List<Installment>
+                {
+                    Installment.Create(100m, 0, 1).Value
+                };
+            }
+
+            var installmentResult = SetupInstallments(membership,installments, plan.TotalPrice,clubId,plan.MembershipType.Id,plan.Id,instTemplateId);
+            if (installmentResult.IsError) return installmentResult.TopError;
+
+
+            if (template != null && template.Installments.Any(i => i.OrderIndex == 1 && i.DueAfterDays == 0))
+                membership.Status = MembershipStatus.Suspended;
+            membership.RaiseDomainEvent(new MembershipCreatedDomainEvent(
+                membership.Id,
+                userId,
+                clubId,
+                plan.MembershipType.Id,
+                plan.Id,
+                membershipPeriod.Value.StartDate,
+                membershipPeriod.Value.EndDate));
+
+            return membership;
+        }
+
         public static Result<Membership> CreateFromApplication(
             MembershipApplication app)
         {
@@ -135,26 +192,40 @@ namespace EaseClub.Domain.Memberships
                 membershipPeriod.Value
                 );
 
-            var installmentResult = SetupInstallments(membership, app);
+            var installments = InstallmentRuleSnapshot.ListToDomain(app.TemplateSnapshot.InstallmentRules);
+
+            if(installments.IsError) return installments.TopError;
+
+            var installmentResult = SetupInstallments(membership,installments.Value,app.FinalPriceSummary!.TotalPrice, app.ClubId, app.MembershipTypeId,app.MembershipPlanId,app.InstallmentTemplateId);
+            
             if (installmentResult.IsError) return installmentResult.TopError;
 
             var familyResult = MapFamilyMembers(membership, app);
             if (familyResult.IsError) return familyResult.TopError;
 
-            membership.Status = MembershipStatus.Suspended;
+
+            if (app.TemplateSnapshot.InstallmentRules.Any(i => i.OrderIndex == 1 && i.DueAfterDays == 0))
+                membership.Status = MembershipStatus.Suspended;
             membership.MembershipApplicationId = app.Id;
 
+            membership.RaiseDomainEvent(new MembershipCreatedDomainEvent(
+                membership.Id,
+                app.UserId,
+                app.ClubId,
+                app.MembershipType.Id,
+                app.MembershipPlanId,
+                membershipPeriod.Value.StartDate,
+                membershipPeriod.Value.EndDate));
 
             return membership;
         }
-        private static Result<Success> SetupInstallments(Membership membership, MembershipApplication app)
+        private static Result<Success> SetupInstallments(Membership membership,List<Installment> installments,
+            decimal totalPrice,Guid clubId,Guid membershipTypeId,Guid membershipPlanId,Guid? installmentTemplateId)
         {
-            var installmentRules = InstallmentRuleSnapshot.ListToDomain(app.TemplateSnapshot.InstallmentRules);
-            if (installmentRules.IsError) return installmentRules.TopError;
 
             var instBluePrint = InstallmentEngine.GenerateMembershipInstallments(
-                installmentRules.Value,
-                app.FinalPriceSummary!.TotalPrice);
+                installments,
+                totalPrice);
 
             if (instBluePrint.IsError) return instBluePrint.TopError;
 
@@ -162,10 +233,10 @@ namespace EaseClub.Domain.Memberships
             {
                 var installment = MembershipInstallment.Create(
                     membership.Id,
-                    app.ClubId,
-                    app.MembershipTypeId,
-                    app.MembershipPlanId,
-                    app.TemplateId,
+                    clubId,
+                    membershipTypeId,
+                    membershipPlanId,
+                    installmentTemplateId,
                     bp.Order,
                     bp.Amount,
                     bp.DueDate
