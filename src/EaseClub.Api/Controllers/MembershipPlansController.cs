@@ -116,7 +116,7 @@ This endpoint supports two modes of pagination:
                 Problem);
         }
 
-        [HttpGet("{planId:guid}")]
+        [HttpGet("{id:guid}")]
         [MapToApiVersion("1.0")]
         [ProducesResponseType(typeof(MembershipPlanDetailsDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -125,9 +125,9 @@ This endpoint supports two modes of pagination:
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [EndpointName("GetMembershipPlan")]
         [EndpointSummary("Retrieves the full details of a membership plan, including linked installment templates.")]
-        public async Task<IActionResult> GetById(Guid planId)
+        public async Task<IActionResult> GetById(Guid id)
         {
-            var result = await sender.Send(new GetMembershipPlanDetailsQuery(planId));
+            var result = await sender.Send(new GetMembershipPlanDetailsQuery(id));
 
             return result.Match( (plan) =>Ok(plan)
                 , Problem);
