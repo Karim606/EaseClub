@@ -14,7 +14,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EaseClub.Application.Features.MembershipApplications.Commands.ReviewApplication
+namespace EaseClub.Application.Features.MembershipApplications.EventHandlers
 {
     public class ApplicationApprovedEventHandler : DomainEventHandler<ApplicationApprovedEvent,ApplicationApprovedEventHandler>
     {
