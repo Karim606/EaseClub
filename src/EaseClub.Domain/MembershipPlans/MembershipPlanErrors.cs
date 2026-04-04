@@ -67,5 +67,7 @@ namespace EaseClub.Domain.MembershipPlans
         public static Error AppTemplateNotAllowed = Error.Validation("MembershipPlan.AppTemplate.NotAllowed", "App template is not allowed when enrollment mode is not ApplicationForm.");
 
         public static Error AppTemplateGuidMustBeProvided = Error.Validation("MembershipPlan.AppTemplate.Guid.Must.Be.Provided", "App template guid must be provided when enrollment mode is ApplicationForm.");
+
+        public static Error AppTemplateInvalidForFamilyPlans = Error.Validation("MembershipPlan.AppTemplate.InvalidForFamilyPlans", "App template is not valid for family membership plans while template doesnt contain family Section.");
     }
 }

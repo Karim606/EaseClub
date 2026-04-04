@@ -154,12 +154,13 @@ namespace EaseClub.Domain.MembershipPlans
         {
             return _InstallmentTemplates.Any(it => it.InstallmentTemplateId == templateId);
         }
-        public Result<Success> AssignApplicationTemplate(Guid templateId)
+
+        public Result<Success> AssignApplicationTemplate(Guid templateId, bool isTempSupportFamilyPlan )
         {
             if(EnrollmentMode != EnrollmentMode.ApplicationForm) return MembershipPlanErrors.AppTemplateNotAllowed;
 
-            if (templateId == Guid.Empty)
-                return MembershipPlanErrors.AppTemplateGuidMustBeProvided;
+            if (MaxFamilyMembers != 0 && !isTempSupportFamilyPlan)
+                return MembershipPlanErrors.AppTemplateInvalidForFamilyPlans;
 
             ApplicationTemplateId = templateId;
             return Result.Success;

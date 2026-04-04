@@ -34,6 +34,7 @@ namespace EaseClub.Domain.ApplicationTemplates
         public Guid ClubId { get; private set; }
         public string Name { get; private set; }
         public bool IsActive { get; private set; } = true;
+        public bool SupportsFamilyPlans { get; private set; } = false;
 
         //private readonly List<ApplicationFieldDefinition> _Fields = new();
         //public  IReadOnlyList<ApplicationFieldDefinition> Fields => _Fields.AsReadOnly();
@@ -236,7 +237,7 @@ namespace EaseClub.Domain.ApplicationTemplates
             // add new ones
             foreach (var plan in newPlans)
             {
-                var res = plan.AssignApplicationTemplate(this.Id);
+                var res = plan.AssignApplicationTemplate(this.Id,SupportsFamilyPlans);
 
                 if (res.IsError) return res.TopError;
                 _ConnectedMembershipPlans.Add(plan);
@@ -292,6 +293,31 @@ namespace EaseClub.Domain.ApplicationTemplates
 
             return GenerateUniqueKey(label);
         }
+
+
+        public Result<Success> ValidateConsistency()
+        {
+            RecalculateCapabilities();
+            if (_ConnectedMembershipPlans.Any(p => p.MaxFamilyMembers > 0)
+                && !SupportsFamilyPlans)
+            {
+                return Error.Conflict(
+                    "Template.FamilySectionRequired",
+                    "Template must include family section because it is used by family plans."
+                );
+            }
+
+            
+            return Result.Success;
+        }
+
+        private void RecalculateCapabilities()
+        {
+            SupportsFamilyPlans = _Steps
+                .SelectMany(s => s.Sections)
+                .Any(sec => sec.Intent == SectionIntent.FamilyMembers);
+        }
+
     }
 
 }
