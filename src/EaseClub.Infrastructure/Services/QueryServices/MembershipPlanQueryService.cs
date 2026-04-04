@@ -53,6 +53,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                     p.SubscriptionValidityInYears,
                     p.MaxFamilyMembers,
                     p.TotalPrice,
+                    p.EnrollmentMode,
                     p.Description),
                 orderSelector: p => p.Name, // Default sorting by Name
                 cancellationToken: ct

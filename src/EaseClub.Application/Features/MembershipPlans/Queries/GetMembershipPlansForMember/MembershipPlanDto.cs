@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EaseClub.Domain.MembershipPlans;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,7 +9,7 @@ namespace EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPla
 {
     public sealed class MembershipPlanDto
     {
-        public MembershipPlanDto(Guid id,string name,int maxPaymentPeriod,int subscriptionValidity,int maxFamilyMembers,decimal price,string? description) {
+        public MembershipPlanDto(Guid id,string name,int maxPaymentPeriod,int subscriptionValidity,int maxFamilyMembers,decimal price,EnrollmentMode enrollmentMode,string? description) {
             Id = id;
             Name = name;
             MaxPaymentPeriodInDays = maxPaymentPeriod;
@@ -16,6 +17,7 @@ namespace EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPla
             Price = price;
             SubscriptionValidityInYears = subscriptionValidity;
             MaxFamilyMembers = maxFamilyMembers;
+            EnrollmentMode = enrollmentMode;
         }
         public Guid Id {  get; init; }
         public string Name { get; init; }
@@ -24,6 +26,7 @@ namespace EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPla
         public int SubscriptionValidityInYears { get; init; }
         public int MaxFamilyMembers { get; init; }
         public decimal Price { get; init; }
+        public EnrollmentMode EnrollmentMode { get; init; }
 
     }
 }

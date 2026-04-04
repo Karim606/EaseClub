@@ -47,6 +47,9 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.CreateAp
 
             if (plan == null )
                return Error.NotFound(description: "plan not found");
+
+            if(plan.EnrollmentMode != EnrollmentMode.ApplicationForm) 
+                return Error.Conflict(description: "Plan WrongEnrollmentMode");
             // 2. Fetch Live Pricing Policies for this club
             var policies = await pricingPolicyRepo.GetByClubIdAsync(request.ClubId, ct);
 
