@@ -17,7 +17,7 @@ namespace EaseClub.Domain.MembershipPlans
             Error.Validation(code: "Installment.DueAfterDays.Must.Be.NonNegative",
                 description: "Installment due after days must be non-negative.");
 
-        public static Error InstallmentOrderIndexMustBeNonNegative = Error.Validation(code:"Installment.OrderIndex.Must.Be.NonNegative",
-                description: "Installment order index must be non-negative.");
+        public static Error InstallmentOrderIndexMustBeGreaterThanZero = Error.Validation(code:"Installment.OrderIndex.Must.Be.GreaterThanZero",
+                description: "Installment order index must be greater than 0.");
     }
 }

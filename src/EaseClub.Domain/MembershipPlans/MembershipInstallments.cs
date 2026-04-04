@@ -17,7 +17,7 @@ namespace EaseClub.Domain.MembershipPlans
         public Guid ClubId { get; private set; }
         public Guid MembershipTypeId { get; private set; }
         public Guid MembershipPlanId { get; private set; }
-        public Guid InstallmentTemplateId { get; private set; }
+        public Guid? InstallmentTemplateId { get; private set; }
 
         public Membership Membership { get; private set; }
         public Club Club { get; private set; }
@@ -29,7 +29,7 @@ namespace EaseClub.Domain.MembershipPlans
 
         private MembershipInstallment() { }
 
-        public MembershipInstallment(Guid membershipId,Guid clubId,Guid membershipTypeId,Guid planId,Guid installmentTemplateId,
+        public MembershipInstallment(Guid membershipId,Guid clubId,Guid membershipTypeId,Guid planId,Guid? installmentTemplateId,
             int order, decimal amount, DateTime dueDate):base(Guid.NewGuid())
         {
             MembershipId = membershipId;
@@ -68,7 +68,7 @@ namespace EaseClub.Domain.MembershipPlans
         }
 
         public static Result<MembershipInstallment> Create(Guid membershipId,Guid clubId,Guid membershipTypeId,
-           Guid planId,Guid installmentTemplateId, int order, decimal amount, DateTime dueDate)
+           Guid planId,Guid? installmentTemplateId, int order, decimal amount, DateTime dueDate)
         {
             if (membershipId == Guid.Empty)
                return MembershipInstallmentErrors.MembershipIdMustBeProvided;
@@ -81,9 +81,6 @@ namespace EaseClub.Domain.MembershipPlans
 
             if (planId == Guid.Empty)
                 return Error.Validation(description: "MembershipTypeIdMustBeProvided");
-
-            if (installmentTemplateId == Guid.Empty)
-                return Error.Validation(description: "InstallmentTemplateIdMustBeProvided");
 
             if (order < 0)
                 return MembershipInstallmentErrors.InstallmentOrderMustBeNonNegative;

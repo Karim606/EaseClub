@@ -29,7 +29,7 @@ namespace EaseClub.Domain.MembershipApplications
             Guid clubId,
             Guid membershipTypeId,
             Guid membershipPlanId,
-            Guid installmentTemplateId,
+            Guid? installmentTemplateId,
             Guid templateId
            )
             : base(id)
@@ -62,7 +62,7 @@ namespace EaseClub.Domain.MembershipApplications
         public Guid UserId { get; private set; }
         public MemberUser User { get; private set; }
         public Guid ClubId { get; private set; }
-        public Guid InstallmentTemplateId { get; private set; }
+        public Guid? InstallmentTemplateId { get; private set; }
         public Guid MembershipTypeId { get; private set; }
         public Guid MembershipPlanId { get; private set; }
         public MembershipType MembershipType { get; private set; }
@@ -87,7 +87,7 @@ namespace EaseClub.Domain.MembershipApplications
             Guid userId,
             Guid clubId,
             MembershipPlan plan,
-            InstallmentTemplate installmentTemplate,
+            InstallmentTemplate? installmentTemplate,
             MembershipType membershipType,
             Guid templateId
             )
@@ -97,7 +97,8 @@ namespace EaseClub.Domain.MembershipApplications
 
             if(plan.MembershipTypeId != membershipType.Id) return Error.Conflict(description: "MembershipPlan isnt associated with this MembershipType");
 
-            if(plan.InstallmentTemplates.All(i => i.InstallmentTemplateId != installmentTemplate.Id)) return Error.Conflict(description:"InstallmentTemplate isnt associated with this MembershipPlan");
+            if(installmentTemplate != null && !plan.InstallmentTemplates.All(i => i.InstallmentTemplateId != installmentTemplate.Id)) 
+                return Error.Conflict(description:"InstallmentTemplate isnt associated with this MembershipPlan");
             
             if (userId == Guid.Empty)
                 return MembershipApplicationErrors.UserIdRequired;
@@ -114,7 +115,7 @@ namespace EaseClub.Domain.MembershipApplications
                 clubId,
                 membershipType.Id,
                 plan.Id,
-                installmentTemplate.Id,
+                installmentTemplate?.Id,
                 templateId
                 );
         }

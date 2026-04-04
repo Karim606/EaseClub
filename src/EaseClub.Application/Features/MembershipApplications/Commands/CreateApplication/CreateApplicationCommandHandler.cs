@@ -53,16 +53,29 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.CreateAp
             // 2. Fetch Live Pricing Policies for this club
             var policies = await pricingPolicyRepo.GetByClubIdAsync(request.ClubId, ct);
 
-            var installmentTemplate = await installmentsTemplatesRepository.GetByIdAsync(request.InstallmentTemplateId);
+            List<Installment> installments = new List<Installment>();
+            InstallmentTemplate? installmentTemplate = null;
 
-            if(installmentTemplate == null) 
-                return Error.NotFound(description: "Installment Template not found");
+            if (request.InstallmentTemplateId == null)
+            {
+                installments.Add(Installment.Create(100, 0, 1).Value);
 
+            }
+
+            else
+            {
+                 installmentTemplate = await installmentsTemplatesRepository.GetByIdAsync(request.InstallmentTemplateId.Value);
+
+                if (installmentTemplate == null)
+                    return Error.NotFound(description: "Installment Template not found");
+
+                installments = installmentTemplate.Installments.ToList();
+            }
             // 3. Create the Frozen Snapshot
             var snapshot = template.ToSnapshot(plan.TotalPrice,
                 policies.Select(p => p.ToSnapshot()).ToList(),
                 plan.ToSnapshot(),
-                Installment.ListToSnapshot(installmentTemplate.Installments)
+                Installment.ListToSnapshot(installments)
                 );
 
             Guid.TryParse(currentUserService.GetId(), out var userId);

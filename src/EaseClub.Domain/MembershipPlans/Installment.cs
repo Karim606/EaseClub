@@ -29,8 +29,8 @@ namespace EaseClub.Domain.MembershipPlans
                 return InstallmentErrors.InstallmentPercentageMustBeGreaterThanZeroAndLessThanOrEqual100;
             if (dueAfterDays < 0)
                 return InstallmentErrors.InstallmentDueAfterDaysMustBeNonNegative;
-            if(orderIndex < 0)
-                return InstallmentErrors.InstallmentOrderIndexMustBeNonNegative;
+            if(orderIndex <= 0)
+                return InstallmentErrors.InstallmentOrderIndexMustBeGreaterThanZero;
 
             return new Installment(percentageOfAmount, dueAfterDays,orderIndex);
         }

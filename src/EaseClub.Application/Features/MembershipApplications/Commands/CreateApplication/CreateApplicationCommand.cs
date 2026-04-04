@@ -18,7 +18,7 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.CreateAp
     Guid TemplateId,
     Guid MembershipTypeId,
     Guid MembershipPlanId,
-    Guid InstallmentTemplateId) : IRequest<Result<Guid>>, IRequireClubOwnershipValidation
+    Guid? InstallmentTemplateId) : IRequest<Result<Guid>>, IRequireClubOwnershipValidation
     {
         public IEnumerable<OwnershipRule> Rules()
         {
@@ -41,9 +41,9 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.CreateAp
                 );
 
             yield return new OwnershipRule(
-                    async (auth, _) => await auth.DoesResourceBelongToClubAsync<InstallmentTemplate>(InstallmentTemplateId, ClubId),
+                    async (auth, _) => await auth.DoesResourceBelongToClubAsync<InstallmentTemplate>(InstallmentTemplateId??Guid.Empty, ClubId),
                     nameof(InstallmentTemplate),
-                    InstallmentTemplateId
+                    InstallmentTemplateId ?? Guid.Empty
                 );
 
         }

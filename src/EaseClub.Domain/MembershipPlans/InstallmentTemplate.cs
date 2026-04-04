@@ -2,12 +2,7 @@
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace EaseClub.Domain.MembershipPlans
 {
@@ -174,7 +169,7 @@ namespace EaseClub.Domain.MembershipPlans
                 decimal percentage = (i == numOfInstallments - 1) ? 100m - installmentPercentage * (numOfInstallments - 1)
                     : installmentPercentage;
 
-                var result = Installment.Create(percentage, dueAfterDays,i);
+                var result = Installment.Create(percentage, dueAfterDays,i+1);
                 if (result.IsError)
                     return result.TopError;
 
