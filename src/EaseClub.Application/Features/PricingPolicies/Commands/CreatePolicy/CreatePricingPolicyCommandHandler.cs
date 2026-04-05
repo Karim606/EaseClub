@@ -31,7 +31,6 @@ namespace EaseClub.Application.Features.PricingPolicies.Commands.CreatePolicy
                 Guid.NewGuid(),
                 request.ClubId,
                 request.Name,
-                request.Priority,
                 request.IsIncrease,
                 request.FixedAmount,
                 request.PercentageValue,

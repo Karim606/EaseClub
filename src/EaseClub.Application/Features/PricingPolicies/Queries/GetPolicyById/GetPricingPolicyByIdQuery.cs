@@ -15,7 +15,6 @@ namespace EaseClub.Application.Features.PricingPolicies.Queries.GetPolicyById
     public record PricingPolicyResponse(
         Guid Id,
         string Name,
-        int Priority,
         bool IsIncrease,
         decimal? FixedAmount,
         decimal? PercentageValue,
