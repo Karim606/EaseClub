@@ -103,6 +103,7 @@ namespace EaseClub.Infrastructure.Data
         public DbSet<ApplicationAnswer> ApplicationAnswers { get; set; }
         public DbSet<ApplicationReview> ApplicationReviews { get; set; }
         public DbSet<PricingPolicy> PricingPolicies { get; set; }
+        public DbSet<PricingPolicyAssignment> PricingPolicyAssignments { get; set; }
 
         public DbSet<Membership>Memberships { get; set; }
         public DbSet<FamilyMember> FamilyMembers { get; set; }
