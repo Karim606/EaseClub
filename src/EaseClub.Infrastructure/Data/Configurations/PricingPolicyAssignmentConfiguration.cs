@@ -25,6 +25,11 @@ namespace EaseClub.Infrastructure.Data.Configurations
                 .HasConversion<string>() // store enum as string
                 .IsRequired();
 
+            builder.HasOne(x => x.Policy)
+            .WithMany() // or .WithMany(p => p.Assignments) if you add collection
+            .HasForeignKey(x => x.PolicyId)
+
+    .OnDelete(DeleteBehavior.Cascade);
             // Optional: unique index to prevent duplicate policy assignment for same template
             builder.HasIndex(a => new { a.TargetId, a.PolicyId, a.TargetType })
                 .IsUnique();

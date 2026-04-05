@@ -28,6 +28,7 @@ namespace EaseClub.Domain.PricingPolices
 
         public Guid ClubId { get; private set; }
         public Guid PolicyId { get; private set; }
+        public PricingPolicy Policy { get; private set; }
         public Guid TargetId { get; private set; }
         public int Priority { get; private set; }
 
