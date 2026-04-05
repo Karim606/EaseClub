@@ -31,7 +31,7 @@ namespace EaseClub.Infrastructure.Data.Repositories
 
         public async Task<List<PricingPolicyAssignment>> GetPricingPolicyAssignmentsByTargetIdAsync(Guid targetId, CancellationToken ct = default)
         {
-            return await _context.PricingPolicyAssignments.Where(p => p.TargetId == targetId).ToListAsync(ct);
+            return await _context.PricingPolicyAssignments.Where(p => p.TargetId == targetId).Include(p => p.Policy).ToListAsync(ct);
         }
     }
 }

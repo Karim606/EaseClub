@@ -27,6 +27,7 @@ namespace EaseClub.Infrastructure.Data.Repositories
         {
             return await _context.ApplicationTemplateDefinitions
                 .Include(t => t.ConnectedMembershipPlans)
+                .Include(t => t.PricingPolicyAssignments)
                 .Include(t => t.Steps)
                 .ThenInclude(s => s.Sections)
                 .ThenInclude(sec => sec.Fields)
