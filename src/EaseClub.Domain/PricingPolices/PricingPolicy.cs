@@ -15,15 +15,15 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Domain.PricingPolices
 {
-    public class PricingPolicy : AuditableEntity, IPricingPolicy,IHaveClub
+    public class PricingPolicy : AuditableEntity,IHaveClub
     {
         public Guid ClubId { get; private set; }
         public string Name { get; private set; } = default!;
-        public int Priority { get; private set; }
         public bool IsIncrease { get; private set; }
         public decimal? FixedAmount { get; private set; }
         public decimal? PercentageValue { get; private set; }
         public string? MultiplierSourceKey { get; private set; }
+        public bool IsActive { get; private set; } = true;
 
         // Backing field for encapsulation
         private readonly List<ConditionExpression> _Conditions = new();
@@ -35,7 +35,6 @@ namespace EaseClub.Domain.PricingPolices
             Guid id,
             Guid clubId,
             string name,
-            int priority,
             bool isIncrease,
             decimal? fixedAmount,
             decimal? percentageValue,
@@ -43,7 +42,6 @@ namespace EaseClub.Domain.PricingPolices
         {
             ClubId = clubId;
             Name = name;
-            Priority = priority;
             IsIncrease = isIncrease;
             FixedAmount = fixedAmount;
             PercentageValue = percentageValue;
@@ -55,7 +53,6 @@ namespace EaseClub.Domain.PricingPolices
             Guid id,
             Guid clubId,
             string name,
-            int priority,
             bool isIncrease,
             decimal? fixedAmount,
             decimal? percentageValue,
@@ -76,7 +73,6 @@ namespace EaseClub.Domain.PricingPolices
                 id,
                 clubId,
                 name,
-                priority,
                 isIncrease,
                 fixedAmount,
                 percentageValue,
@@ -109,7 +105,6 @@ namespace EaseClub.Domain.PricingPolices
 
             // 2. Apply Updates
             Name = name;
-            Priority = priority;
             IsIncrease = isIncrease;
             FixedAmount = fixedAmount;
             PercentageValue = percentageValue;
@@ -123,8 +118,8 @@ namespace EaseClub.Domain.PricingPolices
             return Result.Success;
         }
 
-        public PricingPolicySnapshot ToSnapshot() =>
-            new(Id, Name, Priority, IsIncrease, FixedAmount, PercentageValue, MultiplierSourceKey, _Conditions.ToList());
+        public PricingPolicySnapshot ToSnapshot(int priority) =>
+            new(Id, Name, priority, IsIncrease, FixedAmount, PercentageValue, MultiplierSourceKey, _Conditions.ToList());
 
         public Result<Success>AddCondition(ConditionExpression condition)
         {

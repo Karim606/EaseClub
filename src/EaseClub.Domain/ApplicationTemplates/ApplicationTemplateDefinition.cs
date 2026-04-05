@@ -9,6 +9,7 @@ using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipApplications.ValueObjects;
 using EaseClub.Domain.MembershipPlans;
 using EaseClub.Domain.MembershipTypes;
+using EaseClub.Domain.PricingPolices;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,6 +45,9 @@ namespace EaseClub.Domain.ApplicationTemplates
 
         private readonly List<MembershipPlan> _ConnectedMembershipPlans = new();
         public IReadOnlyList<MembershipPlan> ConnectedMembershipPlans => _ConnectedMembershipPlans.AsReadOnly();
+
+        private readonly List<PricingPolicyAssignment> _PricingPolicyAssignments = new();
+        public IReadOnlyList<PricingPolicyAssignment> PricingPolicyAssignments  => _PricingPolicyAssignments.AsReadOnly();
 
         private HashSet<string>? _fieldKeys;
 
@@ -81,6 +85,7 @@ namespace EaseClub.Domain.ApplicationTemplates
             return Result.Success;
         }
 
+        #region Step Management through Template (to enforce invariants like unique titles and order)
         // 4. THE AGGREGATE GATEKEEPER: Create Step through Template
         public Result<ApplicationStepDefinition> AddNewStep(string category, string title, int order)
         {
@@ -115,7 +120,9 @@ namespace EaseClub.Domain.ApplicationTemplates
 
             return Result.Success;
         }
+        #endregion 
 
+        #region Field Management through Template (to enforce invariants like unique keys)
         public Result<ApplicationFieldDefinition> AddFieldToSection(
             Guid id,
             Guid sectionId,
@@ -227,6 +234,16 @@ namespace EaseClub.Domain.ApplicationTemplates
             return uniqueKey;
         }
 
+        private string ResolveKey(string? key, string label)
+        {
+            if (!string.IsNullOrWhiteSpace(key))
+                return key.ToLower().Trim();
+
+            return GenerateUniqueKey(label);
+        }
+
+        #endregion
+
         public Result<Success> SyncMembershipPlans(List<MembershipPlan> newPlans)
         {
             var newIds = newPlans.Select(t => t.Id).ToHashSet();
@@ -286,15 +303,7 @@ namespace EaseClub.Domain.ApplicationTemplates
                 .FirstOrDefault(s => s.Id == sectionId);
         }
 
-        private string ResolveKey(string? key, string label)
-        {
-            if (!string.IsNullOrWhiteSpace(key))
-                return key.ToLower().Trim();
-
-            return GenerateUniqueKey(label);
-        }
-
-
+        #region ensure invariants like no family fields if not supporting family plans, no system fields in general sections, etc.
         public Result<Success> ValidateConsistency()
         {
             RecalculateCapabilities();
@@ -310,13 +319,51 @@ namespace EaseClub.Domain.ApplicationTemplates
             
             return Result.Success;
         }
-
+        
         private void RecalculateCapabilities()
         {
             SupportsFamilyPlans = _Steps
                 .SelectMany(s => s.Sections)
                 .Any(sec => sec.Intent == SectionIntent.FamilyMembers);
         }
+        #endregion
+
+
+        #region Assignment of Policies
+        public Result<Success> AssignPolicy(PricingPolicy policy,int priority)
+        {
+            // Already assigned?
+            if (_PricingPolicyAssignments.Any(a => a.PolicyId == policy.Id))
+                return Error.Conflict("Template.PolicyAlreadyAssigned",
+                    "This policy is already assigned to this template.");
+
+            var assignmentResult = PricingPolicyAssignment.Create(
+                policy.Id,
+                Id,
+                priority,
+                PricingPolicyTargetType.ApplicationTemplate,
+                policy,
+                FieldKeys  // your existing HashSet<string>
+            );
+
+            if (assignmentResult.IsError) return assignmentResult.TopError;
+
+            _PricingPolicyAssignments.Add(assignmentResult.Value);
+            return Result.Success;
+        }
+
+        public Result<Success> UnassignPolicy(Guid policyId)
+        {
+            var assignment = _PricingPolicyAssignments
+                .FirstOrDefault(a => a.PolicyId == policyId);
+
+            if (assignment == null)
+                return Error.NotFound("Template.PolicyAssignmentNotFound");
+
+            _PricingPolicyAssignments.Remove(assignment);
+            return Result.Success;
+        }
+        #endregion
 
     }
 

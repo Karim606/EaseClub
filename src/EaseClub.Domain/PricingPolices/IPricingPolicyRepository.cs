@@ -11,5 +11,11 @@ namespace EaseClub.Domain.PricingPolices
    public interface IPricingPolicyRepository : IRepository<PricingPolicy>
     {
         public Task<List<PricingPolicy>>GetByClubIdAsync(Guid clubId, CancellationToken ct=default);
+
+        public Task<List<PricingPolicyAssignment>>GetPricingPolicyAssignmentsByTargetIdAsync(Guid targetId, CancellationToken ct=default);
+
+        public Task<List<PricingPolicyAssignment>>GetPricingPolicyAssignmentsByPolicyIdAsync(Guid policyId, CancellationToken ct=default);
+
+        public Task<List<PricingPolicy>>GetPoliciesByIdAsync(List<Guid> ids, CancellationToken ct = default);
     }
 }
