@@ -337,6 +337,14 @@ namespace EaseClub.Domain.ApplicationTemplates
                 return Error.Conflict("Template.PolicyAlreadyAssigned",
                     "This policy is already assigned to this template.");
 
+            if(priority < 0 || priority > 100)
+                return Error.Conflict("Template.InvalidPriority",
+                    "Priority must be between 0 and 100.");
+
+            if(_PricingPolicyAssignments.Any(a => a.Priority == priority))
+                return Error.Conflict("Template.PriorityInUse",
+                    "This priority is already in use.");
+
             var assignmentResult = PricingPolicyAssignment.Create(
                 policy.Id,
                 Id,
@@ -352,7 +360,7 @@ namespace EaseClub.Domain.ApplicationTemplates
             return Result.Success;
         }
 
-        public Result<Success> UnassignPolicy(Guid policyId)
+        public Result<Success> UnAssignPolicy(Guid policyId)
         {
             var assignment = _PricingPolicyAssignments
                 .FirstOrDefault(a => a.PolicyId == policyId);
