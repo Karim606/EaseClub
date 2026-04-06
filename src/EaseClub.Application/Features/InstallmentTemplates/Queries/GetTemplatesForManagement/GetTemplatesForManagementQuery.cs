@@ -19,7 +19,6 @@ namespace EaseClub.Application.Features.InstallmentTemplates.Queries.GetTemplate
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
 
-        public bool isActive { get; set; }
         public int DurationOfPaymentInDays { get; set; }
         public int numOfInstallments { get; set; }
         
