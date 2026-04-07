@@ -29,7 +29,7 @@ namespace EaseClub.Application.Features.Payment.Commands.IntiatePayment
             if (transactionResult.IsError)
                 return transactionResult.TopError;
 
-            var transaction = invoice.Transactions.Where(x => x.Status == PaymentTransactionStatus.Pending && x.Gateway == request.Gateway).FirstOrDefault();
+            var transaction = transactionResult.Value;
 
             // Call Payment Gateway to create session
             var sessionId = await paymentGateway.CreateSessionAsync(transaction,cancellationToken);

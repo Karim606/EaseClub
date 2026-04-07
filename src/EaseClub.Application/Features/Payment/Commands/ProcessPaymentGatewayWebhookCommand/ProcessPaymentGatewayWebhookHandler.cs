@@ -33,6 +33,17 @@ namespace EaseClub.Application.Features.Payment.Commands.ProcessPaymentGatewayWe
             var transaction = await transactionRepository.GetByIdAsync(payload.TransactionId);
             if (transaction == null) return Error.NotFound("Transaction not found");
 
+            if (transaction.Amount != payload.Amount)
+                return Error.Failure("Amount mismatch");
+
+            if (transaction.Currency != payload.Currency)
+                return Error.Failure("Currency mismatch");
+
+            if (transaction.Status == PaymentTransactionStatus.Succeeded)
+                return Result.Success;
+
+            if (transaction.Status == PaymentTransactionStatus.Failed && payload.IsSuccess == false) 
+                return Result.Success;
 
             if (string.IsNullOrEmpty(transaction.ExternalRef))
                 transaction.AttachExternalRef(payload.ExternalRef);
@@ -40,14 +51,21 @@ namespace EaseClub.Application.Features.Payment.Commands.ProcessPaymentGatewayWe
             var invoice  = await invoiceRepository.GetInvoiceWithTransactions(transaction.InvoiceId);
             if (invoice == null) return Error.NotFound("Invoice not found");
 
-            if (payload.IsSuccess)
+            var transactionId = transaction.Id;
+
+            if (transaction.Status == PaymentTransactionStatus.Failed && payload.IsSuccess)
+            {
+                invoice.ForceMarkAsPaid(transactionId);
+                return Result.Success;
+            }
+            else if (payload.IsSuccess)
             {
 
-                invoice?.ConfirmPayment(transaction.ExternalRef, DateTime.UtcNow);
+                invoice?.ConfirmPayment(transactionId, DateTime.UtcNow);
             }
             else
             {
-                invoice.FailPayment(transaction.ExternalRef,payload.Message ?? "Payment failed");
+                invoice.FailPayment(transactionId, payload.Message ?? "Payment failed");
             }
 
             return Result.Success;
