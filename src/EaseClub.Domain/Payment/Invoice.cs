@@ -1,4 +1,5 @@
-﻿using EaseClub.Domain.Common;
+﻿using EaseClub.Domain.Clubs;
+using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Member;
 using EaseClub.Domain.Payment.Enums;
@@ -28,6 +29,7 @@ namespace EaseClub.Domain.Payment
         public decimal Amount { get; private set; }
         public DateTime DueDate { get; private set; }
         public InvoiceStatus Status { get; private set; }
+        public string ReadableId { get; private set; }
         // Issued, Paid, Void
 
         private readonly List<PaymentTransaction> _Transactions = new();
@@ -67,11 +69,16 @@ namespace EaseClub.Domain.Payment
             if (dueDate.Date < DateTime.UtcNow.Date)
                 return InvoiceErrors.InvalidDueDate;
 
-            return new Invoice(
+            var invoice =  new Invoice(
                 Guid.NewGuid(),
                 payableId, payableType,
                 clubId, userId,
                 amount, dueDate);
+
+            invoice.ReadableId = PayableIdGenerator.Generate(payableType, userId, clubId, payableId, dueDate);
+
+            return invoice;
+
         }
 
         public Result<PaymentTransaction> RecordAttempt(

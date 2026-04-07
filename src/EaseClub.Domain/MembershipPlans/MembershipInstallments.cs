@@ -3,6 +3,7 @@ using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Memberships;
+using EaseClub.Domain.Payment.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,7 +27,7 @@ namespace EaseClub.Domain.MembershipPlans
         public DateTime DueDate { get; private set; }
         public InstallmentStatus Status { get; private set; }
         public Guid? InvoiceId { get; private set; }
-
+        public string ReadableId { get; private set; }
         private MembershipInstallment() { }
 
         public MembershipInstallment(Guid membershipId,Guid clubId,Guid membershipTypeId,Guid planId,Guid? installmentTemplateId,
@@ -91,7 +92,20 @@ namespace EaseClub.Domain.MembershipPlans
             if (dueDate <= DateTime.UtcNow)
                 return MembershipInstallmentErrors.InstallmentDueDateMustBeInTheFuture;
 
-            return new MembershipInstallment(membershipId,clubId,membershipTypeId,planId,installmentTemplateId, order, amount, dueDate);
+            var membershipInstallment = new MembershipInstallment(membershipId, clubId, membershipTypeId, planId, installmentTemplateId, order, amount, dueDate);
+             membershipInstallment.ReadableId = membershipInstallment.GetReadableInstallmentId();
+
+            return membershipInstallment;
+        }
+
+        public string GetReadableInstallmentId()
+        {
+            return PayableIdGenerator.Generate(
+                PayableType.MembershipInstallment,
+                MembershipId,
+                ClubId,
+                Id,  // installment guid
+                DueDate);
         }
     }
 }
