@@ -9,6 +9,7 @@ using EaseClub.Application.Features.MembershipPlans.Queries;
 using EaseClub.Application.Features.MembershipTypes.Queries;
 using EaseClub.Application.Features.Notifications;
 using EaseClub.Application.Features.Notifications.Queries;
+using EaseClub.Application.Features.Payment;
 using EaseClub.Domain.ApplicationTemplates.Repositories;
 using EaseClub.Domain.Branches;
 using EaseClub.Domain.ClubAdmin;
@@ -22,6 +23,7 @@ using EaseClub.Domain.MembershipPlans.Repositories;
 using EaseClub.Domain.Memberships;
 using EaseClub.Domain.MembershipTypes;
 using EaseClub.Domain.Notifications;
+using EaseClub.Domain.Payment.Repositories;
 using EaseClub.Domain.PricingPolices;
 using EaseClub.Infrastructure.Auth.Entities;
 using EaseClub.Infrastructure.Auth.interfaces;
@@ -33,6 +35,7 @@ using EaseClub.Infrastructure.Data.Repositories;
 using EaseClub.Infrastructure.Notifications;
 using EaseClub.Infrastructure.Notifications.UserDevices;
 using EaseClub.Infrastructure.Services;
+using EaseClub.Infrastructure.Services.Payment;
 using EaseClub.Infrastructure.Services.QueryServices;
 using EaseClub.Infrastructure.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -162,6 +165,8 @@ namespace EaseClub.Application
             services.AddSignalR();
             services.AddHostedService<FcmTokenCleanupWorker>();
 
+            services.AddScoped<IPaymentGateway, GeideaPaymentGateway>();
+
             return services;
         }
 
@@ -199,7 +204,8 @@ namespace EaseClub.Application
             Services.AddScoped<IFileRepository, FileRepository>();
             Services.AddScoped<IDeviceRepository, DeviceRepository>();
             Services.AddScoped<INotificationRepository, NotificationRepository>();
-
+            Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+            Services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
 
             return Services;
         }
@@ -210,6 +216,8 @@ namespace EaseClub.Application
             services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
 
             services.Configure<FirebaseSettings>(configuration.GetSection("Firebase"));
+
+            services.Configure<GeideaOptions>(configuration.GetSection("Geidea"));
             return services;
         }
     }

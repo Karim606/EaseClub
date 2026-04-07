@@ -26,6 +26,7 @@ using EaseClub.Domain.Memberships;
 using EaseClub.Domain.Files;
 using EaseClub.Domain.Notifications;
 using EaseClub.Infrastructure.Notifications.UserDevices;
+using EaseClub.Domain.Payment;
 
 namespace EaseClub.Infrastructure.Data
 {
@@ -111,6 +112,9 @@ namespace EaseClub.Infrastructure.Data
        
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<UserDevice> UserDevices { get; set; }
+
+        public DbSet<Invoice> Invoices { get; set; }
+        public DbSet<PaymentTransaction> Payments { get; set; }
 
     }
 }
