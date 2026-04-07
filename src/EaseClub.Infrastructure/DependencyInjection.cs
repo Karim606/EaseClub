@@ -49,6 +49,7 @@ using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
@@ -166,6 +167,11 @@ namespace EaseClub.Application
             services.AddHostedService<FcmTokenCleanupWorker>();
 
             services.AddScoped<IPaymentGateway, GeideaPaymentGateway>();
+            services.AddHttpClient<IPaymentGateway, GeideaPaymentGateway>(client =>
+            {
+                // You can set default headers or base URLs here if they are static
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            });
 
             return services;
         }

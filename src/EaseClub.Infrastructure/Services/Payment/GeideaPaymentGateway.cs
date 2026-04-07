@@ -20,11 +20,12 @@ namespace EaseClub.Infrastructure.Services.Payment
 {
     public class GeideaPaymentGateway : IPaymentGateway
     {
-        private readonly HttpClient _httpClient = new HttpClient();
+        private readonly HttpClient _httpClient;
         private readonly GeideaOptions _options;
         private readonly ILogger<GeideaPaymentGateway> _logger;
-        public GeideaPaymentGateway(IOptions<GeideaOptions> options, ILogger<GeideaPaymentGateway> logger)
+        public GeideaPaymentGateway(HttpClient httpClient, IOptions<GeideaOptions> options, ILogger<GeideaPaymentGateway> logger)
         {
+            _httpClient = httpClient;
             _options = options.Value;
             _logger = logger;
         }
