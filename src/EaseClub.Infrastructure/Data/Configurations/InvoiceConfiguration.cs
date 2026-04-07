@@ -43,6 +43,16 @@ namespace EaseClub.Infrastructure.Data.Configurations
                 .HasForeignKey(t => t.InvoiceId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            builder.HasOne(i => i.User)
+                .WithMany()
+                .HasForeignKey(i => i.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(i => i.Club)
+                .WithMany()
+                .HasForeignKey(i => i.ClubId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             builder.Navigation(i => i.Transactions).HasField("_Transactions").UsePropertyAccessMode(PropertyAccessMode.Field);
 
             // AuditableEntity properties mapping if needed

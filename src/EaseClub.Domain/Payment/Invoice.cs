@@ -1,5 +1,6 @@
 ﻿using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.Member;
 using EaseClub.Domain.Payment.Enums;
 using EaseClub.Domain.Payment.Errors;
 using EaseClub.Domain.Payment.Events;
@@ -22,6 +23,8 @@ namespace EaseClub.Domain.Payment
 
         public Guid ClubId { get; private set; }
         public Guid UserId { get; private set; }
+        public MemberUser User { get; private set; }
+        public Club Club { get; private set; }
         public decimal Amount { get; private set; }
         public DateTime DueDate { get; private set; }
         public InvoiceStatus Status { get; private set; }
