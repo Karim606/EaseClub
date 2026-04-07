@@ -71,10 +71,9 @@ namespace EaseClub.Domain.Payment
                 amount, dueDate);
         }
 
-        public Result<Success> RecordAttempt(
+        public Result<PaymentTransaction> RecordAttempt(
             string GatewayName,
-            string externalRef,
-            PaymentMethod? method = null)
+            string? method = null)
         {
             if (Status == InvoiceStatus.Paid)
                 return InvoiceErrors.AlreadyPaid;
@@ -90,22 +89,21 @@ namespace EaseClub.Domain.Payment
                     t.MarkAsFailed("New payment attempt initiated");
                 }
             }
+            var transation = PaymentTransaction.Create(Guid.NewGuid(), Id, Amount, GatewayName, method);
+            _Transactions.Add(transation);
 
-            _Transactions.Add(
-                PaymentTransaction.Create(Guid.NewGuid(),Id, Amount, externalRef, method));
-
-            return Result.Success;
+            return transation;
         }
 
         public Result<Success> ConfirmPayment(
-            string externalRef,
+            Guid transactionId,
             DateTime paidAt)
         {
             if (Status == InvoiceStatus.Void)
                 return InvoiceErrors.InvoiceVoided;
 
             var transaction = _Transactions
-                .FirstOrDefault(t => t.ExternalRef == externalRef);
+                .FirstOrDefault(t => t.Id == transactionId);
 
             if (transaction == null)
                 return InvoiceErrors.TransactionNotFound;
@@ -126,11 +124,11 @@ namespace EaseClub.Domain.Payment
         }
 
         public Result<Success> FailPayment(
-            string externalRef,
+            Guid transactionId,
             string reason)
         {
             var transaction = _Transactions
-                .FirstOrDefault(t => t.ExternalRef == externalRef);
+                .FirstOrDefault(t => t.Id == transactionId);
 
             if (transaction == null)
                 return InvoiceErrors.TransactionNotFound;
@@ -153,6 +151,44 @@ namespace EaseClub.Domain.Payment
                 return InvoiceErrors.CannotVoidPaidInvoice;
 
             Status = InvoiceStatus.Void;
+            return Result.Success;
+        }
+
+        public Result<Success> ForceMarkAsPaid(Guid transactionId)
+        {
+            if (Status == InvoiceStatus.Void)
+                return InvoiceErrors.InvoiceVoided;
+
+            if (Status == InvoiceStatus.Paid)
+                return Result.Success; // idempotent
+
+            var transaction = _Transactions
+                .FirstOrDefault(t => t.Id == transactionId);
+
+            if (transaction == null)
+                return InvoiceErrors.TransactionNotFound;
+
+            // 1. Mark this transaction as succeeded (forcefully)
+            if (transaction.Status != PaymentTransactionStatus.Succeeded)
+            {
+                transaction.MarkAsSucceeded(DateTime.UtcNow);
+            }
+
+            // 2. Cancel all other pending transactions
+            foreach (var t in _Transactions.Where(t =>
+                t.Id != transaction.Id &&
+                t.Status == PaymentTransactionStatus.Pending))
+            {
+                t.MarkAsFailed("Superseded by successful payment");
+            }
+
+            // 3. Update invoice
+            Status = InvoiceStatus.Paid;
+
+            // 4. Raise domain event (ONLY ONCE)
+            RaiseDomainEvent(new InvoicePaidEvent(
+                Id, PayableId, PayableType, Amount, UserId, ClubId));
+
             return Result.Success;
         }
     }

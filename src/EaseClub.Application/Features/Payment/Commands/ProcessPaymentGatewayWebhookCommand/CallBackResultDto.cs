@@ -23,6 +23,8 @@ namespace EaseClub.Application.Features.Payment.Commands.ProcessPaymentGatewayWe
         public string ExternalRef { get; set; } = null!;
         public bool IsSuccess { get; set; }
         public string? Message { get; set; }
+        public decimal Amount { get; set; }
+        public string Currency { get; set; } = null!;
 
     }
 }
