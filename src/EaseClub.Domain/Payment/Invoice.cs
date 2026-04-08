@@ -1,5 +1,6 @@
 ﻿using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Common;
+using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Member;
 using EaseClub.Domain.Payment.Enums;
@@ -14,12 +15,12 @@ using System.Transactions;
 
 namespace EaseClub.Domain.Payment
 {
-    public class Invoice : AuditableEntity
+    public class Invoice : AuditableEntity,IBelongToUser
     {
-        public Guid PayableId { get; private set; }
+        public Guid BillingItemId { get; private set; }
         // InstallmentId or RegistrationId
-
-        public PayableType PayableType { get; private set; }
+        public string BillingItemReadableId { get; private set; }
+        public BillingItemType BillingItemType { get; private set; }
         // MembershipInstallment or EventRegistration
 
         public Guid ClubId { get; private set; }
@@ -38,15 +39,17 @@ namespace EaseClub.Domain.Payment
 
         private Invoice(
             Guid id,
-            Guid payableId,
-            PayableType payableType,
+            Guid billingItemId,
+            BillingItemType billingItemType,
+            string billingItemReadableId,
             Guid clubId,
             Guid userId,
             decimal amount,
             DateTime dueDate):base(id)
         {
-            PayableId = payableId;
-            PayableType = payableType;
+            BillingItemId = billingItemId;
+            BillingItemType = billingItemType;
+            BillingItemReadableId = billingItemReadableId;
             ClubId = clubId;
             UserId = userId;
             Amount = amount;
@@ -55,14 +58,13 @@ namespace EaseClub.Domain.Payment
         }
 
         public static Result<Invoice> Create(
-            Guid payableId,
-            PayableType payableType,
+            IBillingItem billingItem,
             Guid clubId,
             Guid userId,
             decimal amount,
             DateTime dueDate)
         {
-            if (payableId == Guid.Empty)
+            if (billingItem.Id == Guid.Empty)
                 return InvoiceErrors.PayableIdRequired;
             if (amount <= 0)
                 return InvoiceErrors.InvalidAmount;
@@ -71,11 +73,15 @@ namespace EaseClub.Domain.Payment
 
             var invoice =  new Invoice(
                 Guid.NewGuid(),
-                payableId, payableType,
-                clubId, userId,
-                amount, dueDate);
+                billingItem.Id,
+                billingItem.GetBillingType(),
+                billingItem.ReadableId,
+                clubId,
+                userId,
+                amount,
+                dueDate);
 
-            invoice.ReadableId = PayableIdGenerator.Generate(payableType, userId, clubId, payableId, dueDate);
+            invoice.ReadableId = InvoiceIdGenerator.Generate();
 
             return invoice;
 
@@ -128,7 +134,7 @@ namespace EaseClub.Domain.Payment
             Status = InvoiceStatus.Paid;
 
             RaiseDomainEvent(new InvoicePaidEvent(
-                Id, PayableId, PayableType, Amount, UserId, ClubId));
+                Id,BillingItemId,BillingItemType, Amount, UserId, ClubId));
 
             return Result.Success;
         }
@@ -197,7 +203,7 @@ namespace EaseClub.Domain.Payment
 
             // 4. Raise domain event (ONLY ONCE)
             RaiseDomainEvent(new InvoicePaidEvent(
-                Id, PayableId, PayableType, Amount, UserId, ClubId));
+                Id, BillingItemId, BillingItemType, Amount, UserId, ClubId));
 
             return Result.Success;
         }

@@ -5,12 +5,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EaseClub.Domain.Common
+namespace EaseClub.Domain.Payment
 {
-    public static class PayableIdGenerator
+    public static class BillingITemIdGenerator
     {
         public static string Generate(
-            PayableType type,
+            BillingItemType type,
             Guid userId,
             Guid clubId,
             Guid payableId,
@@ -25,7 +25,7 @@ namespace EaseClub.Domain.Common
             // deterministic hash (short, human-readable)
             var input = $"{userId}-{clubId}-{payableId}-{dueDate:yyyyMMddHHmmss}";
             using var sha = System.Security.Cryptography.SHA1.Create();
-            var hashBytes = sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input));
+            var hashBytes = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
             // Take first 3 bytes as hex
             var hashPart = BitConverter.ToUInt32(hashBytes, 0) & 0xFFFFFF; // 3 bytes
             var hashStr = hashPart.ToString("X6"); // 6-digit hex
