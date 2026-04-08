@@ -3,6 +3,7 @@ using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Memberships;
+using EaseClub.Domain.Payment;
 using EaseClub.Domain.Payment.Enums;
 using System;
 using System.Collections.Generic;
@@ -12,14 +13,14 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Domain.MembershipPlans
 {
-    public class MembershipInstallment : AuditableEntity,IHaveClub
+    public class MembershipInstallment : AuditableEntity,IHaveClub,IBillingItem
     {
         public Guid MembershipId { get; private set; }
         public Guid ClubId { get; private set; }
         public Guid MembershipTypeId { get; private set; }
         public Guid MembershipPlanId { get; private set; }
         public Guid? InstallmentTemplateId { get; private set; }
-
+        public BillingItemType GetBillingType() => BillingItemType.MembershipInstallment;
         public Membership Membership { get; private set; }
         public Club Club { get; private set; }
         public int Order { get; private set; }
@@ -100,8 +101,8 @@ namespace EaseClub.Domain.MembershipPlans
 
         public string GetReadableInstallmentId()
         {
-            return PayableIdGenerator.Generate(
-                PayableType.MembershipInstallment,
+            return BillingITemIdGenerator.Generate(
+                BillingItemType.MembershipInstallment,
                 MembershipId,
                 ClubId,
                 Id,  // installment guid

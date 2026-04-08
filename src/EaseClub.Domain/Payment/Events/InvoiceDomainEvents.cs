@@ -8,5 +8,5 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Domain.Payment.Events
 {
-    public record InvoicePaidEvent(Guid Id, Guid PayableId, PayableType type, decimal Amount,Guid  UserId, Guid ClubId):DomainEvent;
+    public record InvoicePaidEvent(Guid Id, Guid billingItemId, BillingItemType type, decimal Amount,Guid  UserId, Guid ClubId):DomainEvent;
 }

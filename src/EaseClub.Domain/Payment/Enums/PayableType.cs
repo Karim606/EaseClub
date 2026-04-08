@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Domain.Payment.Enums
 {
-    public enum PayableType
+    public enum BillingItemType
     {
         MembershipInstallment,
         EventRegistration
