@@ -14,15 +14,23 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.Payment.Commands.IntiatePayment
 {
-    public class InitiatePaymentCommandHandler(IInvoiceRepository invoiceRepository, IPaymentGateway paymentGateway,IUnitOfWork unitOfWork)
+    public class InitiatePaymentCommandHandler(IInvoiceRepository invoiceRepository, IPaymentGateway paymentGateway,ICurrentUserService currentUserService,IUnitOfWork unitOfWork)
         : IRequestHandler<InitiatePaymentCommand, Result<IntiatePaymentResponse>>
     {
 
         public async Task<Result<IntiatePaymentResponse>> Handle(InitiatePaymentCommand request, CancellationToken cancellationToken)
         {
+            var userId = Guid.Parse(currentUserService.GetId());
+            var userRoles = currentUserService.GetRoles();
+
             var invoice = await invoiceRepository.GetInvoiceWithTransactions(request.InvoiceId);
             if (invoice is null)
                 return Error.NotFound(description: "Invoice not found");
+
+            if (userId != invoice.UserId && userRoles.All(r => r != "SuperAdmin"))
+            {
+                return Error.Unauthorized("You are not authorized to view these invoices.");
+            }
 
             // Create Transaction (Domain)
             var transactionResult = invoice.RecordAttempt(request.Gateway, null);

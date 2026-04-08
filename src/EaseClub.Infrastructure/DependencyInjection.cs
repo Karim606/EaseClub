@@ -10,6 +10,7 @@ using EaseClub.Application.Features.MembershipTypes.Queries;
 using EaseClub.Application.Features.Notifications;
 using EaseClub.Application.Features.Notifications.Queries;
 using EaseClub.Application.Features.Payment;
+using EaseClub.Application.Features.Payment.Queries;
 using EaseClub.Domain.ApplicationTemplates.Repositories;
 using EaseClub.Domain.Branches;
 using EaseClub.Domain.ClubAdmin;
@@ -185,6 +186,7 @@ namespace EaseClub.Application
             services.AddScoped<INotificationQueryService, NotificationQueryService>();
             services.AddScoped<IMembershipTypesQueryService, MembershipTypesQueryServices>();
             services.AddScoped<IClubsQueryService, ClubsQueryService>();
+            services.AddScoped<IInvoiceQueryService, InvoiceQueryService>();
             return services;
         }
         private static IServiceCollection AddRepositories(this IServiceCollection Services)

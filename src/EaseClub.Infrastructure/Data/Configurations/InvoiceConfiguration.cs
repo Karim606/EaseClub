@@ -15,10 +15,13 @@ namespace EaseClub.Infrastructure.Data.Configurations
         {
             builder.HasKey(i => i.Id);
 
-            builder.Property(i => i.PayableId)
+            builder.Property(i => i.BillingItemId)
                 .IsRequired();
 
-            builder.Property(i => i.PayableType)
+            builder.Property(i => i.BillingItemReadableId)
+                .IsRequired();
+
+            builder.Property(i => i.BillingItemType)
                 .IsRequired();
 
             builder.Property(i => i.ClubId)
