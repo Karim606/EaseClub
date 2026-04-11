@@ -2,6 +2,7 @@
 using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipApplications.ValueObjects;
+using EaseClub.Domain.Memberships;
 using EaseClub.Domain.MembershipTypes;
 using System;
 using System.Collections.Generic;
@@ -18,10 +19,15 @@ namespace EaseClub.Domain.MembershipPlans
         public MembershipType MembershipType { get; private set; }
         public EnrollmentMode EnrollmentMode { get; private set; }
         public Guid? ApplicationTemplateId { get; private set; }
+
+        private readonly List<Membership>_Memberships = new();
+        public IReadOnlyList<Membership> Memberships => _Memberships.AsReadOnly();
         public string Name { get; private set; }
         public string? Description { get; private set; }
 
         public decimal TotalPrice { get; private set; }
+        public decimal RenewPrice { get; private set; }
+        public bool InstallmentsAllowdInRenewal { get; private set; } = false;
         public int MaxPaymentPeriodInDays { get; private set; }
         public int SubscriptionValidityInYears { get; private set; }
         public int MaxFamilyMembers { get; private set; }
@@ -33,7 +39,7 @@ namespace EaseClub.Domain.MembershipPlans
         private MembershipPlan() { } // EF
 
         private MembershipPlan(Guid id,Guid clubId, Guid membershipTypeId,int subscriptionValidityInYears,int maxFamilyMembers, string name,
-            decimal totalPrice, int maxPaymentPeriod,EnrollmentMode mode) :base(id)
+            decimal totalPrice, int maxPaymentPeriod,EnrollmentMode mode, decimal renewPrice, bool installmentsAllowedInRenewal) :base(id)
         {
             
             ClubId = clubId;
@@ -45,6 +51,8 @@ namespace EaseClub.Domain.MembershipPlans
             MaxFamilyMembers = maxFamilyMembers;
             IsActive = true;
             EnrollmentMode = mode;
+            RenewPrice = renewPrice;
+            InstallmentsAllowdInRenewal = installmentsAllowedInRenewal;
         }
 
         public Result<Success> AddInstallmentTemplate(InstallmentTemplate template)
@@ -82,7 +90,7 @@ namespace EaseClub.Domain.MembershipPlans
       
         public static Result<MembershipPlan> Create(Guid id,Guid clubId, Guid membershipTypeId,
             EnrollmentMode mode,Guid? templateId,
-            int subscriptionValidityInYears,int maxFamilyMembers,string name, decimal totalPrice, int maxPaymentPeriod)
+            int subscriptionValidityInYears,int maxFamilyMembers,string name, decimal totalPrice, int maxPaymentPeriod,decimal renewPrice, bool installmentsAllowedInRenewal)
         {
             if (string.IsNullOrWhiteSpace(name))
                 return MembershipPlanErrors.MembershipPlanNameMustNotBeEmpty;
@@ -95,6 +103,9 @@ namespace EaseClub.Domain.MembershipPlans
 
             if (totalPrice <= 0)
                 return MembershipPlanErrors.MembershipPlanTotalPriceMustBeGreaterThanZero;
+
+            if (renewPrice <= 0)
+                return MembershipPlanErrors.MembershipPlanRenewPriceMustBeGreaterThanZero;
             if (maxPaymentPeriod <= 0)
                 return MembershipPlanErrors.MembershipPlanDurationMustBeGreaterThanZero;
             if (subscriptionValidityInYears <= 0)
@@ -107,7 +118,7 @@ namespace EaseClub.Domain.MembershipPlans
             if (clubId == Guid.Empty)
                 return MembershipPlanErrors.ClubIdMustBeProvided;
 
-            var membershipPlan = new MembershipPlan(id, clubId, membershipTypeId, subscriptionValidityInYears,maxFamilyMembers, name, totalPrice, maxPaymentPeriod,mode);
+            var membershipPlan = new MembershipPlan(id, clubId, membershipTypeId, subscriptionValidityInYears,maxFamilyMembers, name, totalPrice, maxPaymentPeriod,mode, renewPrice, installmentsAllowedInRenewal);
 
             membershipPlan.ApplicationTemplateId = templateId;
             return membershipPlan;

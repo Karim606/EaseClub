@@ -15,13 +15,13 @@ namespace EaseClub.Domain.MembershipPlans
 {
     public class MembershipInstallment : AuditableEntity,IHaveClub,IBillingItem
     {
-        public Guid MembershipId { get; private set; }
+        public Guid MembershipCycleId { get; private set; }
         public Guid ClubId { get; private set; }
         public Guid MembershipTypeId { get; private set; }
         public Guid MembershipPlanId { get; private set; }
         public Guid? InstallmentTemplateId { get; private set; }
         public BillingItemType GetBillingType() => BillingItemType.MembershipInstallment;
-        public Membership Membership { get; private set; }
+        public MembershipCycle Membership { get; private set; }
         public Club Club { get; private set; }
         public int Order { get; private set; }
         public decimal Amount { get; private set; }
@@ -31,10 +31,10 @@ namespace EaseClub.Domain.MembershipPlans
         public string ReadableId { get; private set; }
         private MembershipInstallment() { }
 
-        public MembershipInstallment(Guid membershipId,Guid clubId,Guid membershipTypeId,Guid planId,Guid? installmentTemplateId,
+        public MembershipInstallment(Guid membershipCycleId,Guid clubId,Guid membershipTypeId,Guid planId,Guid? installmentTemplateId,
             int order, decimal amount, DateTime dueDate):base(Guid.NewGuid())
         {
-            MembershipId = membershipId;
+            MembershipCycleId = membershipCycleId;
             ClubId = clubId;
             Order = order;
             Amount = amount;
@@ -69,12 +69,11 @@ namespace EaseClub.Domain.MembershipPlans
 
         }
 
-        public static Result<MembershipInstallment> Create(Guid membershipId,Guid clubId,Guid membershipTypeId,
+        public static Result<MembershipInstallment> Create(Guid membershipCycleId,Guid clubId,Guid membershipTypeId,
            Guid planId,Guid? installmentTemplateId, int order, decimal amount, DateTime dueDate)
         {
-            if (membershipId == Guid.Empty)
-               return MembershipInstallmentErrors.MembershipIdMustBeProvided;
-
+            if (membershipCycleId == Guid.Empty)
+               return MembershipInstallmentErrors.MembershipCycleIdMustBeProvided;
             if (clubId == Guid.Empty)
                 return OwnedByClubErrors.ClubIdIsRequired;
 
@@ -93,7 +92,7 @@ namespace EaseClub.Domain.MembershipPlans
             if (dueDate <= DateTime.UtcNow)
                 return MembershipInstallmentErrors.InstallmentDueDateMustBeInTheFuture;
 
-            var membershipInstallment = new MembershipInstallment(membershipId, clubId, membershipTypeId, planId, installmentTemplateId, order, amount, dueDate);
+            var membershipInstallment = new MembershipInstallment(membershipCycleId, clubId, membershipTypeId, planId, installmentTemplateId, order, amount, dueDate);
              membershipInstallment.ReadableId = membershipInstallment.GetReadableInstallmentId();
 
             return membershipInstallment;
@@ -103,7 +102,7 @@ namespace EaseClub.Domain.MembershipPlans
         {
             return BillingITemIdGenerator.Generate(
                 BillingItemType.MembershipInstallment,
-                MembershipId,
+                MembershipCycleId,
                 ClubId,
                 Id,  // installment guid
                 DueDate);

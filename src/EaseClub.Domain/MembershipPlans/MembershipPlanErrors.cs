@@ -21,6 +21,9 @@ namespace EaseClub.Domain.MembershipPlans
                     Error.Validation(code: "MembershipPlan.TotalPrice.Must.Be.GreaterThan.Zero",
                     description: "Membership plan total price must be greater than zero.");
 
+        public static Error MembershipPlanRenewPriceMustBeGreaterThanZero = Error.Validation(code:"MembershipPlan.RenewPrice.Must.Be.GreaterThan.Zero",
+                    description: "Membership plan renew price must be greater than zero.");
+
         public static Error MembershipPlanDurationMustBeGreaterThanZero =
          Error.Validation(code: "MembershipPlan.Duration.Must.Be.GreaterThan.Zero",
                 description: "Membership plan duration must be greater than zero.");
