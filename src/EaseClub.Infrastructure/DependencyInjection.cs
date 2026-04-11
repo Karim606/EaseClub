@@ -3,6 +3,7 @@ using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Features.ApplicationTemplates.Queries;
 using EaseClub.Application.Features.Auth.Common.Interfaces;
 using EaseClub.Application.Features.Clubs.Queries;
+using EaseClub.Application.Features.Files.Commands;
 using EaseClub.Application.Features.InstallmentTemplates.Queries;
 using EaseClub.Application.Features.MembershipApplications.Queries;
 using EaseClub.Application.Features.MembershipPlans.Queries;
@@ -164,6 +165,7 @@ namespace EaseClub.Application
             services.AddScoped<IPushNotificationService, FirebaseNotificationService>();
             services.AddScoped<INotificationDispatcher, NotificationDispatcher>();
 
+            services.AddScoped<FileAuthorizationService>();
             services.AddSignalR();
             services.AddHostedService<FcmTokenCleanupWorker>();
 

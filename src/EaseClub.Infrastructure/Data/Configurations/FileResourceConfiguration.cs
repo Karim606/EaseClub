@@ -41,23 +41,6 @@ namespace EaseClub.Infrastructure.Data.Configurations
 
             builder.Property(f => f.IsTemporary)
                    .IsRequired();
-
-            builder.Property(f => f.Category)
-                   .IsRequired();
-
-            // Relationships
-
-            // Club (optional)
-            builder.HasOne(f => f.Club)
-                   .WithMany( )   // assume Club has ICollection<FileResource> Files
-                   .HasForeignKey(f => f.ClubId)
-                   .OnDelete(DeleteBehavior.SetNull); // keep file if club is deleted
-
-            // Membership Application (optional)
-            builder.HasOne(f => f.Application)
-                   .WithMany( )   // assume MembershipApplication has ICollection<FileResource> Files
-                   .HasForeignKey(f => f.ApplicationId)
-                   .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }
