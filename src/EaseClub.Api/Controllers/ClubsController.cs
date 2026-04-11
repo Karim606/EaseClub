@@ -1,7 +1,9 @@
 ﻿using EaseClub.Application.Common.Pagination.Parameters;
+using EaseClub.Application.Features.Clubs.Commands.UpdateClubDetails;
 using EaseClub.Application.Features.Clubs.Queries.GetClubById;
 using EaseClub.Application.Features.Clubs.Queries.GetClubs;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -29,6 +31,29 @@ namespace EaseClub.Api.Controllers
                 Problem);
         }
 
+        [Authorize(Roles = "ClubAdmin,SuperAdmin")]
+        [HttpPut("/api/v{version:ApiVersion}/clubs/{id}/details")]
+        [MapToApiVersion("1.0")]
+        
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+
+        [EndpointName("UpdateClubDetails")]
+        [EndpointSummary("Updates the details of a club, such as about, phone, email, work schedules, amenities, and logo. Requires ClubAdmin or SuperAdmin role.")]
+
+        public async Task<IActionResult> UpdateDetails(Guid id, [FromBody] UpdateClubDetailsRequest request)
+        {
+            var command = new UpdateClubDetailsCommand(id, request);
+            var result = await sender.Send(command);
+
+           return result.Match(
+                _ => NoContent(),
+                Problem);
+
+        }
         [HttpGet]
         [MapToApiVersion("1.0")]
 
