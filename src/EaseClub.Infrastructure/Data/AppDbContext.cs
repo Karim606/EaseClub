@@ -114,7 +114,7 @@ namespace EaseClub.Infrastructure.Data
         public DbSet<UserDevice> UserDevices { get; set; }
 
         public DbSet<Invoice> Invoices { get; set; }
-        public DbSet<PaymentTransaction> Payments { get; set; }
+        public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
 
     }
 }

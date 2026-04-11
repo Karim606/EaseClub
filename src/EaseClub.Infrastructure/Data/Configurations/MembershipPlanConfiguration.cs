@@ -32,7 +32,7 @@ namespace EaseClub.Infrastructure.Data.Configurations
                .HasForeignKey(p => p.MembershipTypeId)
                .OnDelete(DeleteBehavior.Restrict); // Prevent deleting a type if plans exist
 
-
+            builder.Navigation(x => x.Memberships).HasField("_Memberships").UsePropertyAccessMode(PropertyAccessMode.Field);
             builder.Navigation(x => x.InstallmentTemplates).HasField("_InstallmentTemplates").UsePropertyAccessMode(PropertyAccessMode.Field);
         }
     }

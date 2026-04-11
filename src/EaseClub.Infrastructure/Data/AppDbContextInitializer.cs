@@ -341,7 +341,7 @@ namespace EaseClub.Infrastructure.Data
             if (!await appDbContext.MembershipPlans.AnyAsync(x => x.Id == SeedMembershipPlanId))
             {
                 var membershipPlan = MembershipPlan.Create(
-                    SeedMembershipPlanId, SeedClubId, SeedMembershipTypeId,EnrollmentMode.DirectPay,null,1,3,"ca", 2000, 60
+                    SeedMembershipPlanId, SeedClubId, SeedMembershipTypeId,EnrollmentMode.DirectPay,null,1,3,"ca", 2000, 60, 1000, false
                 ).Value;
                 await appDbContext.MembershipPlans.AddAsync(membershipPlan);
             }

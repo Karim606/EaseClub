@@ -22,17 +22,16 @@ namespace EaseClub.Infrastructure.Data.Configurations
                    .HasConversion<string>()
                    .HasMaxLength(20);
 
-            builder.HasIndex(x => x.MembershipId);
+            builder.HasIndex(x => x.MembershipCycleId);
 
             builder.HasOne(x=>x.Club).WithMany().HasForeignKey(x => x.ClubId).OnDelete(DeleteBehavior.Restrict);
 
             builder.Property(x => x.DueDate)
             .IsRequired();
 
-            builder.HasIndex(x => new { x.MembershipId, x.Order })
+            builder.HasIndex(x => new { x.MembershipCycleId, x.Order })
             .IsUnique();
 
-            builder.HasIndex(x => new { x.MembershipId, x.Status });
             builder.HasIndex(x => x.DueDate);
         }
     }
