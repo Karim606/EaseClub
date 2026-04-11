@@ -26,10 +26,10 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.Complete
 
             // Map DTOs to Domain Value Objects
             var domainAnswers = request.Answers.Select(dto =>
-                ApplicationAnswer.Create(app.Id, dto.FieldId, dto.Key, dto.Value, dto.InstanceIndex).Value
+                ApplicationAnswer.Create(app.Id, dto.FieldId, dto.Key, dto.FieldType, dto.Value, dto.InstanceIndex).Value
             ).ToList();
 
-            var result = app.CompleteStep(request.StepOrder-1, domainAnswers);
+            var result = app.CompleteStep(request.StepOrder, domainAnswers);
             if (result.IsError) return result.TopError;
 
             await unitOfWork.SaveChangesAsync(ct);

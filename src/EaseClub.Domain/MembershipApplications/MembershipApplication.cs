@@ -131,7 +131,7 @@ namespace EaseClub.Domain.MembershipApplications
             if (Status != ApplicationStatus.Draft)
                 return MembershipApplicationErrors.InvalidStatusTransition;
 
-            if (stepOrder > 1 && !_CompletedStepOrders.Contains(stepOrder - 1))
+            if ( !_CompletedStepOrders.Contains(stepOrder))
                 return MembershipApplicationErrors.PreviousStepRequired;
 
             var step = TemplateSnapshot.Steps.FirstOrDefault(s => s.Order == stepOrder);

@@ -70,7 +70,7 @@ namespace EaseClub.Application.Features.MembershipApplications.Queries.GetApplic
             app.CurrentStepOrder,
             app.CompletedStepOrders.ToList(),
             app.TemplateSnapshot,
-            app.Answers.Select(a => new AnswerDto(a.FieldDefinitionId, a.FieldKey, a.Value, a.InstanceIndex)).ToList(),
+            app.Answers.Select(a => new AnswerDto(a.FieldDefinitionId, a.FieldKey,a.FieldType, a.Value, a.InstanceIndex)).ToList(),
             app.GetPricePreview().Value
             );
         }

@@ -1,6 +1,8 @@
-﻿using EaseClub.Domain.Common;
+﻿using EaseClub.Domain.ApplicationTemplates;
+using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipApplications.Errors;
+using System.Reflection.Metadata;
 
 namespace EaseClub.Domain.MembershipApplications
 {
@@ -15,6 +17,7 @@ namespace EaseClub.Domain.MembershipApplications
             Guid applicationId,
             Guid fieldDefintionId,
             string fieldKey,     // Use the Key from your JSON Snapshot
+            FieldType fieldType,
             string value,
             int instanceIndex) : base(id)
         {
@@ -23,11 +26,14 @@ namespace EaseClub.Domain.MembershipApplications
             FieldKey = fieldKey;
             Value = value;
             InstanceIndex = instanceIndex;
+            FieldType = fieldType;
         }
 
         public Guid ApplicationId { get; private set; }
 
         public Guid FieldDefinitionId { get; private set; }
+
+        public FieldType FieldType { get; private set; }
         // We use FieldKey (from the Template Definition) to link answers 
         // to the fields defined in your JSON Snapshot.
         public string FieldKey { get; private set; }
@@ -46,6 +52,7 @@ namespace EaseClub.Domain.MembershipApplications
             Guid applicationId,
             Guid fieldDefinitionId,
             string fieldKey,
+            FieldType fieldType,
             string value,
             int instanceIndex = 0)
         {
@@ -58,7 +65,7 @@ namespace EaseClub.Domain.MembershipApplications
                 return ApplicationAnswerErrors.FieldKeyRequired;
 
             // id is generated here or passed in
-            return new ApplicationAnswer(Guid.NewGuid(), applicationId,fieldDefinitionId, fieldKey, value, instanceIndex);
+            return new ApplicationAnswer(Guid.NewGuid(), applicationId,fieldDefinitionId, fieldKey, fieldType, value, instanceIndex);
         }
 
         #endregion

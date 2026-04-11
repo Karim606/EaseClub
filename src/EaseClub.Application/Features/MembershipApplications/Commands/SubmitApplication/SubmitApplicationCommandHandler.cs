@@ -1,6 +1,8 @@
 ﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Domain.ApplicationTemplates;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.Files;
 using EaseClub.Domain.MembershipApplications.Errors;
 using EaseClub.Domain.MembershipApplications.Repositories;
 using MediatR;
@@ -15,6 +17,7 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.SubmitAp
     public class SubmitApplicationHandler(
     IMembershipApplicationRepository appRepo,
     IUnitOfWork unitOfWork,
+    IFileRepository _fileRepository,
     IPublisher publisher) : IRequestHandler<SubmitApplicationCommand, Result<Success>>
     {
         public async Task<Result<Success>> Handle(SubmitApplicationCommand request, CancellationToken ct)
@@ -27,6 +30,20 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.SubmitAp
             // This runs the ValidateSectionCounts() and RefreshPrice() we built earlier
             var result = app.Submit();
             if (result.IsError) return result;
+
+            foreach (var answer in app.Answers)
+            {
+                if (answer.FieldType == FieldType.File)
+                {
+                    var fileId = Guid.Parse(answer.Value);
+
+                    var file = await _fileRepository.GetByIdAsync(fileId);
+                    if (file == null)
+                        return Error.NotFound("File missing");
+
+                    file.MarkAsPermanent();
+                }
+            }
 
             // 3. Persist the "Locked" state to the JSON columns
             await unitOfWork.SaveChangesAsync(ct);
