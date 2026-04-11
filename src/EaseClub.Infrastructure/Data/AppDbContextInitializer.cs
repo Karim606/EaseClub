@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using EaseClub.Domain.Clubs.ValueObjects;
 
 namespace EaseClub.Infrastructure.Data
 {
@@ -290,8 +291,10 @@ namespace EaseClub.Infrastructure.Data
                 logger.LogInformation("Club {ClubId} already exists", clubId);
                 return existingClub;
             }
+            PhoneNumber defaultPhone = PhoneNumber.Create("01000000000").Value;
+            Email defaultEmail = Email.Create("Def@default.com").Value;
 
-            var club = Club.Create(clubId,name).Value;
+            var club = Club.Create(clubId,name,"CLUB", new ContactInfo(defaultPhone,defaultEmail), new List<WorkSchedule>(), new List<Amenity>()).Value;
 
             await appDbContext.Clubs.AddAsync(club);
             logger.LogInformation("Club {ClubName} created successfully", name);
