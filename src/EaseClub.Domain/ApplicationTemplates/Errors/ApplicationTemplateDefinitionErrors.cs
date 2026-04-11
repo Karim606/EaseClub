@@ -54,5 +54,9 @@ namespace EaseClub.Domain.ApplicationTemplates.Errors
            code: "ApplicationTemplateDefinition.Step.Order.Invalid",
            description: "Invalid Step order.");
 
+        public static Error DuplicateStepOrder = Error.Validation(
+            code: "ApplicationTemplateDefinition.Duplicate.Step.Order",
+            description: "Another step exists with same order within template.");
+
     }
 }

@@ -92,7 +92,10 @@ namespace EaseClub.Domain.ApplicationTemplates
             if (_Steps.Any(s => s.Title.Equals(title, StringComparison.OrdinalIgnoreCase)))
                 return ApplicationTemplateDefinitionErrors.DuplicateStepTitle;
 
-            if (order < 0 || order > _Steps.Count) return ApplicationTemplateDefinitionErrors.InvalidStepOrder;
+            if(_Steps.Any(s => s.Order == order))
+                return ApplicationTemplateDefinitionErrors.DuplicateStepOrder;
+
+            if (order <= 0 || order > _Steps.Count) return ApplicationTemplateDefinitionErrors.InvalidStepOrder;
 
             var stepResult = ApplicationStepDefinition.Create(
                 Guid.NewGuid(),
