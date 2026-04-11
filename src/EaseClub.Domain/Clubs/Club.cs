@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using EaseClub.Domain.ClubAdmin;
 using EaseClub.Domain.Memberships;
+using EaseClub.Domain.Clubs.ValueObjects;
 
 namespace EaseClub.Domain.Clubs
 {
@@ -18,9 +19,14 @@ namespace EaseClub.Domain.Clubs
         private Club()
         {
         }
-        private Club(Guid id, string name): base(id)
+        private Club(Guid id, string name, string about, ContactInfo contactInfo, IEnumerable<WorkSchedule> workSchedules, IEnumerable<Amenity> amenities, Guid? logo = null): base(id)
         {
             Name = name;
+            About = about;
+            ContactInfo = contactInfo;
+            _workSchedules = workSchedules.ToList();
+            _amenities = amenities.ToList();
+            LogoId = logo;
         }
         
         public string Name { get; private set; }
@@ -34,8 +40,18 @@ namespace EaseClub.Domain.Clubs
 
         private readonly List<Membership> _Memberships = new List<Membership>();
         public IReadOnlyList<Membership> Memberships => _Memberships.AsReadOnly();
+        public Guid? LogoId { get; private set; } // Reference to your FileResource
+        public ContactInfo ContactInfo { get; private set; }
 
-        public static Result<Club> Create(Guid id, string name)
+        private readonly List<WorkSchedule> _workSchedules = new();
+        public IReadOnlyCollection<WorkSchedule> WorkSchedules => _workSchedules.AsReadOnly();
+
+        private readonly List<Amenity> _amenities = new();
+        public IReadOnlyCollection<Amenity> Amenities => _amenities.AsReadOnly();
+
+        public string About { get; private set; }
+
+        public static Result<Club> Create(Guid id, string name, string about, ContactInfo contactInfo, IEnumerable<WorkSchedule> workSchedules, IEnumerable<Amenity> amenities, Guid? logo = null)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
@@ -47,9 +63,31 @@ namespace EaseClub.Domain.Clubs
                 return ClubErrors.Name_Length_NotSuitable;
             }
 
-            return new Club(id, name);
+            
+            return new Club(id, name, about, contactInfo, workSchedules, amenities, logo);
         }
 
+        public void SetWorkSchedules(IEnumerable<WorkSchedule> schedules)
+        {
+            _workSchedules.Clear();
+            _workSchedules.AddRange(schedules);
+
+        }
+
+        public void UpdateDetails(
+        string about,
+        ContactInfo contact,
+        IEnumerable<WorkSchedule> schedules,
+        IEnumerable<Amenity> amenities,
+        Guid? logoId)
+        {
+            About = about;
+            ContactInfo = contact;
+            SetWorkSchedules(schedules);
+            _amenities.Clear();
+            _amenities.AddRange(amenities);
+            LogoId = logoId;
+        }
         public void Deactivate() => IsActive = false;
         public void Activate() => IsActive = true;
 
