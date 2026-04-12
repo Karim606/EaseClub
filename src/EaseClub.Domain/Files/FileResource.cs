@@ -53,11 +53,19 @@ namespace EaseClub.Domain.Files
         FileOwnerType ownerType
         )
         {
-            if((purpose == FilePurpose.ClubBanner|| purpose == FilePurpose.ClubLogo)||ownerType!=FileOwnerType.Club) return Error.Validation("Invalid file purpose for club files.");
-            if ((purpose == FilePurpose.UserProfileImage) || ownerType != FileOwnerType.User) return Error.Validation("Invalid file purpose for user files.");
+            if ((purpose == FilePurpose.ClubBanner || purpose == FilePurpose.ClubLogo)&& ownerType != FileOwnerType.Club)
+                return Error.Validation("Club files must have Club as owner.");
+            
+            if (purpose == FilePurpose.UserProfileImage && ownerType != FileOwnerType.User)
+                return Error.Validation("User profile images must have User as owner.");
 
+            if (purpose == FilePurpose.ApplicationDocument && ownerType != FileOwnerType.Application)
+                return Error.Validation("Application documents must have Application as owner.");
+ 
             var file = new FileResource(id, fileName, filePath, contentType, size,isPrivate, true, purpose, ownerType, ownerId);
-            file.SetCreated(uploadedBy);
+
+            if (purpose == FilePurpose.ApplicationDocument) file.IsPrivate = true;
+                file.SetCreated(uploadedBy);
             return file;
         }
 
