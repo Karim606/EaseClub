@@ -54,7 +54,8 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.CreatePlan
                 request.Price,
                 request.DurationInDays,
                 request.RenewPrice,
-                request.InstallmentsAllowedInRenewal
+                request.InstallmentsAllowedInRenewal,
+                request.paymentMode
                 );
 
             if (planResult.IsError) { 

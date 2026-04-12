@@ -31,6 +31,7 @@ namespace EaseClub.Domain.MembershipPlans
         public int MaxPaymentPeriodInDays { get; private set; }
         public int SubscriptionValidityInYears { get; private set; }
         public int MaxFamilyMembers { get; private set; }
+        public PaymentMode PaymentMode { get; private set; }
         public bool IsActive { get; private set; } = true;
 
         private readonly List<PlanInstallmentTemplate> _InstallmentTemplates = new();
@@ -39,7 +40,7 @@ namespace EaseClub.Domain.MembershipPlans
         private MembershipPlan() { } // EF
 
         private MembershipPlan(Guid id,Guid clubId, Guid membershipTypeId,int subscriptionValidityInYears,int maxFamilyMembers, string name,
-            decimal totalPrice, int maxPaymentPeriod,EnrollmentMode mode, decimal renewPrice, bool installmentsAllowedInRenewal) :base(id)
+            decimal totalPrice, int maxPaymentPeriod,EnrollmentMode mode, decimal renewPrice, bool installmentsAllowedInRenewal, PaymentMode paymentMode) :base(id)
         {
             
             ClubId = clubId;
@@ -53,11 +54,15 @@ namespace EaseClub.Domain.MembershipPlans
             EnrollmentMode = mode;
             RenewPrice = renewPrice;
             InstallmentsAllowdInRenewal = installmentsAllowedInRenewal;
+            PaymentMode = paymentMode;
         }
 
         public Result<Success> AddInstallmentTemplate(InstallmentTemplate template)
         {
-           if( template == null)
+           if(PaymentMode != PaymentMode.Installments&&PaymentMode != PaymentMode.Mixed)
+                return Error.Conflict(description:"Installment templates can only be added to plans that support installments.");
+
+            if ( template == null)
                 return MembershipPlanErrors.InstallmenttTemplateMustBeProvided;
 
             if (_InstallmentTemplates.Any(x => x.InstallmentTemplateId == template.Id))
@@ -90,7 +95,7 @@ namespace EaseClub.Domain.MembershipPlans
       
         public static Result<MembershipPlan> Create(Guid id,Guid clubId, Guid membershipTypeId,
             EnrollmentMode mode,Guid? templateId,
-            int subscriptionValidityInYears,int maxFamilyMembers,string name, decimal totalPrice, int maxPaymentPeriod,decimal renewPrice, bool installmentsAllowedInRenewal)
+            int subscriptionValidityInYears,int maxFamilyMembers,string name, decimal totalPrice, int maxPaymentPeriod,decimal renewPrice, bool installmentsAllowedInRenewal, PaymentMode paymentMode)
         {
             if (string.IsNullOrWhiteSpace(name))
                 return MembershipPlanErrors.MembershipPlanNameMustNotBeEmpty;
@@ -118,7 +123,7 @@ namespace EaseClub.Domain.MembershipPlans
             if (clubId == Guid.Empty)
                 return MembershipPlanErrors.ClubIdMustBeProvided;
 
-            var membershipPlan = new MembershipPlan(id, clubId, membershipTypeId, subscriptionValidityInYears,maxFamilyMembers, name, totalPrice, maxPaymentPeriod,mode, renewPrice, installmentsAllowedInRenewal);
+            var membershipPlan = new MembershipPlan(id, clubId, membershipTypeId, subscriptionValidityInYears,maxFamilyMembers, name, totalPrice, maxPaymentPeriod,mode, renewPrice, installmentsAllowedInRenewal, paymentMode);
 
             membershipPlan.ApplicationTemplateId = templateId;
             return membershipPlan;
@@ -128,6 +133,8 @@ namespace EaseClub.Domain.MembershipPlans
         string name,
         string? description,
         decimal totalPrice,
+        decimal renewPrice,
+
     IEnumerable<InstallmentTemplate> newTemplates)
         {
             // 1. Basic Validation

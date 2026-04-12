@@ -21,6 +21,7 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.CreatePlan
     int DurationInDays,
     int subscriptionValidityInYears,
     int maxFamilyMembers,
+    PaymentMode paymentMode,
     Guid? ApplicationTemplateId = null,
     decimal RenewPrice = 0,
     bool InstallmentsAllowedInRenewal = false

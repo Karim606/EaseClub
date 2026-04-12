@@ -17,5 +17,8 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.CreatePlan
         public int DurationInDays { get; init; }
         public EnrollmentMode EnrollmentMode { get; init; }
         public Guid? ApplicationTemplateId { get; init; } = null;
+        public bool InstallmentsAllowedInRenewal { get; init; } = false;
+        public decimal RenewPrice { get; init; }
+        public PaymentMode paymentMode { get; init; }
     }
 }
