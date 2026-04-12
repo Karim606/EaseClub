@@ -14,11 +14,13 @@ namespace EaseClub.Application.Features.Clubs.Queries.GetClubs
 
     public class ClubsDto
     {
-        public ClubsDto(Guid id, string name) { 
+        public ClubsDto(Guid id, string name, string? logoUrl = null) { 
             Id = id; 
             Name = name;
+            LogoUrl = logoUrl;
         }
         public Guid Id { get; set; }
         public string Name { get; set; }
+        public string? LogoUrl { get; set; }
     }
 }

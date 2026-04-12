@@ -20,7 +20,8 @@ namespace EaseClub.Application.Features.Clubs.Commands.UpdateClubDetails
     string Email,
     List<WorkScheduleDto> WorkSchedules,
     List<string> Amenities,
-    Guid? LogoId
+    Guid? LogoId,
+    Guid? coverImageId
 );
 
     public record WorkScheduleDto(string Label, string TimeRange);

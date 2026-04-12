@@ -18,6 +18,7 @@ namespace EaseClub.Application.Features.Clubs.Commands.UpdateClubDetails
     public class UpdateClubDetailsHandler(
     IClubRepository clubRepo,
     IFileRepository fileRepo,
+    IFileStorageService fileStorageService,
     IUnitOfWork unitOfWork) : IRequestHandler<UpdateClubDetailsCommand, Result<Success>>
     {
         public async Task<Result<Success>> Handle(UpdateClubDetailsCommand request, CancellationToken ct)
@@ -46,24 +47,46 @@ namespace EaseClub.Application.Features.Clubs.Commands.UpdateClubDetails
             var amenities = request.Data.Amenities.Select(a => new Amenity(a));
 
             // 3. Handle File Lifecycle (The Logo)
+            FileResource? logo = null;
+            FileResource? coverImage = null;
             if (request.Data.LogoId.HasValue)
             {
-                var file = await fileRepo.GetByIdAsync(request.Data.LogoId.Value, ct);
-                if (file == null) return Error.NotFound("Logo file not found");
+                 logo = await fileRepo.GetByIdAsync(request.Data.LogoId.Value, ct);
+                if (logo == null) return Error.NotFound("Logo file not found");
 
-                if(file.OwnerType != FileOwnerType.Club || file.OwnerId != club.Id) 
+                if(logo.OwnerType != FileOwnerType.Club || logo.OwnerId != club.Id) 
                     return Error.Unauthorized("File does not belong to this club");
                 // Mark the temporary upload as a permanent asset
-                file.MarkAsPermanent();
+                logo.MarkAsPermanent();
             }
 
+            if (request.Data.coverImageId.HasValue)
+            {
+                coverImage = await fileRepo.GetByIdAsync(request.Data.coverImageId.Value, ct);
+                if (coverImage == null) return Error.NotFound("Cover image file not found");
+
+                if (coverImage.OwnerType != FileOwnerType.Club || coverImage.OwnerId != club.Id)
+                    return Error.Unauthorized("File does not belong to this club");
+                // Mark the temporary upload as a permanent asset
+                coverImage.MarkAsPermanent();
+            }
+            string? logoUrl = null;
+            string? coverImageUrl = null;
+
+            if(logo != null) 
+            logoUrl = fileStorageService.GetFileUrl(logo.FilePath);
+
+            if(coverImage != null)
+                coverImageUrl = fileStorageService.GetFileUrl(coverImage.FilePath);
             // 4. Execute Domain Logic
             club.UpdateDetails(
                 request.Data.about,
                 contactInfo,
                 schedules.Select(s => s.Value),
                 amenities,
-                request.Data.LogoId);
+                logoUrl,
+                coverImageUrl
+                );
 
             // 5. Persist Changes
             await unitOfWork.SaveChangesAsync(ct);

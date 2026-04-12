@@ -25,7 +25,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
         {
             var query = Query();
 
-           return await GetPaginatedAsync<ClubsDto,string, CursorPaginatedResult<ClubsDto>>(query, parameters, selector: c => new ClubsDto(c.Id, c.Name), orderSelector: c => c.Name, ct);
+           return await GetPaginatedAsync<ClubsDto,string, CursorPaginatedResult<ClubsDto>>(query, parameters, selector: c => new ClubsDto(c.Id, c.Name,c.LogoUrl), orderSelector: c => c.Name, ct);
         }
     }
 }
