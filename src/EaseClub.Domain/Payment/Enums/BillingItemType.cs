@@ -9,7 +9,8 @@ namespace EaseClub.Domain.Payment.Enums
     public enum BillingItemType
     {
         MembershipInstallment,
-        EventRegistration
+        EventRegistration,
+        PendingEnrollmentFirstInstallment
     }
 
 }

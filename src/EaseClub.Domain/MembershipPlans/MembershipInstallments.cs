@@ -89,7 +89,7 @@ namespace EaseClub.Domain.MembershipPlans
             if (amount <= 0)
                 return  MembershipInstallmentErrors.InstallmentAmountMustBeGreaterThanZero;
            
-            if (dueDate <= DateTime.UtcNow)
+            if (dueDate < DateTime.UtcNow.Date)
                 return MembershipInstallmentErrors.InstallmentDueDateMustBeInTheFuture;
 
             var membershipInstallment = new MembershipInstallment(membershipCycleId, clubId, membershipTypeId, planId, installmentTemplateId, order, amount, dueDate);

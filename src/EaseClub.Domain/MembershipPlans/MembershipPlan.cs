@@ -170,7 +170,7 @@ namespace EaseClub.Domain.MembershipPlans
 
         public bool SupportsTemplate(Guid templateId)
         {
-            return _InstallmentTemplates.Any(it => it.InstallmentTemplateId == templateId);
+            return _InstallmentTemplates.Any(it => it.InstallmentTemplateId == templateId)&&(PaymentMode == PaymentMode.Installments || PaymentMode == PaymentMode.Mixed);
         }
 
         public Result<Success> AssignApplicationTemplate(Guid templateId, bool isTempSupportFamilyPlan )
