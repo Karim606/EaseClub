@@ -57,7 +57,7 @@ namespace EaseClub.Api.Controllers
         [HttpGet]
         [MapToApiVersion("1.0")]
 
-        [ProducesResponseType(typeof(ClubResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ClubsDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
 
