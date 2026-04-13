@@ -66,54 +66,43 @@ namespace EaseClub.Domain.Memberships
 
         #region Factory Methods
 
-        public static Result<Membership> CreateFromDirectPay(
-            Guid userId,
-            Guid clubId,
-            MembershipPlan plan,
-            InstallmentTemplate? template)
+        public static Result<Membership> CreateFromPendingEnrollment(PendingEnrollment pendingEnrollment)
         {
-            var membership = new Membership(Guid.NewGuid(), userId, clubId, plan.MembershipTypeId, plan.Id);
+            if (pendingEnrollment.Status != PendingEnrollmentStatus.WaitingForFirstPayment)
+                return Error.Conflict(description: "Pending enrollment is not payable.");
 
-            // Membership period
+            var membership = new Membership(
+                Guid.NewGuid(),
+                pendingEnrollment.UserId,
+                pendingEnrollment.ClubId,
+                pendingEnrollment.MembershipTypeId,
+                pendingEnrollment.MembershipPlanId);
+
+            membership.MembershipApplicationId = pendingEnrollment.MembershipApplicationId;
+
             var start = DateTime.UtcNow;
-            var end = start.AddYears(plan.SubscriptionValidityInYears);
+            var end = start.AddYears(pendingEnrollment.SubscriptionValidityInYears);
 
-            // Convert template to installments if exists
-            List<Installment> installments = template?.Installments.ToList() ?? new List<Installment>
-        {
-            Installment.Create(plan.TotalPrice, 0, 1).Value
-        };
+            var rules = InstallmentDto.ToInstallments(pendingEnrollment.GetInstallments().ToList());
+            if (rules.IsError) return rules.TopError;
 
-            // Create the cycle
-            var cycleResult = MembershipCycle.Create(membership.Id, start, end, plan.TotalPrice, template?.Id, installments);
-            if (cycleResult.IsError) return cycleResult.TopError;
+
+            var cycleResult = MembershipCycle.Create(
+                membership.Id,
+                membership.ClubId,
+                membership.MembershipTypeId,
+                membership.MembershipPlanId,
+                start,
+                end,
+                pendingEnrollment.TotalPrice,
+                pendingEnrollment.InstallmentTemplateId,
+                rules.Value
+                );
+
+            if (cycleResult.IsError)
+                return cycleResult.TopError;
 
             membership._MembershipCycles.Add(cycleResult.Value);
-
-            return membership;
-        }
-
-        public static Result<Membership> CreateFromApplication(MembershipApplication app)
-        {
-            if (app.Status != ApplicationStatus.Approved)
-                return Error.Conflict("Membership.CannotCreate.NotApproved");
-
-            var membership = new Membership(Guid.NewGuid(), app.UserId, app.ClubId, app.MembershipTypeId, app.MembershipPlanId);
-
-            // Membership period
-            var start = DateTime.UtcNow;
-            var end = start.AddYears(app.TemplateSnapshot.MembershipPlan.SubscriptionValidityInYears);
-
-            // Map installments
-            var installmentsResult = InstallmentRuleSnapshot.ListToDomain(app.TemplateSnapshot.InstallmentRules);
-            if (installmentsResult.IsError) return installmentsResult.TopError;
-
-            // Create cycle
-            var cycleResult = MembershipCycle.Create(membership.Id, start, end,app.FinalPriceSummary!.TotalPrice,app.InstallmentTemplateId,installmentsResult.Value);
-            if (cycleResult.IsError) return cycleResult.TopError;
-
-            membership._MembershipCycles.Add(cycleResult.Value);
-
             return membership;
         }
 
@@ -234,7 +223,16 @@ namespace EaseClub.Domain.Memberships
                     Installment.Create(MembershipPlan.TotalPrice, 0, 1).Value
                 };
 
-                var cycleResult = MembershipCycle.Create(Id, newStartDate, newEndDate, MembershipPlan.TotalPrice, installmentTemplateId, installments);
+                var cycleResult = MembershipCycle.Create(
+                    Id,
+                    ClubId,
+                    MembershipTypeId,
+                    MembershipPlanId,
+                    newStartDate,
+                    newEndDate,
+                    MembershipPlan.TotalPrice,
+                    installmentTemplateId,
+                    installments);
 
             if (cycleResult.IsError)   return cycleResult.TopError;
 
