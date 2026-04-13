@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Common
 {
-    public abstract class DomainEventHandler<TEvent,THandler> : INotificationHandler<TEvent>
+    public abstract class DomainEventHandler<TEvent, THandler> : INotificationHandler<TEvent>
     where TEvent : DomainEvent
     {
         protected readonly INotificationDispatcher _notificationDispatcher;
@@ -20,7 +20,7 @@ namespace EaseClub.Application.Common
         protected readonly IUnitOfWork _unitOfWork;
         protected readonly ILogger<THandler> _logger;
 
-        protected DomainEventHandler(INotificationDispatcher notificationDispatcher, INotificationRepository notificationRepository, IUnitOfWork unitOfWork,ILogger<THandler> logger)
+        protected DomainEventHandler(INotificationDispatcher notificationDispatcher, INotificationRepository notificationRepository, IUnitOfWork unitOfWork, ILogger<THandler> logger)
         {
             _notificationDispatcher = notificationDispatcher;
             _notificationRepository = notificationRepository;
@@ -48,18 +48,21 @@ namespace EaseClub.Application.Common
 
         protected void LogEvent(TEvent evt)
         {
-             _logger.LogInformation(GetType().Name + " - " + $", event with Id:{evt.EventId} of type:{evt.GetType().Name} that ocuured on:" +
-                 $"{evt.OccurredOn}" +
-                 "is currently processed");
+            _logger.LogInformation(GetType().Name + " - " + $", event with Id:{evt.EventId} of type:{evt.GetType().Name} that ocuured on:" +
+                $"{evt.OccurredOn}" +
+                "is currently processed");
         }
 
-        protected async Task DispatchNotification(Notification notification)
+        protected async Task DispatchNotification(Notification notification, CancellationToken ct)
         {
-            await _notificationRepository.AddAsync(notification);
-            await _unitOfWork.SaveChangesAsync();
-
+            await _notificationRepository.AddAsync(notification, ct);
+            await SaveChangesAsync(ct);
             await _notificationDispatcher.DispatchAsync(notification);
         }
 
+        protected async Task SaveChangesAsync(CancellationToken ct)
+        {
+            await _unitOfWork.SaveChangesAsync(ct);
+        }
     }
 }
