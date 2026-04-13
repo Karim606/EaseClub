@@ -85,7 +85,7 @@ namespace EaseClub.Api.Controllers
 
         [Authorize(Roles ="ClubAdmin,SuperAdmin")]
         [HttpPost("{id}/reviews")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         [EndpointName("ReviewApplication")]
         [EndpointSummary("Approves or rejects a submitted application.")]
         [EndpointDescription("Approves or rejects a submitted application, " +
@@ -95,7 +95,7 @@ namespace EaseClub.Api.Controllers
 
             var result = await sender.Send(cmd with { ApplicationId = id });
 
-            return result.Match(_ => NoContent(), Problem);
+            return result.Match((_)=>Ok(), Problem);
         }
 
 
