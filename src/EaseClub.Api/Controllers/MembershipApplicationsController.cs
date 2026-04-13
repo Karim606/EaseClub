@@ -73,6 +73,34 @@ namespace EaseClub.Api.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [EndpointName("CompleteStep")]
         [EndpointSummary("Submits answers for a specific application step.")]
+        #region swagger-description
+        [EndpointDescription(@"
+Completes a specific application step by submitting field answers.
+
+This endpoint:
+- Validates the step order against application progression rules
+- Validates each field against the frozen template snapshot
+- Removes previous answers for the same step before applying new ones
+- Stores validated answers and updates application progress
+- Recalculates application pricing after step completion
+
+Rules:
+- Application must be in Draft status
+- Steps must be completed in sequence
+- Each answer is validated using field-level validation rules from the template snapshot
+
+Answer behavior:
+- FieldId must exist in the step snapshot
+- InstanceIndex is used for repeatable fields (e.g. family members)
+- Invalid fields are ignored or rejected depending on validation rules
+
+Side effects:
+- Updates application answers
+- Advances application step pointer
+- Updates pricing dynamically
+")]
+
+        #endregion
         public async Task<IActionResult> CompleteStep(Guid id, int order, [FromBody] List<AnswerDto> answers) =>
         (await sender.Send(new CompleteStepCommand(id, order, answers))).Match(_ => NoContent(), Problem);
 
@@ -80,6 +108,45 @@ namespace EaseClub.Api.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [EndpointName("SubmitApplication")]
         [EndpointSummary("Finalizes and submits the application for review.")]
+        #region swagger-description
+        [EndpointDescription(@"
+Finalizes and submits a membership application for processing.
+
+This is the terminal state transition of the application workflow.
+
+What this endpoint does:
+
+1. Loads the application with all completed steps and answers
+2. Validates the application through domain rules:
+   - Ensures all required steps are completed
+   - Validates section constraints
+   - Locks pricing based on final answers
+3. Marks the application as SUBMITTED (no further edits allowed)
+4. Locks all dynamic data into a final immutable state
+5. Processes file attachments and marks uploaded files as permanent
+
+File Handling:
+- Any answer of type 'File' is treated as a temporary upload reference
+- On submission, files are promoted to permanent storage
+- Temporary uploads not referenced by answers may be eligible for cleanup
+
+Business Rules:
+- Application must be in DRAFT state
+- No further modifications are allowed after submission
+- Price is frozen at submission time
+- Answers are treated as immutable snapshot of user input
+
+Side Effects:
+- Locks application lifecycle
+- Finalizes pricing calculation
+- Converts uploaded files to permanent storage
+- Triggers downstream workflows (review, approval, billing, etc.)
+
+Important:
+This operation is irreversible from a business perspective.
+")]
+
+        #endregion
         public async Task<IActionResult> Submit(Guid id) =>
             (await sender.Send(new SubmitApplicationCommand(id))).Match(_ => Ok(), Problem);
 
