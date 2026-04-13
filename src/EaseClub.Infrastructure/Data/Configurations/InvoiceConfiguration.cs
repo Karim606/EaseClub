@@ -34,8 +34,6 @@ namespace EaseClub.Infrastructure.Data.Configurations
                 .IsRequired()
                 .HasColumnType("decimal(18,2)");
 
-            builder.Property(i => i.DueDate)
-                .IsRequired();
 
             builder.Property(i => i.Status)
                 .IsRequired();

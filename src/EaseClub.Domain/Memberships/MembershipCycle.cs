@@ -33,6 +33,9 @@ namespace EaseClub.Domain.Memberships
 
         public static Result<MembershipCycle> Create(
             Guid membershipId,
+            Guid clubId,
+            Guid membershipTypeId,
+            Guid membershipPlanId,
             DateTime startDate,
             DateTime endDate,
             decimal price,
@@ -51,7 +54,13 @@ namespace EaseClub.Domain.Memberships
             // Optional: generate installments if passed
             if (installments != null && installments.Any())
             {
-                var setupResult = cycle.SetupInstallments(installments,price,installmentTemplateId);
+                var setupResult = cycle.SetupInstallments(
+                    installments,
+                    price,
+                    clubId,
+                    membershipTypeId,
+                    membershipPlanId,
+                    installmentTemplateId);
                 if (setupResult.IsError)
                     return setupResult.TopError;
             }
@@ -59,7 +68,13 @@ namespace EaseClub.Domain.Memberships
             return cycle;
         }
 
-        private Result<Success> SetupInstallments(List<Installment> installments,decimal price, Guid? installmentTemplateId = null)
+        private Result<Success> SetupInstallments(
+            List<Installment> installments,
+            decimal price,
+            Guid clubId,
+            Guid membershipTypeId,
+            Guid membershipPlanId,
+            Guid? installmentTemplateId = null)
         {
             var instBluePrint = InstallmentEngine.GenerateMembershipInstallments(
                 installments,
@@ -72,9 +87,9 @@ namespace EaseClub.Domain.Memberships
             {
                 var result = MembershipInstallment.Create(
                     Id,
-                    this.Membership.ClubId,
-                    this.Membership.MembershipTypeId,
-                    this.Membership.MembershipPlanId,
+                    clubId,
+                    membershipTypeId,
+                    membershipPlanId,
                     installmentTemplateId,
                     inst.Order,
                     inst.Amount,

@@ -73,7 +73,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                                 .FirstOrDefault(),
                     
                 },
-                orderSelector: i => i.DueDate, // default sorting by due date
+                orderSelector: i => i.CreatedAt, // default sorting by due date
                 cancellationToken: ct
             );
         }

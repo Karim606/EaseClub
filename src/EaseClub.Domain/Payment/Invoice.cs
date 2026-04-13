@@ -28,7 +28,6 @@ namespace EaseClub.Domain.Payment
         public MemberUser User { get; private set; }
         public Club Club { get; private set; }
         public decimal Amount { get; private set; }
-        public DateTime DueDate { get; private set; }
         public InvoiceStatus Status { get; private set; }
         public string ReadableId { get; private set; }
         // Issued, Paid, Void
@@ -44,8 +43,7 @@ namespace EaseClub.Domain.Payment
             string billingItemReadableId,
             Guid clubId,
             Guid userId,
-            decimal amount,
-            DateTime dueDate):base(id)
+            decimal amount):base(id)
         {
             BillingItemId = billingItemId;
             BillingItemType = billingItemType;
@@ -53,7 +51,6 @@ namespace EaseClub.Domain.Payment
             ClubId = clubId;
             UserId = userId;
             Amount = amount;
-            DueDate = dueDate;
             Status = InvoiceStatus.Issued;
         }
 
@@ -61,15 +58,12 @@ namespace EaseClub.Domain.Payment
             IBillingItem billingItem,
             Guid clubId,
             Guid userId,
-            decimal amount,
-            DateTime dueDate)
+            decimal amount)
         {
             if (billingItem.Id == Guid.Empty)
                 return InvoiceErrors.PayableIdRequired;
             if (amount <= 0)
                 return InvoiceErrors.InvalidAmount;
-            if (dueDate.Date < DateTime.UtcNow.Date)
-                return InvoiceErrors.InvalidDueDate;
 
             var invoice =  new Invoice(
                 Guid.NewGuid(),
@@ -78,8 +72,7 @@ namespace EaseClub.Domain.Payment
                 billingItem.ReadableId,
                 clubId,
                 userId,
-                amount,
-                dueDate);
+                amount);
 
             invoice.ReadableId = InvoiceIdGenerator.Generate();
 
@@ -205,6 +198,23 @@ namespace EaseClub.Domain.Payment
             RaiseDomainEvent(new InvoicePaidEvent(
                 Id, BillingItemId, BillingItemType, Amount, UserId, ClubId));
 
+            return Result.Success;
+        }
+
+        public Result<Success> Reconcile(
+        Guid newBillingItemId,
+        BillingItemType newType)
+        {
+            if (BillingItemType != BillingItemType.PendingEnrollmentFirstInstallment)
+                return Error.Conflict("Invoice.CannotReconcile",
+                    "Only pending enrollment invoices can be reconciled.");
+
+            if (Status != InvoiceStatus.Paid)
+                return Error.Conflict("Invoice.MustBePaidToReconcile",
+                    "Invoice must be paid before reconciling.");
+
+            BillingItemId = newBillingItemId;
+            BillingItemType = newType;
             return Result.Success;
         }
     }
