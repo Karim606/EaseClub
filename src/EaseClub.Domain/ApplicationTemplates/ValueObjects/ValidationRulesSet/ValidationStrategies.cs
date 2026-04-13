@@ -79,36 +79,36 @@ namespace EaseClub.Domain.ApplicationTemplates.ValueObjects.ValidationRulesSet
     }
 
 
-    public sealed class RegexValidationStrategy : IValidationStrategy
-    {
-        public Error? Validate(string? value, ValidationRuleSet rules)
-        {
-            if (string.IsNullOrWhiteSpace(rules.Regex) ||
-                string.IsNullOrWhiteSpace(value))
-                return null;
+    //public sealed class RegexValidationStrategy : IValidationStrategy
+    //{
+    //    public Error? Validate(string? value, ValidationRuleSet rules)
+    //    {
+    //        if (string.IsNullOrWhiteSpace(rules.Regex) ||
+    //            string.IsNullOrWhiteSpace(value))
+    //            return null;
 
-            try
-            {
-                var isMatch = Regex.IsMatch(
-                    value,
-                    rules.Regex,
-                    RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
-                    TimeSpan.FromMilliseconds(100));
+    //        try
+    //        {
+    //            var isMatch = Regex.IsMatch(
+    //                value,
+    //                rules.Regex,
+    //                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+    //                TimeSpan.FromMilliseconds(100));
 
-                return isMatch
-                    ? null
-                    : ValidationErrors.InvalidFormat;
-            }
-            catch (RegexMatchTimeoutException)
-            {
-                return Error.Failure(
-                    "Validation.Regex.Timeout",
-                    "The validation process timed out.");
-            }
-            catch
-            {
-                return ValidationErrors.RegexInvalid;
-            }
-        }
-    }
+    //            return isMatch
+    //                ? null
+    //                : ValidationErrors.InvalidFormat;
+    //        }
+    //        catch (RegexMatchTimeoutException)
+    //        {
+    //            return Error.Failure(
+    //                "Validation.Regex.Timeout",
+    //                "The validation process timed out.");
+    //        }
+    //        catch
+    //        {
+    //            return ValidationErrors.RegexInvalid;
+    //        }
+    //    }
+    //}
 }
