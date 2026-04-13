@@ -6,6 +6,8 @@ using EaseClub.Application.Features.MembershipPlans.Command.CreatePlan;
 using EaseClub.Application.Features.MembershipPlans.Command.DeleteMembershipPlan;
 using EaseClub.Application.Features.MembershipPlans.Command.RemoveInstallmentTemplateFromPlan;
 using EaseClub.Application.Features.MembershipPlans.Command.UpdatePlan;
+using EaseClub.Application.Features.Memberships;
+using EaseClub.Application.Features.Memberships.Commands.StartDirectPayEnrollment;
 using EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPlanDetails;
 using EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPlansForMember;
 using EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPlansForAdmin;
@@ -110,7 +112,11 @@ This endpoint supports two modes of pagination:
                 request.DurationInDays,
                 request.SubscriptionValidityInYears,
                 request.MaxFamilyMembers,
-                request.ApplicationTemplateId);
+                request.paymentMode,
+                request.ApplicationTemplateId,
+                request.RenewPrice,
+                request.InstallmentsAllowedInRenewal
+                );
 
             var result = await sender.Send(command);
             return result.Match(
@@ -133,6 +139,26 @@ This endpoint supports two modes of pagination:
 
             return result.Match( (plan) =>Ok(plan)
                 , Problem);
+        }
+
+        [Authorize(Roles = "MemberUser,SuperAdmin")]
+        [HttpPost("{planId:guid}/direct-pay")]
+        [MapToApiVersion("1.0")]
+        [ProducesResponseType(typeof(EnrollmentPaymentResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [EndpointName("StartDirectPayEnrollment")]
+        [EndpointSummary("Creates the first installment checkout for a direct-pay plan.")]
+        public async Task<IActionResult> StartDirectPay(Guid planId, [FromBody] StartDirectPayEnrollmentRequest request, CancellationToken ct)
+        {
+            var command = new StartDirectPayEnrollmentCommand(
+                request.ClubId,
+                request.MembershipTypeId,
+                planId,
+                request.InstallmentTemplateId
+                );
+
+            var result = await sender.Send(command, ct);
+            return result.Match(Ok, Problem);
         }
 
 
