@@ -44,7 +44,7 @@ namespace EaseClub.Application.Features.MembershipApplications.EventHandlers
                 evt.RejectionReason);
 
             var notification = Notification.ForUser(evt.ApplicationOwnerId,"Application rejected", $"Application {evt.ApplicationId} rejected. Reason: {evt.RejectionReason}",NotificationType.MembershipApplicationRejected);
-            await DispatchNotification(notification);
+            await DispatchNotification(notification,ct);
         }
     }
 }
