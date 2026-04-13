@@ -211,6 +211,7 @@ namespace EaseClub.Application
             Services.AddScoped<IApplicationFieldRepository, ApplicationFieldRepository>();
             Services.AddScoped<IPricingPolicyRepository,PricingPolicyRepository>();
             Services.AddScoped<IMembershipRepository, MembershipRepository>();
+            Services.AddScoped<IPendingEnrollmentRepository, PendingEnrollmentRepository>();
             Services.AddScoped<IFileRepository, FileRepository>();
             Services.AddScoped<IDeviceRepository, DeviceRepository>();
             Services.AddScoped<INotificationRepository, NotificationRepository>();
