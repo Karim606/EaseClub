@@ -1,6 +1,7 @@
 ﻿using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.Memberships;
 using EaseClub.Domain.Payment;
 using EaseClub.Domain.Payment.Enums;
 using EaseClub.Domain.Payment.Errors;
@@ -14,7 +15,8 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.Payment.Commands.IntiatePayment
 {
-    public class InitiatePaymentCommandHandler(IInvoiceRepository invoiceRepository, IPaymentGateway paymentGateway,ICurrentUserService currentUserService,IUnitOfWork unitOfWork)
+    public class InitiatePaymentCommandHandler(IInvoiceRepository invoiceRepository, IPaymentGateway paymentGateway,ICurrentUserService currentUserService,
+        IPendingEnrollmentRepository pendingEnrollmentRepository,IUnitOfWork unitOfWork)
         : IRequestHandler<InitiatePaymentCommand, Result<IntiatePaymentResponse>>
     {
 
@@ -32,6 +34,12 @@ namespace EaseClub.Application.Features.Payment.Commands.IntiatePayment
                 return Error.Unauthorized("You are not authorized to view these invoices.");
             }
 
+            if(invoice.BillingItemType == BillingItemType.PendingEnrollmentFirstInstallment)
+            {
+               var pendingEnrollment = await  pendingEnrollmentRepository.GetByIdAsync(invoice.BillingItemId, cancellationToken);
+
+                if (DateTime.UtcNow >= pendingEnrollment.ExpiresAt) return Error.Failure(description: "current invoice cant be paid cause enrollment request has expired try to enroll again");
+            }
             // Create Transaction (Domain)
             var transactionResult = invoice.RecordAttempt(request.Gateway, null);
             if (transactionResult.IsError)
