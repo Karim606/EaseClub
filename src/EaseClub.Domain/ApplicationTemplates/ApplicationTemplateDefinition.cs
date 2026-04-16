@@ -87,7 +87,7 @@ namespace EaseClub.Domain.ApplicationTemplates
 
         #region Step Management through Template (to enforce invariants like unique titles and order)
         // 4. THE AGGREGATE GATEKEEPER: Create Step through Template
-        public Result<ApplicationStepDefinition> AddNewStep(string category, string title, int order)
+        public Result<ApplicationStepDefinition> AddNewStep( string title, int order)
         {
             if (_Steps.Any(s => s.Title.Equals(title, StringComparison.OrdinalIgnoreCase)))
                 return ApplicationTemplateDefinitionErrors.DuplicateStepTitle;
@@ -100,7 +100,6 @@ namespace EaseClub.Domain.ApplicationTemplates
             var stepResult = ApplicationStepDefinition.Create(
                 Guid.NewGuid(),
                 this.Id,
-                category,
                 title,
                 order
             );

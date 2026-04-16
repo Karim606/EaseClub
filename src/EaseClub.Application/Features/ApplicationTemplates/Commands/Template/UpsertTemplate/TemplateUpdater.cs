@@ -37,7 +37,7 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Services
             // 2. Add
             foreach (var stepDto in diff.Added)
             {
-                var result = _template.AddNewStep(stepDto.Category, stepDto.Title, order: 0);
+                var result = _template.AddNewStep(stepDto.Title, order: 0);
                 if (result.IsError) return result.TopError;
 
                 var step = result.Value;

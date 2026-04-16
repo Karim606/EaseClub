@@ -17,7 +17,6 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Commands
     public record StepDetailsDto(
     Guid Id,
     string Title,
-    string Category,
     List<SectionDetailsDto> Sections);
 
     public record SectionDetailsDto(
