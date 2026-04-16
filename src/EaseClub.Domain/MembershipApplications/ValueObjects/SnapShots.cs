@@ -104,6 +104,7 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
                 FieldType type,
                 ValidationRuleSetSnapshot validationRules,
                 ConditionExpressionSnapshot? visibilityCondition,
+                List<string>?allowedValues,
                 int order,
                 bool isSystemField)
         {
@@ -114,6 +115,7 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
             ValidationRules = validationRules;
             VisibilityCondition = visibilityCondition;
             Order = order;
+            AllowedValues = allowedValues;
             IsSystemField = isSystemField;
 
         }
@@ -125,6 +127,8 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
         public bool IsSystemField { get; private set; }
         public ValidationRuleSetSnapshot ValidationRules { get; init; } = default!;
         public ConditionExpressionSnapshot? VisibilityCondition { get; init; }
+
+        public List<string>? AllowedValues = null;
 
         public int Order { get; private set; }
 
