@@ -131,37 +131,51 @@ namespace EaseClub.Domain.MembershipApplications
             if (Status != ApplicationStatus.Draft)
                 return MembershipApplicationErrors.InvalidStatusTransition;
 
-            if ( !_CompletedStepOrders.Contains(stepOrder))
-                return MembershipApplicationErrors.PreviousStepRequired;
-
             var step = TemplateSnapshot.Steps.FirstOrDefault(s => s.Order == stepOrder);
             if (step == null) return MembershipApplicationErrors.StepNotFound;
 
-            var fields = step.Sections.SelectMany(s => s.Fields);
-            // 1. Identify Fields in this step using the Snapshot to reset them
-            var fieldIdsInStep = fields.Select(f => f.Id).ToList();
+            // 1. Identify all fields in this step (across all sections)
+            var fieldsInStep = step.Sections.SelectMany(s => s.Fields).ToList();
+            var fieldIdsInStep = fieldsInStep.Select(f => f.Id).ToHashSet();
+
+            // 2. Clear ONLY the existing answers for the fields present in this step
+            // This removes all instances (Index 0, 1, 2...) for these specific fields.
             _Answers.RemoveAll(a => fieldIdsInStep.Contains(a.FieldDefinitionId));
 
-            // 2. Map and Validate
+            // 3. Validation & Insertion Loop
+            var errors = new List<Error>();
+
             foreach (var answer in newAnswers)
             {
-                var fieldSnapshot = fields.FirstOrDefault(f => f.Id == answer.FieldDefinitionId);
+                // Find the specific field snapshot to get its validation rules
+                var fieldSnapshot = fieldsInStep.FirstOrDefault(f => f.Id == answer.FieldDefinitionId);
+
                 if (fieldSnapshot == null) continue;
 
-                // Validate against frozen rules
+                // Execute Domain Validation (ValidationRules.ToDomain().Validate(...))
                 var validationErrors = fieldSnapshot.Validate(answer.Value);
-                if (validationErrors.Any()) return validationErrors;
 
-                // 3. Add the answer
+                if (validationErrors.Any())
+                {
+                    errors.AddRange(validationErrors);
+                    continue; // Collect all errors for this step
+                }
+
+                // Add valid answer (InstanceIndex is preserved from the Command)
                 _Answers.Add(answer);
             }
 
-            // 4. Update Progress
+            // If any validation failed, don't save anything and return the errors
+            if (errors.Any()) return errors;
+
+            // 4. Update Progress & Invalidate Future
             if (!_CompletedStepOrders.Contains(stepOrder))
                 _CompletedStepOrders.Add(stepOrder);
 
-            MoveToStep(stepOrder+1);
-            // 5. Update the live Price property
+            _CompletedStepOrders.RemoveAll(order => order > stepOrder);
+
+            CurrentStepOrder = stepOrder + 1;
+
             RefreshPrice();
 
             return Result.Success;
@@ -232,7 +246,7 @@ namespace EaseClub.Domain.MembershipApplications
             return FinalPriceSummary;
         }
 
-        public Result<List<Installment>>GetPaymentSchedule(){
+        public Result<List<InstallmentBlueprint>>GetPaymentSchedule(){
             
             var res = GetPricePreview();
 
@@ -249,7 +263,7 @@ namespace EaseClub.Domain.MembershipApplications
 
             if(resultedInstallments.IsError) return resultedInstallments.TopError;
 
-            return InstallmentBlueprint.ToInstallments(resultedInstallments.Value);
+            return resultedInstallments.Value;
 
         }
 
@@ -274,24 +288,6 @@ namespace EaseClub.Domain.MembershipApplications
             PricingState = PricingState.Locked;
 
             return Result.Success;
-        }
-
-        //Navigate between steps
-        public void MoveToStep(int stepOrder)
-        {
-            var totalSteps = TemplateSnapshot.Steps.Count;
-
-            // 1. Calculate the "High Water Mark" (Furthest they can go)
-            // They can go to any completed step, or one step past the highest completed step.
-            var maxAllowed = _CompletedStepOrders.Any()
-                ? Math.Min(_CompletedStepOrders.Max() + 1, totalSteps)
-                : 1;
-
-            // 2. Validate and Update
-            if (stepOrder >= 1 && stepOrder <= maxAllowed)
-            {
-                CurrentStepOrder = stepOrder;
-            }
         }
 
 

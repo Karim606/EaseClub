@@ -17,9 +17,9 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.Complete
     public class CompleteStepHandler(
         IMembershipApplicationRepository appRepo,
         IUnitOfWork unitOfWork
-        ) : IRequestHandler<CompleteStepCommand, Result<Success>>
+        ) : IRequestHandler<CompleteStepCommand, Result<StepProgressResponse>>
     {
-        public async Task<Result<Success>> Handle(CompleteStepCommand request, CancellationToken ct)
+        public async Task<Result<StepProgressResponse>> Handle(CompleteStepCommand request, CancellationToken ct)
         {
             var app = await appRepo.GetByIdAsync(request.ApplicationId, ct);
             if (app == null) return Error.NotFound("Application not found");
@@ -30,10 +30,16 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.Complete
             ).ToList();
 
             var result = app.CompleteStep(request.StepOrder, domainAnswers);
-            if (result.IsError) return result.TopError;
+            if (result.IsError) return (result.Errors.ToList());
 
             await unitOfWork.SaveChangesAsync(ct);
-            return Result.Success;
+
+            var response = new StepProgressResponse(
+                app.CurrentStepOrder,
+                app.CompletedStepOrders.ToList()
+            );
+
+            return response;
         }
     }
 }
