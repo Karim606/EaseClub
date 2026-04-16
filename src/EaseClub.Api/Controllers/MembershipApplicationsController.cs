@@ -8,8 +8,11 @@ using EaseClub.Application.Features.MembershipApplications.Commands.ReviewApplic
 using EaseClub.Application.Features.MembershipApplications.Commands.SubmitApplication;
 using EaseClub.Application.Features.MembershipApplications.Commands.UpdateAnswer;
 using EaseClub.Application.Features.MembershipApplications.Queries.GetApplication;
+using EaseClub.Application.Features.MembershipApplications.Queries.GetApplicationForAdmin;
 using EaseClub.Application.Features.MembershipApplications.Queries.GetApplications;
 using EaseClub.Application.Features.MembershipApplications.Queries.GetApplicationsForManagement;
+using EaseClub.Application.Features.MembershipApplications.Queries.GetPricingForApplication;
+using EaseClub.Domain.PricingPolices;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -32,12 +35,36 @@ namespace EaseClub.Api.Controllers
 
         // Get the application structure and answers
         [HttpGet("{id}")]
-        [ProducesResponseType(typeof(ApplicationResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApplicationUserResponse), StatusCodes.Status200OK)]
         [EndpointName("GetApplication")]
         [EndpointSummary("Retrieves the details of a specific application.")]
         public async Task<IActionResult> Get(Guid id)
         {
             var result = await sender.Send(new GetApplicationQuery(id));
+            return result.Match(
+                val => Ok(val),
+                Problem);
+        }
+
+        [HttpGet("admin/{id:guid}")]
+        [ProducesResponseType(typeof(ApplicationAdminResponse), StatusCodes.Status200OK)]
+        [EndpointName("GetApplication")]
+        [EndpointSummary("Retrieves the details of a specific application.")]
+        public async Task<IActionResult> GetApplicationForAdmin(Guid id)
+        {
+            var result = await sender.Send(new GetApplicationAdminQuery(id));
+            return result.Match(
+                val => Ok(val),
+                Problem);
+        }
+
+        [HttpGet("{id:guid}/pricing")]
+        [ProducesResponseType(typeof(Pricing), StatusCodes.Status200OK)]
+        [EndpointName("GetApplication")]
+        [EndpointSummary("Retrieves the details of a specific application.")]
+        public async Task<IActionResult> GetApplicationPricing(Guid id)
+        {
+            var result = await sender.Send(new GetApplicationPricingQuery(id));
             return result.Match(
                 val => Ok(val),
                 Problem);
