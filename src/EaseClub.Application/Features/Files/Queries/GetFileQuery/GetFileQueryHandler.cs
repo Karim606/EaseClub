@@ -1,4 +1,5 @@
 ﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Features.Files.Commands;
 using EaseClub.Domain.ClubAdmin;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
@@ -15,40 +16,26 @@ namespace EaseClub.Application.Features.Files.Queries.GetFileQuery
     public class GetFileQueryHandler(IFileRepository fileRepository,
         IClubAdminUserRepository clubAdminUserRepository,
         IFileStorageService fileStorageService,
-        ICurrentUserService currentUserService) : IRequestHandler<GetFileQuery, Result<FileDto>>
+        ICurrentUserService currentUserService,
+        FileAuthorizationService fileAuthorizationService) : IRequestHandler<GetFileQuery, Result<FileDto>>
     {
         
 
         public async Task<Result<FileDto>> Handle(GetFileQuery request, CancellationToken ct)
         {
-            var parsingRes = Guid.TryParse(currentUserService.GetId(),out var userId);
-
-            if (parsingRes == false)
-                return Error.Unauthorized();
-
-            var roles = currentUserService.GetRoles();
             var file = await fileRepository.GetByIdAsync(request.FileId, ct);
 
             if (file == null)
                 return Error.NotFound("File not found");
 
-            var isSuperAdmin = roles.Contains("SuperAdmin");
+            var canAccess = await fileAuthorizationService.CanAccessAsync(file);
 
-            if (!isSuperAdmin && roles.Contains("ClubAdmin"))
-            {
-                var admin = await clubAdminUserRepository.GetByIdAsync(userId, ct);
-                if (admin == null) return Error.Unauthorized();
-
-                if (admin.ClubId != file.ClubId)
-                    return Error.Unauthorized();
-            }
-
-            else if (!isSuperAdmin && file.CreatedBy != userId)
-                return Error.Unauthorized();
+                if (!canAccess)
+                    return Error.Unauthorized("You do not have permission to access this file");
 
             string? url;
             if(file.IsPrivate)
-             url = fileStorageService.GetSignedUrl("s");
+             url = fileStorageService.GetSignedUrl(file.FilePath,900);
             else
                 url = fileStorageService.GetFileUrl(file.FilePath);
 
@@ -58,7 +45,7 @@ namespace EaseClub.Application.Features.Files.Queries.GetFileQuery
                     url,
                     file.ContentType,
                     file.Size,
-                    file.Category
+                    file.Purpose
                 );
 
             return dto;

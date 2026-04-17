@@ -22,6 +22,8 @@ namespace EaseClub.Infrastructure.Data.Configurations
             builder.Property(x => x.Description).HasMaxLength(500);
             builder.Property(x => x.TotalPrice).HasPrecision(18, 2);
 
+            builder.Property(x=> x.PaymentMode).HasConversion<string>().HasMaxLength(50);
+            builder.Property(x => x.EnrollmentMode).HasConversion<string>().HasMaxLength(50);
             // Relationships
             builder.HasMany(x => x.InstallmentTemplates)
                    .WithOne(x => x.MembershipPlan)
@@ -32,7 +34,7 @@ namespace EaseClub.Infrastructure.Data.Configurations
                .HasForeignKey(p => p.MembershipTypeId)
                .OnDelete(DeleteBehavior.Restrict); // Prevent deleting a type if plans exist
 
-
+            builder.Navigation(x => x.Memberships).HasField("_Memberships").UsePropertyAccessMode(PropertyAccessMode.Field);
             builder.Navigation(x => x.InstallmentTemplates).HasField("_InstallmentTemplates").UsePropertyAccessMode(PropertyAccessMode.Field);
         }
     }

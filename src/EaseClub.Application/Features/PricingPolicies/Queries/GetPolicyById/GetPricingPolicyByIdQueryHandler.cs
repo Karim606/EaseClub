@@ -25,7 +25,6 @@ namespace EaseClub.Application.Features.PricingPolicies.Queries.GetPolicyById
             return new PricingPolicyResponse(
                 policy.Id,
                 policy.Name,
-                policy.Priority,
                 policy.IsIncrease,
                 policy.FixedAmount,
                 policy.PercentageValue,

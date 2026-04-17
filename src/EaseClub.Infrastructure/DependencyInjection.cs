@@ -3,12 +3,15 @@ using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Features.ApplicationTemplates.Queries;
 using EaseClub.Application.Features.Auth.Common.Interfaces;
 using EaseClub.Application.Features.Clubs.Queries;
+using EaseClub.Application.Features.Files.Commands;
 using EaseClub.Application.Features.InstallmentTemplates.Queries;
 using EaseClub.Application.Features.MembershipApplications.Queries;
 using EaseClub.Application.Features.MembershipPlans.Queries;
 using EaseClub.Application.Features.MembershipTypes.Queries;
 using EaseClub.Application.Features.Notifications;
 using EaseClub.Application.Features.Notifications.Queries;
+using EaseClub.Application.Features.Payment;
+using EaseClub.Application.Features.Payment.Queries;
 using EaseClub.Domain.ApplicationTemplates.Repositories;
 using EaseClub.Domain.Branches;
 using EaseClub.Domain.ClubAdmin;
@@ -22,6 +25,7 @@ using EaseClub.Domain.MembershipPlans.Repositories;
 using EaseClub.Domain.Memberships;
 using EaseClub.Domain.MembershipTypes;
 using EaseClub.Domain.Notifications;
+using EaseClub.Domain.Payment.Repositories;
 using EaseClub.Domain.PricingPolices;
 using EaseClub.Infrastructure.Auth.Entities;
 using EaseClub.Infrastructure.Auth.interfaces;
@@ -33,6 +37,7 @@ using EaseClub.Infrastructure.Data.Repositories;
 using EaseClub.Infrastructure.Notifications;
 using EaseClub.Infrastructure.Notifications.UserDevices;
 using EaseClub.Infrastructure.Services;
+using EaseClub.Infrastructure.Services.Payment;
 using EaseClub.Infrastructure.Services.QueryServices;
 using EaseClub.Infrastructure.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -46,6 +51,7 @@ using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
@@ -159,8 +165,16 @@ namespace EaseClub.Application
             services.AddScoped<IPushNotificationService, FirebaseNotificationService>();
             services.AddScoped<INotificationDispatcher, NotificationDispatcher>();
 
+            services.AddScoped<FileAuthorizationService>();
             services.AddSignalR();
             services.AddHostedService<FcmTokenCleanupWorker>();
+
+            services.AddScoped<IPaymentGateway, GeideaPaymentGateway>();
+            services.AddHttpClient<IPaymentGateway, GeideaPaymentGateway>(client =>
+            {
+                // You can set default headers or base URLs here if they are static
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            });
 
             return services;
         }
@@ -174,6 +188,7 @@ namespace EaseClub.Application
             services.AddScoped<INotificationQueryService, NotificationQueryService>();
             services.AddScoped<IMembershipTypesQueryService, MembershipTypesQueryServices>();
             services.AddScoped<IClubsQueryService, ClubsQueryService>();
+            services.AddScoped<IInvoiceQueryService, InvoiceQueryService>();
             return services;
         }
         private static IServiceCollection AddRepositories(this IServiceCollection Services)
@@ -196,10 +211,12 @@ namespace EaseClub.Application
             Services.AddScoped<IApplicationFieldRepository, ApplicationFieldRepository>();
             Services.AddScoped<IPricingPolicyRepository,PricingPolicyRepository>();
             Services.AddScoped<IMembershipRepository, MembershipRepository>();
+            Services.AddScoped<IPendingEnrollmentRepository, PendingEnrollmentRepository>();
             Services.AddScoped<IFileRepository, FileRepository>();
             Services.AddScoped<IDeviceRepository, DeviceRepository>();
             Services.AddScoped<INotificationRepository, NotificationRepository>();
-
+            Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+            Services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
 
             return Services;
         }
@@ -210,6 +227,8 @@ namespace EaseClub.Application
             services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
 
             services.Configure<FirebaseSettings>(configuration.GetSection("Firebase"));
+
+            services.Configure<GeideaOptions>(configuration.GetSection("Geidea"));
             return services;
         }
     }

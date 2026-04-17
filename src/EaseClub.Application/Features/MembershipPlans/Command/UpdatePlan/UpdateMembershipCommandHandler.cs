@@ -44,6 +44,7 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.UpdatePlan
                 request.Name,
                 request.Description,
                 request.TotalPrice,
+                request.RenewPrice,
                 installmentTemplates
                 );
 

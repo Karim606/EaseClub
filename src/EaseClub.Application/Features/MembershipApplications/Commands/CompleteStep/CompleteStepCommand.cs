@@ -11,5 +11,10 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.Complete
     public record CompleteStepCommand(
      Guid ApplicationId,
      int StepOrder,
-     List<AnswerDto> Answers) : IRequest<Result<Success>>;
+     List<AnswerDto> Answers) : IRequest<Result<StepProgressResponse>>;
+
+    public record StepProgressResponse(
+        int CurrentStepOrder,
+        List<int> CompletedStepOrders
+    );
 }

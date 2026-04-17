@@ -27,14 +27,12 @@ namespace EaseClub.Domain.Memberships
             Guid clubId,
             Guid membershipTypeId,
             Guid membershipPlanId,
-            MembershipPeriod period,
             string? extraDataJson = null)  : base(id)
         {
             UserId = userId;
             ClubId = clubId;
             MembershipTypeId = membershipTypeId;
             MembershipPlanId = membershipPlanId;
-            Period = period;
             Status = MembershipStatus.Active;
             ExtraDataJson = extraDataJson;
         }
@@ -47,10 +45,11 @@ namespace EaseClub.Domain.Memberships
         public MembershipType MembershipType { get; private set; }
         public Guid MembershipPlanId { get; private set; }
         public MembershipPlan MembershipPlan { get; private set; }
-        public MembershipPeriod Period { get; private set; }
         public MembershipStatus Status { get; private set; }
         public Guid? MembershipApplicationId { get; private set; } = Guid.Empty;
 
+        private readonly List<MembershipCycle> _MembershipCycles = new List<MembershipCycle>();
+        public IReadOnlyList<MembershipCycle> MembershipCycles => _MembershipCycles.AsReadOnly();
         public string? ExtraDataJson { get; private set; }
 
         // Family members
@@ -59,196 +58,55 @@ namespace EaseClub.Domain.Memberships
 
         //public int FamilyMemberCount => _FamilyMembers.Count;
 
-        private readonly List<MembershipInstallment> _MembershipInstallments = new();
-        public IReadOnlyList<MembershipInstallment> MembershipInstallments => _MembershipInstallments.AsReadOnly();
-
         // Cancellation tracking
         public DateTime? CancelledAt { get; private set; }
         public string? CancellationReason { get; private set; }
 
         #region Factory Methods
 
-        public static Result<Membership> Create(
-            Guid id,
-            Guid userId,
-            Guid clubId,
-            Guid membershipTypeId,
-            Guid membershipPlanId,
-            DateTime startDate,
-            DateTime endDate,
-            string? extraDataJson = null,
-            string? primaryContact = null)
+        #region Factory Methods
+
+        public static Result<Membership> CreateFromPendingEnrollment(PendingEnrollment pendingEnrollment)
         {
-            // Validation
-            if (id == Guid.Empty)
-                return Error.Validation("Membership.Id.Required", "Membership ID is required.");
-            if (userId == Guid.Empty)
-                return MembershipErrors.UserIdRequired;
-            if (clubId == Guid.Empty)
-                return MembershipErrors.ClubIdRequired;
-            if (membershipTypeId == Guid.Empty)
-                return MembershipErrors.MembershipTypeIdRequired;
-            if (membershipPlanId == Guid.Empty)
-                return MembershipErrors.MembershipPlanIdRequired;
-
-            var periodResult = MembershipPeriod.Create(startDate, endDate);
-            if (periodResult.IsError)
-                return periodResult.TopError;
-
-            var membership = new Membership(
-                id,
-                userId,
-                clubId,
-                membershipTypeId,
-                membershipPlanId,
-                periodResult.Value,
-                extraDataJson
-                );
-
-            membership.RaiseDomainEvent(new MembershipCreatedDomainEvent(
-                membership.Id,
-                userId,
-                clubId,
-                membershipTypeId,
-                membershipPlanId,
-                startDate,
-                endDate));
-
-            return membership;
-        }
-
-        public static Result<Membership> CreateFromDirectPay(
-            Guid id,
-            Guid userId,
-            Guid clubId,
-            MembershipPlan plan,
-            InstallmentTemplate? template)
-        {
-
-            var subYears = plan.SubscriptionValidityInYears;
-            var membershipPeriod = MembershipPeriod.Create(DateTime.UtcNow, DateTime.UtcNow.AddYears(subYears));
-            if (membershipPeriod.IsError) return membershipPeriod.TopError;
+            if (pendingEnrollment.Status != PendingEnrollmentStatus.WaitingForFirstPayment)
+                return Error.Conflict(description: "Pending enrollment is not payable.");
 
             var membership = new Membership(
                 Guid.NewGuid(),
-                userId,
-                clubId,
-                plan.MembershipTypeId,
-                plan.Id,
-                membershipPeriod.Value
+                pendingEnrollment.UserId,
+                pendingEnrollment.ClubId,
+                pendingEnrollment.MembershipTypeId,
+                pendingEnrollment.MembershipPlanId);
+
+            membership.MembershipApplicationId = pendingEnrollment.MembershipApplicationId;
+
+            var start = DateTime.UtcNow;
+            var end = start.AddYears(pendingEnrollment.SubscriptionValidityInYears);
+
+            var rules = InstallmentDto.ToInstallments(pendingEnrollment.GetInstallments().ToList());
+            if (rules.IsError) return rules.TopError;
+
+
+            var cycleResult = MembershipCycle.Create(
+                membership.Id,
+                membership.ClubId,
+                membership.MembershipTypeId,
+                membership.MembershipPlanId,
+                start,
+                end,
+                pendingEnrollment.TotalPrice,
+                pendingEnrollment.InstallmentTemplateId,
+                rules.Value
                 );
 
-            List<Installment> installments = new List<Installment>();
-            Guid? instTemplateId = null;
-            
-            if(template != null)
-            {
-                installments = template.Installments.ToList();
+            if (cycleResult.IsError)
+                return cycleResult.TopError;
 
-            }
-            else
-            {
-                // If no template, create a single installment for the full amount
-                installments = new List<Installment>
-                {
-                    Installment.Create(100m, 0, 1).Value
-                };
-            }
-
-            var installmentResult = SetupInstallments(membership,installments, plan.TotalPrice,clubId,plan.MembershipType.Id,plan.Id,instTemplateId);
-            if (installmentResult.IsError) return installmentResult.TopError;
-
-
-            if (template != null && template.Installments.Any(i => i.OrderIndex == 1 && i.DueAfterDays == 0))
-                membership.Status = MembershipStatus.Suspended;
-            membership.RaiseDomainEvent(new MembershipCreatedDomainEvent(
-                membership.Id,
-                userId,
-                clubId,
-                plan.MembershipType.Id,
-                plan.Id,
-                membershipPeriod.Value.StartDate,
-                membershipPeriod.Value.EndDate));
-
+            membership._MembershipCycles.Add(cycleResult.Value);
             return membership;
         }
 
-        public static Result<Membership> CreateFromApplication(
-            MembershipApplication app)
-        {
-            // Skip the plan.SupportsTemplate check because it was verified 
-            // when the Application was submitted.
-            if(app.Status!= ApplicationStatus.Approved) return Error.Conflict(description:"Membership.Cannot.CreateFromApplication.NotApproved");
-            var subYears = app.TemplateSnapshot.MembershipPlan.SubscriptionValidityInYears;
-            var membershipPeriod = MembershipPeriod.Create(DateTime.UtcNow, DateTime.UtcNow.AddYears(subYears));
-            if (membershipPeriod.IsError) return membershipPeriod.TopError;
-
-            var membership = new Membership(
-                Guid.NewGuid(),
-                app.UserId,
-                app.ClubId,
-                app.MembershipTypeId,
-                app.MembershipPlanId,
-                membershipPeriod.Value
-                );
-
-            var installments = InstallmentRuleSnapshot.ListToDomain(app.TemplateSnapshot.InstallmentRules);
-
-            if(installments.IsError) return installments.TopError;
-
-            var installmentResult = SetupInstallments(membership,installments.Value,app.FinalPriceSummary!.TotalPrice, app.ClubId, app.MembershipTypeId,app.MembershipPlanId,app.InstallmentTemplateId);
-            
-            if (installmentResult.IsError) return installmentResult.TopError;
-
-            var familyResult = MapFamilyMembers(membership, app);
-            if (familyResult.IsError) return familyResult.TopError;
-
-
-            if (app.TemplateSnapshot.InstallmentRules.Any(i => i.OrderIndex == 1 && i.DueAfterDays == 0))
-                membership.Status = MembershipStatus.Suspended;
-            membership.MembershipApplicationId = app.Id;
-
-            membership.RaiseDomainEvent(new MembershipCreatedDomainEvent(
-                membership.Id,
-                app.UserId,
-                app.ClubId,
-                app.MembershipType.Id,
-                app.MembershipPlanId,
-                membershipPeriod.Value.StartDate,
-                membershipPeriod.Value.EndDate));
-
-            return membership;
-        }
-        private static Result<Success> SetupInstallments(Membership membership,List<Installment> installments,
-            decimal totalPrice,Guid clubId,Guid membershipTypeId,Guid membershipPlanId,Guid? installmentTemplateId)
-        {
-
-            var instBluePrint = InstallmentEngine.GenerateMembershipInstallments(
-                installments,
-                totalPrice);
-
-            if (instBluePrint.IsError) return instBluePrint.TopError;
-
-            foreach (var bp in instBluePrint.Value)
-            {
-                var installment = MembershipInstallment.Create(
-                    membership.Id,
-                    clubId,
-                    membershipTypeId,
-                    membershipPlanId,
-                    installmentTemplateId,
-                    bp.Order,
-                    bp.Amount,
-                    bp.DueDate
-                );
-
-                if (installment.IsError) return installment.TopError;
-
-                membership._MembershipInstallments.Add(installment.Value);
-            }
-
-            return Result.Success;
-        }
+        #endregion
 
         private static Result<Success> MapFamilyMembers(Membership membership, MembershipApplication app)
         {
@@ -328,8 +186,8 @@ namespace EaseClub.Domain.Memberships
 
         public Result<Success> Expire()
         {
-            if (Status == MembershipStatus.Expired)
-                return MembershipErrors.AlreadyExpired;
+            if(!CurrentCycle.Period.IsExpired(DateTime.UtcNow))
+                return MembershipErrors.CannotPeriodOfCurrentCycleNotEnded;
 
             if (Status == MembershipStatus.Cancelled)
                 return Error.Validation("Membership.Cannot.Expire.Cancelled",
@@ -344,25 +202,39 @@ namespace EaseClub.Domain.Memberships
             return Result.Success;
         }
 
-        public Result<Success> Renew(DateTime newEndDate, Guid? newPlanId = null)
+        public Result<Success> Renew(InstallmentTemplate? installmentTemplate)
         {
             if (Status != MembershipStatus.Active && Status != MembershipStatus.Expired)
                 return Error.Validation("Membership.Cannot.Renew",
                     "Only active or expired memberships can be renewed.");
 
-            if (newEndDate <= Period.EndDate)
-                return MembershipErrors.InvalidRenewalDate;
 
-            var oldEndDate = Period.EndDate;
-            var periodResult = MembershipPeriod.Create(Period.StartDate, newEndDate);
+            var oldEndDate = CurrentCycle.Period.EndDate;
+            var newStartDate = oldEndDate+TimeSpan.FromSeconds(1) > DateTime.UtcNow ? oldEndDate.AddSeconds(1) : DateTime.UtcNow;
+            var newEndDate = newStartDate.AddYears(this.MembershipPlan.SubscriptionValidityInYears);
 
-            if (periodResult.IsError)
-                return periodResult.TopError;
+            if(installmentTemplate != null && !MembershipPlan.InstallmentTemplates.Any(i => i.InstallmentTemplateId == installmentTemplate.Id))
+                return Error.Validation("Membership.InvalidInstallmentTemplate",
+                    "The provided installment template is not valid for the current membership plan.");
 
-            Period = periodResult.Value;
+             var installmentTemplateId = installmentTemplate?.Id;
+            var installments = installmentTemplate != null ? installmentTemplate.Installments.ToList() : new List<Installment>
+                {
+                    Installment.Create(MembershipPlan.TotalPrice, 0, 1).Value
+                };
 
-            if (newPlanId.HasValue)
-                MembershipPlanId = newPlanId.Value;
+                var cycleResult = MembershipCycle.Create(
+                    Id,
+                    ClubId,
+                    MembershipTypeId,
+                    MembershipPlanId,
+                    newStartDate,
+                    newEndDate,
+                    MembershipPlan.TotalPrice,
+                    installmentTemplateId,
+                    installments);
+
+            if (cycleResult.IsError)   return cycleResult.TopError;
 
             if (Status == MembershipStatus.Expired)
                 Status = MembershipStatus.Active;
@@ -372,7 +244,7 @@ namespace EaseClub.Domain.Memberships
                 UserId,
                 oldEndDate,
                 newEndDate,
-                newPlanId,
+                null,
                 DateTime.UtcNow));
 
             return Result.Success;
@@ -508,71 +380,27 @@ namespace EaseClub.Domain.Memberships
 
         #region Query Methods
 
+        public MembershipCycle CurrentCycle =>
+            _MembershipCycles.OrderByDescending(c => c.Period.StartDate)
+                             .FirstOrDefault(c => !c.Period.IsExpired(DateTime.UtcNow));
+
         public bool IsActive()
         {
             return Status == MembershipStatus.Active &&
-                   Period.IsActive(DateTime.UtcNow);
+                   CurrentCycle.Period.IsActive(DateTime.UtcNow);
         }
 
-        public bool IsExpired()
-        {
-            return Status == MembershipStatus.Expired ||
-                   Period.IsExpired(DateTime.UtcNow);
-        }
 
-        public bool IsCancelled()
-        {
-            return Status == MembershipStatus.Cancelled;
-        }
 
         public int DaysRemaining()
         {
-            if (IsExpired() || IsCancelled())
+            if (Status == MembershipStatus.Expired || Status == MembershipStatus.Cancelled)
                 return 0;
 
-            return (Period.EndDate - DateTime.UtcNow).Days;
+            return (CurrentCycle.Period.EndDate - DateTime.UtcNow).Days;
         }
-
-        //public bool HasFamilyMembers()
-        //{
-        //    return _FamilyMembers.Any();
-        //}
 
         #endregion
-
-
-        public Result<Success> GenerateInstallments(InstallmentTemplate template,decimal totalPrice)
-        {
-            // 1. Verify the link between Plan and Template
-            if (!MembershipPlan.SupportsTemplate(template.Id))
-                return Error.Conflict(description:"Membership.Plan.DoesNotSupportTemplate");
-
-            // 2. Calculate the installments using the current logic
-            var result = InstallmentEngine.GenerateMembershipInstallments(template.Installments,totalPrice);
-            if (result.IsError) return result.TopError;
-
-            // 3. Clear existing PENDING installments 
-            // (We keep the PAID ones for history!)
-            var pending = _MembershipInstallments.Where(i => i.Status == InstallmentStatus.Pending).ToList();
-            foreach (var item in pending) _MembershipInstallments.Remove(item);
-
-            // 4. Add the new ones
-            // IMPORTANT: Store the snapshot of the rule used
-            _MembershipInstallments.AddRange(result.Value.Select(bp =>
-                MembershipInstallment.Create(
-                    this.Id,
-                    ClubId,
-                    MembershipTypeId,
-                    MembershipPlan.Id,
-                    template.Id, // Link to the definition
-                    bp.Order,
-                    bp.Amount,
-                    bp.DueDate
-                ).Value
-            ));
-
-            return Result.Success;
-        }
 
     }
 }

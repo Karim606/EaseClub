@@ -1,4 +1,5 @@
-﻿using EaseClub.Domain.MembershipApplications.Enums;
+﻿using EaseClub.Domain.ApplicationTemplates;
+using EaseClub.Domain.MembershipApplications.Enums;
 using EaseClub.Domain.MembershipApplications.ValueObjects;
 using EaseClub.Domain.PricingPolices;
 using System;
@@ -9,16 +10,8 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.MembershipApplications
 {
-    public record ApplicationResponse(
-    Guid Id,
-    string TrackingNumber,
-    int CurrentStepOrder,
-    List<int> CompletedSteps,
-    ApplicationTemplateSnapshot Template,
-    List<AnswerDto> Answers,
-    PricingResult? CurrentPrice);
 
-    public record AnswerDto(Guid FieldId, string Key, string Value, int InstanceIndex = 0);
+    public record AnswerDto(Guid FieldId, string Key, FieldType FieldType, string Value, int InstanceIndex = 0);
 
     public class MembershipAppDto
     {

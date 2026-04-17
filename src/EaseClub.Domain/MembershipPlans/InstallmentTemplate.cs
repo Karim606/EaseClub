@@ -86,6 +86,7 @@ namespace EaseClub.Domain.MembershipPlans
             //Generate installments based on provided list
             else if (installments != null && installments.Any())
             {
+                if(installments.First().DueAfterDays > 0) return Error.Validation(description: "The first installment must have DueAfterDays equal to 0, indicating that it's due immediately.");
 
                 var validationOfInstallments = ValidateInstallments(installments);
 
@@ -143,6 +144,12 @@ namespace EaseClub.Domain.MembershipPlans
 
             for(int i = 1; i < installments.Count; i++)
             {
+                if (installments[i].PercentageOfAmount <= 0)
+                    return Error.Validation(description: "PercentageOfAmount must be greater than zero");
+
+                if (installments[i].DueAfterDays < 0)
+                    return Error.Validation(description: "DueAfterDays cannot be negative");
+
                 if (installments[i].DueAfterDays < installments[i - 1].DueAfterDays)
                     return Error.Validation(description: "DueAfterDays must be in increasing sequence");
             }

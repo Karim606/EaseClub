@@ -38,13 +38,11 @@ namespace EaseClub.Domain.ApplicationTemplates
         internal static Result<ApplicationStepDefinition> Create(
             Guid id,
             Guid templateId,
-            string category,
             string title,
             int order)
         {
             if (templateId == Guid.Empty) return ApplicationStepErrors.TemplateIdRequired;
             if (string.IsNullOrEmpty(title)) return ApplicationStepErrors.TitleRequired;
-            if (string.IsNullOrEmpty(category)) return ApplicationStepErrors.CategoryRequired;
 
             return new ApplicationStepDefinition(id, templateId, title, order);
         }

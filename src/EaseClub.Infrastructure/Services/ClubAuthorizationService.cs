@@ -19,10 +19,11 @@ namespace EaseClub.Infrastructure.Services
     public class ClubAuthorizationService : IClubAuthorizationService
     {
         private readonly AppDbContext _context;
-
-        public ClubAuthorizationService(AppDbContext context)
+        private readonly ICurrentUserService _currentUserService;
+        public ClubAuthorizationService(AppDbContext context,ICurrentUserService currentUserService)
         {
             _context = context;
+            _currentUserService = currentUserService;
         }
 
         public async Task<bool> IsUserAdminOfClubAsync(Guid userId, Guid clubId)
@@ -43,6 +44,15 @@ namespace EaseClub.Infrastructure.Services
             Guid entityId,
             Guid userId) where TEntity : Entity, IBelongToUser
         {
+            return await _context.Set<TEntity>()
+                .AnyAsync(x => x.UserId == userId && x.Id == entityId);
+        }
+
+        public async Task<bool> DoesResourceBelongToCurrentUserAsync<TEntity>(
+            Guid entityId) where TEntity : Entity, IBelongToUser
+        {
+            var userId = Guid.Parse(_currentUserService.GetId());
+
             return await _context.Set<TEntity>()
                 .AnyAsync(x => x.UserId == userId && x.Id == entityId);
         }

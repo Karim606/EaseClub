@@ -75,5 +75,9 @@ namespace EaseClub.Domain.Memberships.Errors
         public static Error DowngradeNotAllowed => Error.Validation(
             code: "Membership.Downgrade.NotAllowed",
             description: "Downgrade is not allowed for this membership type.");
+
+        public static Error CannotPeriodOfCurrentCycleNotEnded => Error.Conflict(
+            code: "Membership.PeriodOfCurrentCycle.NotEnded",
+            description: "Cannot expire a membership its current cycle  has not yet ended.");
     }
 }

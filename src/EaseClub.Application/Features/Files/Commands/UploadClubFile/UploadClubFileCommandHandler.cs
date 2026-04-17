@@ -3,6 +3,7 @@ using EaseClub.Domain.ClubAdmin;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Files;
+using EaseClub.Domain.Files.Enums;
 using EaseClub.Domain.Member;
 using EaseClub.Domain.MembershipApplications.Repositories;
 using MediatR;
@@ -52,7 +53,7 @@ namespace EaseClub.Application.Features.Files.Commands.UploadClubFile
 
             if (res.IsError) return res.TopError;
 
-            var file = FileResource.Create(Guid.NewGuid(), res.Value.FileName, res.Value.FilePath, request.File.ContentType, res.Value.Size, FileCategory.ClubAttachment, userId, true, request.ClubId);
+            var file = FileResource.Create(Guid.NewGuid(), res.Value.FileName, res.Value.FilePath, request.File.ContentType, res.Value.Size, userId, true, request.ClubId,request.Purpose, FileOwnerType.Club);
 
             if (file.IsError) return file.TopError;
 

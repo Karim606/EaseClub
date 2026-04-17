@@ -16,6 +16,7 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.UpdatePlan
     string Name,
     string? Description,
     decimal TotalPrice,
+    decimal RenewPrice,
     List<Guid> InstallmentTemplateIds
         ) : IRequest<Result<Success>>, IRequireClubOwnershipValidation
     {

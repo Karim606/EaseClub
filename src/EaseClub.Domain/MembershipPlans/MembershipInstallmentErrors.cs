@@ -9,9 +9,9 @@ namespace EaseClub.Domain.MembershipPlans
 {
     public static  class MembershipInstallmentErrors
     {
-        public static Error MembershipIdMustBeProvided = 
-            Error.Validation(code: "MembershipInstallment.MembershipId.Must.Be.Provided",
-                description: "Membership ID must be provided for a membership installment.");
+        public static Error MembershipCycleIdMustBeProvided = 
+            Error.Validation(code: "MembershipInstallment.MembershipCycleId.Must.Be.Provided",
+                description: "Membership cycle ID must be provided for a membership installment.");
 
         public static Error CantMarkPaidPlanAsOverdue = 
             Error.Validation(code: "MembershipInstallment.Cant.Mark.Paid.Plan.As.Overdue",

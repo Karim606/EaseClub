@@ -5,6 +5,7 @@ using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipApplications;
 using EaseClub.Domain.MembershipApplications.Repositories;
+using EaseClub.Domain.MembershipApplications.ValueObjects;
 using EaseClub.Domain.MembershipPlans;
 using EaseClub.Domain.MembershipPlans.Repositories;
 using EaseClub.Domain.MembershipTypes;
@@ -36,29 +37,35 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.CreateAp
         public async Task<Result<Guid>> Handle(CreateApplicationCommand request, CancellationToken ct)
         {
             // 1. Fetch Live Template
+            var resOfParse = Guid.TryParse(currentUserService.GetId(), out var userId);
+            if (!resOfParse)
+                return Error.Unauthorized(description: "Invalid user ID");
+
             var template = await tempRepo.GetFullTemplateAsync(request.TemplateId, ct);
             if (template == null) return Error.NotFound("Template not found");
 
+            // 1.1 Fetch Membership Type
             var memType = await membershipTyeRepo.GetByIdAsync(request.MembershipTypeId);
             if (memType == null)
                 return Error.NotFound(description: "Membership type not found.");
 
+            // 1.2 Fetch Membership Plan
             var plan = await  membershipPlanRepo.GetPlanWithDetailsAsync(request.MembershipPlanId);
 
             if (plan == null )
                return Error.NotFound(description: "plan not found");
 
+            // 1.3 Validate Enrollment Mode
             if(plan.EnrollmentMode != EnrollmentMode.ApplicationForm) 
                 return Error.Conflict(description: "Plan WrongEnrollmentMode");
-            // 2. Fetch Live Pricing Policies for this club
-            var policies = await pricingPolicyRepo.GetByClubIdAsync(request.ClubId, ct);
 
+            // 2. Fetch Installments Template if exists
             List<Installment> installments = new List<Installment>();
             InstallmentTemplate? installmentTemplate = null;
 
             if (request.InstallmentTemplateId == null)
             {
-                installments.Add(Installment.Create(100, 0, 1).Value);
+                installments.Add(Installment.Create(100m, 0, 1).Value);
 
             }
 
@@ -71,14 +78,30 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.CreateAp
 
                 installments = installmentTemplate.Installments.ToList();
             }
+
+            // 4. Fetch Live Pricing Policies for this club
+            var policyAssignments = await pricingPolicyRepo.GetPricingPolicyAssignmentsByTargetIdAsync(template.Id, ct);
+            var policies = await pricingPolicyRepo.GetPoliciesByIdAsync(policyAssignments.Select(a => a.PolicyId).ToList(), ct);
+
             // 3. Create the Frozen Snapshot
+
+            List<PricingPolicySnapshot> policySnapshots = new List<PricingPolicySnapshot>();
+            policies =policies.Where(p => p.IsActive).ToList();
+
+            foreach (var assignment in policyAssignments)
+            {
+                var policy = policies.FirstOrDefault(p => p.Id == assignment.PolicyId);
+                if (policy != null)
+                    policySnapshots.Add(policy.ToSnapshot(assignment.Priority));
+            }
+
             var snapshot = template.ToSnapshot(plan.TotalPrice,
-                policies.Select(p => p.ToSnapshot()).ToList(),
+                policySnapshots,
                 plan.ToSnapshot(),
                 Installment.ListToSnapshot(installments)
                 );
 
-            Guid.TryParse(currentUserService.GetId(), out var userId);
+          
             // 4. Initialize the Aggregate
             var trackingNumber = $"APP-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString()[..8].ToUpper()}";
             var application = MembershipApplication.Create(

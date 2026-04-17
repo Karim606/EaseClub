@@ -17,7 +17,7 @@ namespace EaseClub.Domain.ApplicationTemplates.ValueObjects.ValidationRulesSet
                 {
                     new RequiredValidationStrategy(),
                     new LengthValidationStrategy(),
-                    new RegexValidationStrategy()
+                   // new RegexValidationStrategy()
                 }
              },
 

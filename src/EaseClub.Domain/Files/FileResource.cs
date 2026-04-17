@@ -1,6 +1,7 @@
 ﻿using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.Files.Enums;
 using EaseClub.Domain.MembershipApplications;
 using System;
 using System.Collections.Generic;
@@ -19,24 +20,24 @@ namespace EaseClub.Domain.Files
         public string ContentType { get; private set; }
         public long Size { get; private set; }
         public bool IsPrivate { get; private set; }
-        public FileCategory Category { get; private set; } 
         public bool IsTemporary { get; private set; }
-        public Guid? ClubId { get; private set; }     // which club owns it
-        public Guid? ApplicationId { get; private set; } // linked membership application
-        public Club? Club { get; private set; }  // Navigation property
-        public MembershipApplication? Application { get; private set; }
+        public FileOwnerType OwnerType { get; private set; }
+        public Guid OwnerId { get; private set; }
+        public FilePurpose Purpose { get; private set; }
 
         private FileResource() { }
 
-        private FileResource(Guid id, string fileName,string filePath, string contentType, long size,FileCategory category,bool isPrivate, bool isTemporary):base(id)
+        private FileResource(Guid id, string fileName,string filePath, string contentType, long size,bool isPrivate, bool isTemporary, FilePurpose purpose, FileOwnerType ownerType, Guid ownerId) :base(id)
         {
             FileName = fileName;
             FilePath = filePath;
             ContentType = contentType;
             Size = size;
-            Category = category;
             IsPrivate = isPrivate;
             IsTemporary = isTemporary;
+            Purpose = purpose;
+            OwnerType = ownerType;
+            OwnerId = ownerId;
         }
 
         public static Result<FileResource> Create(
@@ -45,16 +46,26 @@ namespace EaseClub.Domain.Files
         string filePath,
         string contentType,
         long size,
-        FileCategory category,
         Guid uploadedBy,
         bool isPrivate,
-        Guid? clubId = null,
-        Guid? applicationId = null)
+        Guid ownerId,
+        FilePurpose purpose,
+        FileOwnerType ownerType
+        )
         {
-            var file = new FileResource(id, fileName, filePath, contentType, size, category,isPrivate, true);
-            file.SetCreated(uploadedBy);
-            file.ClubId = clubId;
-            file.ApplicationId = applicationId;
+            if ((purpose == FilePurpose.ClubBanner || purpose == FilePurpose.ClubLogo)&& ownerType != FileOwnerType.Club)
+                return Error.Validation("Club files must have Club as owner.");
+            
+            if (purpose == FilePurpose.UserProfileImage && ownerType != FileOwnerType.User)
+                return Error.Validation("User profile images must have User as owner.");
+
+            if (purpose == FilePurpose.ApplicationDocument && ownerType != FileOwnerType.Application)
+                return Error.Validation("Application documents must have Application as owner.");
+ 
+            var file = new FileResource(id, fileName, filePath, contentType, size,isPrivate, true, purpose, ownerType, ownerId);
+
+            if (purpose == FilePurpose.ApplicationDocument) file.IsPrivate = true;
+                file.SetCreated(uploadedBy);
             return file;
         }
 

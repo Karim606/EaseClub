@@ -104,6 +104,7 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
                 FieldType type,
                 ValidationRuleSetSnapshot validationRules,
                 ConditionExpressionSnapshot? visibilityCondition,
+                List<string>?allowedValues,
                 int order,
                 bool isSystemField)
         {
@@ -114,6 +115,7 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
             ValidationRules = validationRules;
             VisibilityCondition = visibilityCondition;
             Order = order;
+            AllowedValues = allowedValues;
             IsSystemField = isSystemField;
 
         }
@@ -125,6 +127,8 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
         public bool IsSystemField { get; private set; }
         public ValidationRuleSetSnapshot ValidationRules { get; init; } = default!;
         public ConditionExpressionSnapshot? VisibilityCondition { get; init; }
+
+        public List<string>? AllowedValues = null;
 
         public int Order { get; private set; }
 
@@ -177,7 +181,7 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
         public bool IsRequired { get; init; }
         public int? MinLength { get; init; }
         public int? MaxLength { get; init; }
-        public string? Regex { get; init; }
+       // public string? Regex { get; init; }
         public decimal? MinValue { get; init; }
         public decimal? MaxValue { get; init; }
         public DateTime? MinDate { get; init; }
@@ -188,7 +192,7 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
             bool isRequired,
             int? minLength,
             int? maxLength,
-            string? regex,
+           // string? regex,
             decimal? minValue,
             decimal? maxValue,
             DateTime? minDate,
@@ -197,7 +201,7 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
             IsRequired = isRequired;
             MinLength = minLength;
             MaxLength = maxLength;
-            Regex = regex;
+           // Regex = regex;
             MinValue = minValue;
             MaxValue = maxValue;
             MinDate = minDate;
@@ -210,7 +214,7 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
                 domain.IsRequired,
                 domain.MinLength,
                 domain.MaxLength,
-                domain.Regex,
+               // domain.Regex,
                 domain.MinValue,
                 domain.MaxValue,
                 domain.MinDate,
@@ -219,7 +223,8 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
 
         // Snapshot -> Domain
         public ValidationRuleSet ToDomain() =>
-            ValidationRuleSet.Create(IsRequired, MinLength, MaxLength, Regex, MinValue, MaxValue,MinDate,MaxDate).Value;
+            ValidationRuleSet.Create(IsRequired, MinLength, MaxLength//,Regex
+                ,MinValue, MaxValue,MinDate,MaxDate).Value;
     }
 
     public record ConditionExpressionSnapshot

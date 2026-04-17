@@ -1,5 +1,6 @@
 ﻿using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Files;
+using EaseClub.Domain.Files.Enums;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -16,7 +17,7 @@ namespace EaseClub.Application.Features.Files.Queries.GetFileQuery
         string Url,
         string ContentType,
         long Size,
-        FileCategory Category
+        FilePurpose Category
     );
 
 }

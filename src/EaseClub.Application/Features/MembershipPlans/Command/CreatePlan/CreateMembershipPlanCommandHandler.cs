@@ -52,7 +52,10 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.CreatePlan
                 request.maxFamilyMembers,
                 request.Name,
                 request.Price,
-                request.DurationInDays
+                request.DurationInDays,
+                request.RenewPrice,
+                request.InstallmentsAllowedInRenewal,
+                request.paymentMode
                 );
 
             if (planResult.IsError) { 

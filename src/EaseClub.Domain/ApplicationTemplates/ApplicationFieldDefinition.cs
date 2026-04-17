@@ -157,6 +157,7 @@ namespace EaseClub.Domain.ApplicationTemplates
                 Type, // Enum (Text, Number, Date, etc.)
                 ValidationRules.ToSnapshot(),      // Value Object
                 VisibilityCondition?.ToSnapshot(),   // Value Object
+                AllowedValues,
                 Order,
                 IsSystemField
             );

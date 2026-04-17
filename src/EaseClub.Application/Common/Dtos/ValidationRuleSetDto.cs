@@ -13,7 +13,7 @@ namespace EaseClub.Application.Common.Dtos
     [DefaultValue(true)] bool IsRequired,
     int? MinLength = null,
     int? MaxLength = null,
-    string? Regex = null,
+    //string? Regex = null,
     decimal? MinValue = null,
     decimal? MaxValue = null,
     DateTime? MinDate = null,
@@ -21,8 +21,9 @@ namespace EaseClub.Application.Common.Dtos
     )
     {
         public Result<ValidationRuleSet> ToDomain() => ValidationRuleSet.Create(IsRequired,
-                MinLength,  MaxLength, Regex, MinValue, MaxValue);
-        public static ValidationRuleSetDto FromDomain(ValidationRuleSet rule) => new(rule.IsRequired,rule.MinLength, rule.MaxLength, rule.Regex, rule.MinValue, 
-            rule.MaxValue);
+                MinLength,  MaxLength //,Regex
+                                       ,MinValue, MaxValue);
+        public static ValidationRuleSetDto FromDomain(ValidationRuleSet rule) => new(rule.IsRequired,rule.MinLength, rule.MaxLength //,rule.Regex
+                                                                                                                                    ,rule.MinValue, rule.MaxValue);
     }
 }

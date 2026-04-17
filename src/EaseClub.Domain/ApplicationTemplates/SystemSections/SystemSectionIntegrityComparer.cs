@@ -92,7 +92,7 @@ using System.Threading.Tasks;
                 CheckRule(system.RuleSet.MaxDate, incoming.ValidationRules.MaxDate, system.ValidationRulesCanBeOverriden.MaxDate, "MaxDate");
                 CheckRule(system.RuleSet.MinLength, incoming.ValidationRules.MinLength, system.ValidationRulesCanBeOverriden.MinLength, "MinLength");
                 CheckRule(system.RuleSet.MaxLength, incoming.ValidationRules.MaxLength, system.ValidationRulesCanBeOverriden.MaxLength, "MaxLength");
-                CheckRule(system.RuleSet.Regex, incoming.ValidationRules.Regex, system.ValidationRulesCanBeOverriden.Regex, "Regex");
+                //CheckRule(system.RuleSet.Regex, incoming.ValidationRules.Regex, system.ValidationRulesCanBeOverriden.Regex, "Regex");
 
                 return errors;
             }
