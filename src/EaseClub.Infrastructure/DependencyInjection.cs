@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.interfaces;
+using EaseClub.Application.Common.interfaces;
 using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Features.ApplicationTemplates.Queries;
 using EaseClub.Application.Features.Auth.Common.Interfaces;
@@ -22,6 +22,8 @@ using EaseClub.Domain.MembershipPlans.Repositories;
 using EaseClub.Domain.Memberships;
 using EaseClub.Domain.MembershipTypes;
 using EaseClub.Domain.Notifications;
+using EaseClub.Domain.Events;
+using EaseClub.Infrastructure.Data.Repositories;
 using EaseClub.Domain.PricingPolices;
 using EaseClub.Infrastructure.Auth.Entities;
 using EaseClub.Infrastructure.Auth.interfaces;
@@ -199,6 +201,8 @@ namespace EaseClub.Application
             Services.AddScoped<IFileRepository, FileRepository>();
             Services.AddScoped<IDeviceRepository, DeviceRepository>();
             Services.AddScoped<INotificationRepository, NotificationRepository>();
+            Services.AddScoped<IEventRepository, EventRepository>();
+
 
 
             return Services;

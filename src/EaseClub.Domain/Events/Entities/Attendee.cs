@@ -12,7 +12,7 @@ public class Attendee : Entity
     public Guid? AttendeeId { get; private set; }
     public string AttendeeName { get; private set; }
 
-    internal Attendee(Guid eventRegistrationId, Guid ticketTypeId, Guid? attendeeId, string attendeeName) : base()
+    internal Attendee(Guid eventRegistrationId, Guid ticketTypeId, Guid? attendeeId, string attendeeName) : base(Guid.NewGuid())
     {
         EventRegistrationId = eventRegistrationId;
         TicketTypeId = ticketTypeId;

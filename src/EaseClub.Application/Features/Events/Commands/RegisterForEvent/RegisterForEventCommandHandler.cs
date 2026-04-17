@@ -1,0 +1,98 @@
+using EaseClub.Application.Common.Interfaces;
+using EaseClub.Domain.Common;
+using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.Events;
+using EaseClub.Domain.Events.Enums;
+using EaseClub.Domain.Memberships;
+using EaseClub.Domain.PricingPolices;
+using MediatR;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace EaseClub.Application.Features.Events.Commands.RegisterForEvent;
+
+public class RegisterForEventCommandHandler(
+    IEventRepository eventRepository,
+    IMembershipRepository membershipRepository,
+    IPricingPolicyRepository pricingPolicyRepository,
+    IUnitOfWork unitOfWork,
+    ILogger<RegisterForEventCommandHandler> logger)
+    : IRequestHandler<RegisterForEventCommand, Result<Guid>>
+{
+    public async Task<Result<Guid>> Handle(RegisterForEventCommand request, CancellationToken cancellationToken)
+    {
+        // 1. Load Event with details
+        var @event = await eventRepository.GetWithDetailsAsync(request.EventId, cancellationToken);
+        if (@event == null)
+        {
+            return Error.NotFound("Event.NotFound", "Event not found.");
+        }
+
+        // 2. Check if registrant matches membership requirements
+        var memberships = await membershipRepository.GetByUserIdAsync(request.RegistrantId, cancellationToken);
+        bool isMember = memberships.Any(m => m.ClubId == @event.ClubId); 
+        // Note: Simple membership check for now. Might need to check status (Active).
+
+        // 3. Register in domain (handles capacity, ticket availability, age/gender restrictions inside domain)
+        var registrationResult = @event.Register(
+            request.RegistrantId,
+            isMember,
+            request.Attendees);
+
+        if (registrationResult.IsError)
+        {
+            logger.LogWarning("Registration failed for event {EventId}: {Errors}", 
+                request.EventId, string.Join(", ", registrationResult.Errors.Select(e => e.Description)));
+            return registrationResult.Errors.First();
+        }
+
+        var registration = registrationResult.Value;
+
+        // 4. Pricing Logic
+        if (@event.PricingPolicyIds.Any())
+        {
+            var attendeeStats = request.Attendees.Select(a => {
+                var ticket = @event.TicketTypes.First(t => t.Id == a.TicketTypeId);
+                return ticket.Category;
+            }).ToList();
+
+            var pricingData = new Dictionary<string, string?>
+            {
+                { "attendee_count", attendeeStats.Count.ToString() },
+                { "member_count", attendeeStats.Count(c => c == AttendeeCategory.Member).ToString() },
+                { "guest_count", attendeeStats.Count(c => c == AttendeeCategory.Guest).ToString() },
+                { "family_count", attendeeStats.Count(c => c == AttendeeCategory.FamilyMember).ToString() },
+                { "non_member_count", attendeeStats.Count(c => c != AttendeeCategory.Member).ToString() },
+                { "is_member", isMember.ToString().ToLower() }
+            };
+
+            var context = new PricingContext(pricingData);
+
+            // Load policies
+            var allClubPolicies = await pricingPolicyRepository.GetByClubIdAsync(@event.ClubId, cancellationToken);
+            var assignedPolicies = allClubPolicies.Where(p => @event.PricingPolicyIds.Contains(p.Id)).ToList();
+
+            if (assignedPolicies.Any())
+            {
+                var pricingResult = PricingEngine.Calculate(registration.TotalBasePrice, assignedPolicies, context);
+                
+                logger.LogInformation("Pricing calculated for registration {RegistrationId}: Base {Base}, Final {Final}", 
+                    registration.Id, pricingResult.BasePrice, pricingResult.TotalPrice);
+            }
+        }
+
+        // 5. Invoice Generation (Placeholder Guid for now as per MVP plan)
+        var invoiceId = Guid.NewGuid();
+        registration.SetInvoiceId(invoiceId);
+
+        // 6. Persistence
+        await eventRepository.UpdateAsync(@event, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return registration.Id;
+    }
+}

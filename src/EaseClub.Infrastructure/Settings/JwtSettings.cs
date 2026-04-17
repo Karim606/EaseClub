@@ -15,3 +15,5 @@ namespace EaseClub.Infrastructure.Settings
         public double RefreshTokenExpiryDays { get; set; } = 10;
     }
 }
+
+

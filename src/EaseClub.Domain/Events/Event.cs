@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using EaseClub.Domain.Common;
+using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Events.DomainEvents;
 using EaseClub.Domain.Events.Entities;
@@ -10,8 +11,9 @@ using EaseClub.Domain.Events.ValueObjects;
 
 namespace EaseClub.Domain.Events;
 
-public class Event : AuditableEntity
+public class Event : AuditableEntity, IHaveClub
 {
+    public Guid ClubId { get; private set; }
     public string Name { get; private set; }
     public string Description { get; private set; }
     public DateTime StartDate { get; private set; }
@@ -26,9 +28,15 @@ public class Event : AuditableEntity
     private readonly List<EventRegistration> _registrations = new();
     public IReadOnlyCollection<EventRegistration> Registrations => _registrations.AsReadOnly();
 
+    private readonly List<Guid> _pricingPolicyIds = new();
+    public IReadOnlyCollection<Guid> PricingPolicyIds => _pricingPolicyIds.AsReadOnly();
+
     private Event() { }
 
+    private Event(Guid id) : base(id) { }
+
     public static Result<Event> Create(
+        Guid clubId,
         string name, 
         string description, 
         DateTime startDate, 
@@ -36,17 +44,21 @@ public class Event : AuditableEntity
         int capacity, 
         Audience audience)
     {
+        if (clubId == Guid.Empty)
+            return EventErrors.InvalidClub;
+
         if (startDate < DateTime.UtcNow)
-            return Error.Validation("Event.PastDate", "Event start date must be in the future.");
+            return EventErrors.PastDate;
             
         if (endDate <= startDate)
-            return Error.Validation("Event.InvalidEndDate", "End date must be after start date.");
+            return EventErrors.InvalidEndDate;
             
         if (capacity <= 0)
-            return Error.Validation("Event.InvalidCapacity", "Event capacity must be greater than zero.");
+            return EventErrors.InvalidCapacity;
 
-        var @event = new Event
+        var @event = new Event(Guid.NewGuid())
         {
+            ClubId = clubId,
             Name = name,
             Description = description,
             StartDate = startDate,
@@ -59,6 +71,39 @@ public class Event : AuditableEntity
         return @event;
     }
 
+    public Result<Success> UpdateDetails(
+        string name, 
+        string description, 
+        DateTime startDate, 
+        DateTime endDate, 
+        int capacity)
+    {
+        if (Status != EventStatus.Draft)
+            return EventErrors.NotDraft("update");
+
+        if (startDate < DateTime.UtcNow)
+            return EventErrors.PastDate;
+
+        if (endDate <= startDate)
+            return EventErrors.InvalidEndDate;
+
+        if (capacity <= 0)
+            return EventErrors.InvalidCapacity;
+
+        // Check if new capacity can accommodate existing ticket types
+        var totalTicketQuantity = _ticketTypes.Sum(t => t.Quantity);
+        if (capacity < totalTicketQuantity)
+            return EventErrors.CapacityTooSmall;
+
+        Name = name;
+        Description = description;
+        StartDate = startDate;
+        EndDate = endDate;
+        Capacity = capacity;
+
+        return Result.Success;
+    }
+
     public Result<TicketType> AddTicketType(
         string name, 
         string description, 
@@ -68,27 +113,27 @@ public class Event : AuditableEntity
         int? maxPerMember = null)
     {
         if (Status != EventStatus.Draft)
-            return Error.Validation("Event.NotDraft", "Can only add tickets to draft events.");
+            return EventErrors.NotDraft("add tickets to");
 
         // Invariants
         if (price < 0)
-            return Error.Validation("TicketType.InvalidPrice", "Ticket price cannot be negative.");
+            return EventErrors.InvalidTicketPrice;
             
         if (quantity <= 0)
-            return Error.Validation("TicketType.InvalidQuantity", "Ticket quantity must be greater than zero.");
+            return EventErrors.InvalidTicketQuantity;
             
         if (maxPerMember.HasValue && (maxPerMember.Value <= 0 || maxPerMember.Value > quantity))
-            return Error.Validation("TicketType.InvalidMaxPerMember", "Max per member must be greater than zero and less than or equal to ticket quantity.");
+            return EventErrors.InvalidMaxPerMember;
 
         // Audience rules enforcement
         var rules = AudienceRules.For(Audience);
         if (!rules.AllowedCategories.Contains(category))
-            return Error.Validation("Event.InvalidTicketCategory", $"Category {category} is not allowed for audience {Audience}.");
+            return EventErrors.InvalidTicketCategory(category.ToString(), Audience.ToString());
 
         // Capacity check
         var currentTotalQuantity = _ticketTypes.Sum(t => t.Quantity);
         if (currentTotalQuantity + quantity > Capacity)
-            return Error.Validation("Event.CapacityExceeded", "Adding this ticket type would exceed the total event capacity.");
+            return EventErrors.CapacityExceeded;
 
         var ticket = new TicketType(Id, name, description, category, price, quantity, maxPerMember);
         _ticketTypes.Add(ticket);
@@ -99,11 +144,11 @@ public class Event : AuditableEntity
     public Result<Success> RemoveTicketType(Guid ticketTypeId)
     {
         if (Status != EventStatus.Draft)
-            return Error.Validation("Event.NotDraft", "Can only remove tickets from draft events.");
+            return EventErrors.NotDraft("remove tickets from");
 
         var ticket = _ticketTypes.FirstOrDefault(t => t.Id == ticketTypeId);
         if (ticket is null)
-            return Error.NotFound("Event.TicketNotFound", "Ticket type not found.");
+            return EventErrors.TicketNotFound;
 
         _ticketTypes.Remove(ticket);
         return Result.Success;
@@ -118,24 +163,24 @@ public class Event : AuditableEntity
         int? maxPerMember = null)
     {
         if (Status != EventStatus.Draft)
-            return Error.Validation("Event.NotDraft", "Can only update tickets in draft events.");
+            return EventErrors.NotDraft("update tickets in");
 
         var ticket = _ticketTypes.FirstOrDefault(t => t.Id == ticketTypeId);
         if (ticket is null)
-            return Error.NotFound("Event.TicketNotFound", "Ticket type not found.");
+            return EventErrors.TicketNotFound;
 
         if (price < 0)
-            return Error.Validation("TicketType.InvalidPrice", "Ticket price cannot be negative.");
+            return EventErrors.InvalidTicketPrice;
             
         if (quantity <= 0)
-            return Error.Validation("TicketType.InvalidQuantity", "Ticket quantity must be greater than zero.");
+            return EventErrors.InvalidTicketQuantity;
             
         if (maxPerMember.HasValue && (maxPerMember.Value <= 0 || maxPerMember.Value > quantity))
-            return Error.Validation("TicketType.InvalidMaxPerMember", "Max per member must be greater than zero and less than or equal to ticket quantity.");
+            return EventErrors.InvalidMaxPerMember;
 
         var otherTicketsQuantity = _ticketTypes.Where(t => t.Id != ticketTypeId).Sum(t => t.Quantity);
         if (otherTicketsQuantity + quantity > Capacity)
-            return Error.Validation("Event.CapacityExceeded", "Updating this ticket type would exceed the total event capacity.");
+            return EventErrors.CapacityExceeded;
 
         ticket.UpdateDetails(name, description, price, quantity, maxPerMember);
         return Result.Success;
@@ -144,7 +189,7 @@ public class Event : AuditableEntity
     public Result<Success> ChangeAudience(Audience newAudience)
     {
         if (Status != EventStatus.Draft)
-            return Error.Validation("Event.NotDraft", "Can only change audience for draft events.");
+            return EventErrors.NotDraft("change audience for");
 
         var newRules = AudienceRules.For(newAudience);
         
@@ -152,12 +197,32 @@ public class Event : AuditableEntity
         {
             if (!newRules.AllowedCategories.Contains(ticket.Category))
             {
-                return Error.Validation("Event.IncompatibleAudience", 
-                    $"Cannot change audience to {newAudience} because existing ticket '{ticket.Name}' has category '{ticket.Category}' which is not allowed.");
+                return EventErrors.IncompatibleAudience(newAudience.ToString(), ticket.Name, ticket.Category.ToString());
             }
         }
 
         Audience = newAudience;
+        return Result.Success;
+    }
+
+    public Result<Success> AssignPricingPolicy(Guid policyId)
+    {
+        if (Status != EventStatus.Draft)
+            return EventErrors.NotDraft("assign policies to");
+
+        if (_pricingPolicyIds.Contains(policyId))
+            return Result.Success;
+
+        _pricingPolicyIds.Add(policyId);
+        return Result.Success;
+    }
+
+    public Result<Success> UnassignPricingPolicy(Guid policyId)
+    {
+        if (Status != EventStatus.Draft)
+            return EventErrors.NotDraft("unassign policies from");
+
+        _pricingPolicyIds.Remove(policyId);
         return Result.Success;
     }
 
@@ -167,14 +232,14 @@ public class Event : AuditableEntity
         List<AttendeeRequest> attendees)
     {
         if (Status != EventStatus.Published)
-            return Error.Validation("Event.NotPublished", "Cannot register for an event that is not published.");
+            return EventErrors.NotPublished;
 
         if (attendees == null || !attendees.Any())
-            return Error.Validation("Event.NoAttendees", "At least one attendee is required to register.");
+            return EventErrors.NoAttendees;
 
         var rules = AudienceRules.For(Audience);
         if (rules.RequiresMemberRegistrant && !isRegistrantMember)
-            return Error.Validation("Event.RegistrantMustBeMember", "This event requires the registrant to be a club member.");
+            return EventErrors.RegistrantMustBeMember;
 
         // Rule: Duplicate Attendee ID check - an attendee can only be registered once for the entire event
         var groupedIds = attendees
@@ -182,7 +247,7 @@ public class Event : AuditableEntity
             .GroupBy(a => a.AttendeeId!.Value);
             
         if (groupedIds.Any(g => g.Count() > 1))
-            return Error.Validation("Event.DuplicateAttendees", "Duplicate attendee IDs found in the registration request.");
+            return EventErrors.DuplicateAttendees;
 
         foreach (var req in attendees.Where(a => a.AttendeeId.HasValue))
         {
@@ -192,7 +257,7 @@ public class Event : AuditableEntity
                 .Any(a => a.AttendeeId == req.AttendeeId!.Value);
 
             if (alreadyRegistered)
-                return Error.Validation("Event.AlreadyRegistered", $"Attendee {req.AttendeeName ?? req.AttendeeId.ToString()} is already registered for this event.");
+                return EventErrors.AlreadyRegistered(req.AttendeeName ?? req.AttendeeId.ToString() ?? "");
         }
 
         var ticketRequests = attendees.GroupBy(a => a.TicketTypeId).ToDictionary(g => g.Key, g => g.Count());
@@ -205,7 +270,7 @@ public class Event : AuditableEntity
             var ticketType = _ticketTypes.FirstOrDefault(t => t.Id == ticketTypeId);
             
             if (ticketType == null)
-                return Error.Validation("Event.TicketNotFound", $"Ticket type not found on this event.");
+                return EventErrors.TicketNotFound;
 
             // Consume capacity natively
             var reserveResult = ticketType.ReserveSeats(requestedQuantity);
@@ -222,10 +287,8 @@ public class Event : AuditableEntity
 
                 if (previousRegistrantTicketsForType + requestedQuantity > ticketType.MaxPerMember.Value)
                 {
-                    // Rollback reservations
                     ticketType.ReleaseSeats(requestedQuantity);
-                    return Error.Validation("Event.MaxPerMemberExceeded", 
-                        $"Registrant limits exceeded for ticket '{ticketType.Name}'. Maximum allowed is {ticketType.MaxPerMember.Value}.");
+                    return EventErrors.MaxPerMemberExceeded(ticketType.Name, ticketType.MaxPerMember.Value);
                 }
             }
 
@@ -248,7 +311,7 @@ public class Event : AuditableEntity
     {
         var registration = _registrations.FirstOrDefault(r => r.Id == registrationId);
         if (registration == null)
-            return Error.NotFound("Event.RegistrationNotFound", "Registration not found.");
+            return EventErrors.RegistrationNotFound;
 
         var result = registration.MarkAsConfirmed();
         if (result.IsError)
@@ -262,13 +325,12 @@ public class Event : AuditableEntity
     {
         var registration = _registrations.FirstOrDefault(r => r.Id == registrationId);
         if (registration == null)
-            return Error.NotFound("Event.RegistrationNotFound", "Registration not found.");
+            return EventErrors.RegistrationNotFound;
 
         var result = registration.Cancel();
         if (result.IsError)
             return result.TopError;
 
-        // Release the seats!
         var ticketCounts = registration.Attendees.GroupBy(a => a.TicketTypeId).ToDictionary(g => g.Key, g => g.Count());
         foreach (var tc in ticketCounts)
         {
@@ -283,13 +345,13 @@ public class Event : AuditableEntity
     public Result<Success> Publish()
     {
         if (Status != EventStatus.Draft)
-            return Error.Validation("Event.AlreadyPublished", "Event is not in Draft state.");
+            return EventErrors.AlreadyPublished;
 
         if (!_ticketTypes.Any())
-            return Error.Validation("Event.NoTickets", "Cannot publish event without at least one ticket type.");
+            return EventErrors.NoTickets;
 
         if (StartDate <= DateTime.UtcNow)
-            return Error.Validation("Event.PastStartDate", "Event start date must be in the future.");
+            return EventErrors.PastDate;
 
         Status = EventStatus.Published;
         RaiseDomainEvent(new EventPublished(Id));
@@ -299,7 +361,7 @@ public class Event : AuditableEntity
     public Result<Success> Cancel()
     {
         if (Status == EventStatus.Cancelled)
-            return Error.Validation("Event.AlreadyCancelled", "Event is already cancelled.");
+            return EventErrors.AlreadyCancelled;
 
         Status = EventStatus.Cancelled;
         

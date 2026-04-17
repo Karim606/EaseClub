@@ -19,7 +19,7 @@ public class EventRegistration : AuditableEntity
     private readonly List<Attendee> _attendees = new();
     public IReadOnlyCollection<Attendee> Attendees => _attendees.AsReadOnly();
 
-    internal EventRegistration(Guid eventId, Guid registrantId, decimal totalBasePrice) : base()
+    internal EventRegistration(Guid eventId, Guid registrantId, decimal totalBasePrice) : base(Guid.NewGuid())
     {
         EventId = eventId;
         RegistrantId = registrantId;
@@ -34,10 +34,10 @@ public class EventRegistration : AuditableEntity
         _attendees.Add(attendee);
     }
 
-    internal Result<Success> SetInvoiceId(Guid invoiceId)
+    public Result<Success> SetInvoiceId(Guid invoiceId)
     {
         if (Status != RegistrationStatus.PendingPayment)
-            return Error.Validation("EventRegistration.NotPendingPayment", "Can only attach invoice to a pending registration.");
+            return EventErrors.NotPendingPayment;
 
         InvoiceId = invoiceId;
         return Result.Success;
@@ -47,7 +47,7 @@ public class EventRegistration : AuditableEntity
     {
         // Must strictly transition from PendingPayment -> Confirmed
         if (Status != RegistrationStatus.PendingPayment)
-            return Error.Validation("EventRegistration.InvalidStateTransition", $"Cannot transition to Confirmed from {Status}.");
+            return EventErrors.InvalidStateTransition($"Cannot transition to Confirmed from {Status}.");
 
         Status = RegistrationStatus.Confirmed;
         return Result.Success;
@@ -57,7 +57,7 @@ public class EventRegistration : AuditableEntity
     {
         // Can cancel from PendingPayment or Confirmed
         if (Status == RegistrationStatus.Cancelled)
-            return Error.Validation("EventRegistration.InvalidStateTransition", "Registration is already cancelled.");
+            return EventErrors.InvalidStateTransition("Registration is already cancelled.");
 
         Status = RegistrationStatus.Cancelled;
         return Result.Success;

@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.ClubAdmin;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Member;
@@ -26,6 +26,8 @@ using EaseClub.Domain.Memberships;
 using EaseClub.Domain.Files;
 using EaseClub.Domain.Notifications;
 using EaseClub.Infrastructure.Notifications.UserDevices;
+using EaseClub.Domain.Events;
+using EaseClub.Domain.Events.Entities;
 
 namespace EaseClub.Infrastructure.Data
 {
@@ -110,6 +112,11 @@ namespace EaseClub.Infrastructure.Data
        
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<UserDevice> UserDevices { get; set; }
+
+        public DbSet<Event> Events { get; set; }
+        public DbSet<TicketType> TicketTypes { get; set; }
+        public DbSet<EventRegistration> EventRegistrations { get; set; }
+        public DbSet<Attendee> EventAttendees { get; set; }
 
     }
 }

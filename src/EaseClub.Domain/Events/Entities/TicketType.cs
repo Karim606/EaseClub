@@ -26,7 +26,7 @@ public class TicketType : Entity
         AttendeeCategory category, 
         decimal price, 
         int quantity, 
-        int? maxPerMember = null) : base()
+        int? maxPerMember = null) : base(Guid.NewGuid())
     {
         EventId = eventId;
         Name = name;
@@ -58,10 +58,10 @@ public class TicketType : Entity
     internal Result<Success> ReserveSeats(int count)
     {
         if (count <= 0)
-            return Error.Validation("TicketType.InvalidReserveCount", "Must reserve at least one seat.");
+            return EventErrors.InvalidReserveCount;
             
         if (AvailableQuantity < count)
-            return Error.Validation("TicketType.NotEnoughSeats", $"Not enough '{Name}' tickets available.");
+            return EventErrors.NotEnoughSeats(Name);
 
         SoldQuantity += count;
         return Result.Success;
@@ -70,10 +70,10 @@ public class TicketType : Entity
     internal Result<Success> ReleaseSeats(int count)
     {
         if (count <= 0)
-            return Error.Validation("TicketType.InvalidReleaseCount", "Must release at least one seat.");
+            return EventErrors.InvalidReleaseCount;
 
         if (SoldQuantity - count < 0)
-            return Error.Validation("TicketType.InvalidRelease", "Cannot release more seats than have been sold.");
+            return EventErrors.InvalidRelease;
 
         SoldQuantity -= count;
         return Result.Success;
