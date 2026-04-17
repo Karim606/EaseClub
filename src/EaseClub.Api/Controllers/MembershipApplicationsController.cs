@@ -48,7 +48,7 @@ namespace EaseClub.Api.Controllers
 
         [HttpGet("admin/{id:guid}")]
         [ProducesResponseType(typeof(ApplicationAdminResponse), StatusCodes.Status200OK)]
-        [EndpointName("GetApplication")]
+        [EndpointName("GetApplicationForAdmin")]
         [EndpointSummary("Retrieves the details of a specific application.")]
         public async Task<IActionResult> GetApplicationForAdmin(Guid id)
         {
@@ -60,7 +60,7 @@ namespace EaseClub.Api.Controllers
 
         [HttpGet("{id:guid}/pricing")]
         [ProducesResponseType(typeof(Pricing), StatusCodes.Status200OK)]
-        [EndpointName("GetApplication")]
+        [EndpointName("GetApplicationPricing")]
         [EndpointSummary("Retrieves the details of a specific application.")]
         public async Task<IActionResult> GetApplicationPricing(Guid id)
         {
