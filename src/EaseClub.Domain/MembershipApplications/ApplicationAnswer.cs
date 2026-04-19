@@ -54,12 +54,13 @@ namespace EaseClub.Domain.MembershipApplications
             string fieldKey,
             FieldType fieldType,
             string value,
-            int instanceIndex = 0)
+            int instanceIndex = 1)
         {
             if (applicationId == Guid.Empty)
                 return ApplicationAnswerErrors.ApplicationRequired;
 
             if (fieldDefinitionId == Guid.Empty) return ApplicationAnswerErrors.FieldDefintionRequired;
+            if(instanceIndex < 1) instanceIndex = 1;
 
             if (string.IsNullOrWhiteSpace(fieldKey))
                 return ApplicationAnswerErrors.FieldKeyRequired;

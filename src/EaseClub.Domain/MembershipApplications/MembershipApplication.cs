@@ -128,91 +128,122 @@ namespace EaseClub.Domain.MembershipApplications
 
         public Result<Success> CompleteStep(int stepOrder, List<ApplicationAnswer> newAnswers)
         {
+            // 1. Pre-validation: Status & Template existence
             if (Status != ApplicationStatus.Draft)
                 return MembershipApplicationErrors.InvalidStatusTransition;
 
             var step = TemplateSnapshot.Steps.FirstOrDefault(s => s.Order == stepOrder);
             if (step == null) return MembershipApplicationErrors.StepNotFound;
 
-            // 1. Identify all fields in this step (across all sections)
-            var fieldsInStep = step.Sections.SelectMany(s => s.Fields).ToList();
-            var fieldIdsInStep = fieldsInStep.Select(f => f.Id).ToHashSet();
+            // 2. Identify permitted fields (Zero Trust)
+            var fieldIdsInStep = step.Sections.SelectMany(s => s.Fields).Select(f => f.Id).ToHashSet();
+            var filteredAnswers = newAnswers.Where(a => fieldIdsInStep.Contains(a.FieldDefinitionId)).ToList();
 
-            // 2. Clear ONLY the existing answers for the fields present in this step
-            // This removes all instances (Index 0, 1, 2...) for these specific fields.
-            _Answers.RemoveAll(a => fieldIdsInStep.Contains(a.FieldDefinitionId));
-
-            // 3. Validation & Insertion Loop
             var errors = new List<Error>();
 
-            foreach (var answer in newAnswers)
-            {
-                // Find the specific field snapshot to get its validation rules
-                var fieldSnapshot = fieldsInStep.FirstOrDefault(f => f.Id == answer.FieldDefinitionId);
+            // 3. Validation Pipeline
+            ValidateRepeatRules(step, filteredAnswers, errors);
+            ValidateStructuralIntegrity(step, filteredAnswers, errors);
 
-                if (fieldSnapshot == null) continue;
-
-                // Execute Domain Validation (ValidationRules.ToDomain().Validate(...))
-                var validationErrors = fieldSnapshot.Validate(answer.Value);
-
-                if (validationErrors.Any())
-                {
-                    errors.AddRange(validationErrors);
-                    continue; // Collect all errors for this step
-                }
-
-                // Add valid answer (InstanceIndex is preserved from the Command)
-                _Answers.Add(answer);
-            }
-
-            // If any validation failed, don't save anything and return the errors
             if (errors.Any()) return errors;
 
-            // 4. Update Progress & Invalidate Future
-            if (!_CompletedStepOrders.Contains(stepOrder))
-                _CompletedStepOrders.Add(stepOrder);
-
-            _CompletedStepOrders.RemoveAll(order => order > stepOrder);
-
-            CurrentStepOrder = stepOrder + 1;
-
+            // 4. Persistence & State Progression
+            ApplyAnswersToStep(fieldIdsInStep, filteredAnswers);
+            UpdateProgress(stepOrder);
             RefreshPrice();
 
             return Result.Success;
         }
 
+        #region Private Helpers
 
-
-        private Result<Success> ValidateSectionCounts()
+        private void ValidateRepeatRules(StepSnapshot step, List<ApplicationAnswer> answers, List<Error> errors)
         {
-            foreach (var step in TemplateSnapshot.Steps)
+            foreach (var section in step.Sections)
             {
-                // Only validate sections that have a RepeatRule
-                foreach (var section in step.Sections.Where(s => s.RepeatRule != null))
+                if (section.RepeatRule == null) continue;
+
+                var sectionFieldIds = section.Fields.Select(f => f.Id).ToHashSet();
+                var uniqueInstancesCount = answers
+                    .Where(a => sectionFieldIds.Contains(a.FieldDefinitionId))
+                    .Select(a => a.InstanceIndex)
+                    .Distinct()
+                    .Count();
+
+                if (!section.RepeatRule.Evaluate(uniqueInstancesCount))
                 {
-                    // 1. Get the actual number of instances the user submitted
-                    var sectionFieldIds = section.Fields.Select(f => f.Id).ToList();
-                    var actualCount = _Answers
-                        .Where(a => sectionFieldIds.Contains(a.FieldDefinitionId))
-                        .Select(a => a.InstanceIndex)
-                        .Distinct()
-                        .Count();
+                    errors.Add(Error.Validation(
+                        "Application.InvalidRepeatCount",
+                        $"Section '{section.Title}' requires {section.RepeatRule.Mode} ({section.RepeatRule.NumberOfRepeats}), but received {uniqueInstancesCount}."));
+                }
+            }
+        }
 
-                    // 2. Evaluate the rule directly against actualCount
-                    bool isValid = section.RepeatRule!.Evaluate(actualCount);
+        private void ValidateStructuralIntegrity(StepSnapshot step, List<ApplicationAnswer> answers, List<Error> errors)
+        {
+            foreach (var section in step.Sections)
+            {
+                var sectionFields = section.Fields;
+                var sectionFieldIds = sectionFields.Select(f => f.Id).ToHashSet();
 
-                    if (!isValid)
+                var instances = answers
+                    .Where(a => sectionFieldIds.Contains(a.FieldDefinitionId))
+                    .GroupBy(a => a.InstanceIndex)
+                    .OrderBy(g => g.Key)
+                    .ToList();
+
+                // Start at 1 to match the 1-based InstanceIndex
+                for (int i = 1; i <= instances.Count; i++)
+                {
+                    // Now 'i' is exactly the index we expect (1, 2, 3...)
+                    var currentInstance = instances[i - 1]; // Access the list via 0-based offset
+
+                    if (currentInstance.Key != i)
                     {
-                        return MembershipApplicationErrors.SectionCountMismatch(
-                            section.Title,
-                            actualCount,
-                            section.RepeatRule.NumberOfRepeats);
+                        errors.Add(Error.Validation("Application.StructuralGap",
+                            $"Sequence gap in '{section.Title}': expected instance {i} but found {currentInstance.Key}."));
+                        return;
+                    }
+
+                    var instanceAnswers = currentInstance.ToDictionary(a => a.FieldDefinitionId);
+
+                    foreach (var fieldDef in sectionFields)
+                    {
+                        bool provided = instanceAnswers.TryGetValue(fieldDef.Id, out var answer);
+                        bool hasValue = provided && !string.IsNullOrWhiteSpace(answer?.Value);
+
+                        if (fieldDef.ValidationRules.IsRequired && !hasValue)
+                        {
+                            errors.Add(Error.Validation("Application.MissingRequiredField",
+                                $"'{fieldDef.Label}' is required for {section.Title} item #{i}."));
+                        }
+
+                        if (provided)
+                        {
+                            var fieldErrors = fieldDef.Validate(answer!.Value);
+                            errors.AddRange(fieldErrors);
+                        }
                     }
                 }
             }
-            return Result.Success;
         }
 
+        private void ApplyAnswersToStep(HashSet<Guid> fieldIdsInStep, List<ApplicationAnswer> filteredAnswers)
+        {
+            _Answers.RemoveAll(a => fieldIdsInStep.Contains(a.FieldDefinitionId));
+            _Answers.AddRange(filteredAnswers);
+        }
+
+        private void UpdateProgress(int stepOrder)
+        {
+            if (!_CompletedStepOrders.Contains(stepOrder))
+                _CompletedStepOrders.Add(stepOrder);
+
+            _CompletedStepOrders.RemoveAll(order => order > stepOrder);
+            CurrentStepOrder = stepOrder + 1;
+        }
+
+        #endregion
 
         #endregion
 
@@ -274,10 +305,6 @@ namespace EaseClub.Domain.MembershipApplications
             var totalSteps = TemplateSnapshot.Steps.Count;
             if (_CompletedStepOrders.Count < totalSteps)
                 return MembershipApplicationErrors.NotAllStepsCompleted;
-
-            // 2. Check Repeat Integrity (The Driver Count vs Actual Detail Forms)
-            var countValidation = ValidateSectionCounts();
-            if (countValidation.IsError) return countValidation;
 
             // 3. Generate Immutable Receipt
             var finalResult = RefreshPrice();
