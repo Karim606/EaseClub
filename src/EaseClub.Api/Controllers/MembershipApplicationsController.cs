@@ -3,19 +3,15 @@ using EaseClub.Application.Common.Pagination.Results;
 using EaseClub.Application.Features.MembershipApplications;
 using EaseClub.Application.Features.MembershipApplications.Commands.CompleteStep;
 using EaseClub.Application.Features.MembershipApplications.Commands.CreateApplication;
-using EaseClub.Application.Features.MembershipApplications.Commands.RemoveAnswer;
 using EaseClub.Application.Features.MembershipApplications.Commands.ReviewApplication;
 using EaseClub.Application.Features.MembershipApplications.Commands.SubmitApplication;
-using EaseClub.Application.Features.MembershipApplications.Commands.UpdateAnswer;
 using EaseClub.Application.Features.MembershipApplications.Queries.GetApplication;
 using EaseClub.Application.Features.MembershipApplications.Queries.GetApplicationForAdmin;
 using EaseClub.Application.Features.MembershipApplications.Queries.GetApplications;
 using EaseClub.Application.Features.MembershipApplications.Queries.GetApplicationsForManagement;
 using EaseClub.Application.Features.MembershipApplications.Queries.GetPricingForApplication;
-using EaseClub.Domain.PricingPolices;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EaseClub.Api.Controllers
@@ -128,7 +124,7 @@ Side effects:
 ")]
 
         #endregion
-        public async Task<IActionResult> CompleteStep(Guid id, int order, [FromBody] List<AnswerDto> answers) =>
+        public async Task<IActionResult> CompleteStep(Guid id, int order, [FromBody] List<AnswerRequestDto> answers) =>
         (await sender.Send(new CompleteStepCommand(id, order, answers))).Match(_ => NoContent(), Problem);
 
         [HttpPost("{id}/submit")]
@@ -193,24 +189,5 @@ This operation is irreversible from a business perspective.
         }
 
 
-        // Update an answer (The one we built in the previous step)
-        //[HttpPatch("{id}/answers")]
-        //public async Task<IActionResult> UpdateAnswer(Guid id, [FromBody] SetAnswerCommand command,CancellationToken ct)
-        //{
-        //    var result = await sender.Send(command with { ApplicationId = id },ct);
-        //    return result.Match(_ => NoContent(), Problem);
-        //}
-
-        //[HttpDelete("{applicationId}/answers/{fieldDefinitionId}")]
-        //public async Task<IActionResult> RemoveAnswer(
-        //Guid applicationId,
-        //Guid fieldDefinitionId,
-        //CancellationToken ct,
-        //[FromQuery] int index = 0
-        //)
-        //{
-        //    var result = await sender.Send(new RemoveAnswerCommand(applicationId, fieldDefinitionId, index),ct);
-        //    return result.Match(_ => NoContent(), Problem);
-        //}
     }
 }

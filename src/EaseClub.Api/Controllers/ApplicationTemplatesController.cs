@@ -240,7 +240,6 @@ ValidationRuleSet defines constraints:
 TEXT:
 - IsRequired → mandatory field
 - MinLength / MaxLength → string limits
-- Regex → pattern validation
 
 NUMERIC:
 - MinValue / MaxValue → numeric boundaries
