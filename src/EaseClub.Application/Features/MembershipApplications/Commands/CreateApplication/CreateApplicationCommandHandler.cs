@@ -41,19 +41,19 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.CreateAp
             if (!resOfParse)
                 return Error.Unauthorized(description: "Invalid user ID");
 
-            var template = await tempRepo.GetFullTemplateAsync(request.TemplateId, ct);
+            // 1.2 Fetch Membership Plan
+            var plan = await membershipPlanRepo.GetPlanWithDetailsAsync(request.MembershipPlanId);
+
+            if (plan == null)
+                return Error.NotFound(description: "plan not found");
+
+            var template = await tempRepo.GetFullTemplateAsync(plan.ApplicationTemplateId!.Value, ct);
             if (template == null) return Error.NotFound("Template not found");
 
             // 1.1 Fetch Membership Type
             var memType = await membershipTyeRepo.GetByIdAsync(request.MembershipTypeId);
             if (memType == null)
                 return Error.NotFound(description: "Membership type not found.");
-
-            // 1.2 Fetch Membership Plan
-            var plan = await  membershipPlanRepo.GetPlanWithDetailsAsync(request.MembershipPlanId);
-
-            if (plan == null )
-               return Error.NotFound(description: "plan not found");
 
             // 1.3 Validate Enrollment Mode
             if(plan.EnrollmentMode != EnrollmentMode.ApplicationForm) 
@@ -113,7 +113,7 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.CreateAp
                 plan,
                 installmentTemplate,
                 memType,
-                request.TemplateId).Value;
+                plan.ApplicationTemplateId!.Value).Value;
 
             await appRepo.AddAsync(application);
             await unitOfWork.SaveChangesAsync(ct);

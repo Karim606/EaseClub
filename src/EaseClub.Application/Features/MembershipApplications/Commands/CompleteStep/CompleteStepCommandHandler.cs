@@ -4,6 +4,7 @@ using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipApplications;
+using EaseClub.Domain.MembershipApplications.Errors;
 using EaseClub.Domain.MembershipApplications.Repositories;
 using MediatR;
 using System;
@@ -24,10 +25,43 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.Complete
             var app = await appRepo.GetByIdAsync(request.ApplicationId, ct);
             if (app == null) return Error.NotFound("Application not found");
 
-            // Map DTOs to Domain Value Objects
-            var domainAnswers = request.Answers.Select(dto =>
-                ApplicationAnswer.Create(app.Id, dto.FieldId, dto.Key, dto.FieldType, dto.Value, dto.InstanceIndex).Value
-            ).ToList();
+            // 1. Get all fields defined in the current step from the backend snapshot
+            var stepFields = app.TemplateSnapshot.Steps
+                .FirstOrDefault(s => s.Order == request.StepOrder)?
+                .Sections.SelectMany(s => s.Fields)
+                .ToDictionary(f => f.Id);
+
+            if (stepFields == null) return MembershipApplicationErrors.StepNotFound;
+
+            var domainAnswers = new List<ApplicationAnswer>();
+            var mappingErrors = new List<Error>();
+
+            // 2. Map & Enrich: Only use the FieldId and Value from the client
+            foreach (var dto in request.Answers)
+            {
+                // Zero Trust: If the field isn't in this step's snapshot, ignore or error
+                if (!stepFields.TryGetValue(dto.FieldId, out var fieldDefinition))
+                    continue;
+
+                // Set technical properties (Key, Type) from the BACKEND definition
+                var answerResult = ApplicationAnswer.Create(
+                    app.Id,
+                    dto.FieldId,
+                    fieldDefinition.Key,   // From Snapshot
+                    fieldDefinition.Type,  // From Snapshot
+                    dto.Value,             // From Client
+                    dto.InstanceIndex);
+
+                if (answerResult.IsError)
+                {
+                    mappingErrors.AddRange(answerResult.Errors);
+                    continue;
+                }
+
+                domainAnswers.Add(answerResult.Value);
+            }
+
+            if (mappingErrors.Any()) return mappingErrors;
 
             var result = app.CompleteStep(request.StepOrder, domainAnswers);
             if (result.IsError) return (result.Errors.ToList());

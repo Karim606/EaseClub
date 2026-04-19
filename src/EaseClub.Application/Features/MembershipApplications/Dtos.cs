@@ -13,6 +13,7 @@ namespace EaseClub.Application.Features.MembershipApplications
 
     public record AnswerDto(Guid FieldId, string Key, FieldType FieldType, string Value, int InstanceIndex = 0);
 
+    public record AnswerRequestDto(Guid FieldId, string Value, int InstanceIndex = 0);
     public class MembershipAppDto
     {
         public Guid ClubId { get; set; }

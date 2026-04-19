@@ -15,18 +15,12 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.CreateAp
 {
     public record CreateApplicationCommand(
     Guid ClubId,
-    Guid TemplateId,
     Guid MembershipTypeId,
     Guid MembershipPlanId,
     Guid? InstallmentTemplateId) : IRequest<Result<Guid>>, IRequireClubOwnershipValidation
     {
         public IEnumerable<OwnershipRule> Rules()
         {
-            yield return new OwnershipRule(
-                    async (auth,_) => await auth.DoesResourceBelongToClubAsync<ApplicationTemplateDefinition>(TemplateId,ClubId),
-                    nameof(ApplicationTemplateDefinition),
-                    TemplateId
-                );
 
             yield return new OwnershipRule(
                     async (auth, _) => await auth.DoesResourceBelongToClubAsync<MembershipType>(MembershipTypeId, ClubId),
