@@ -26,7 +26,7 @@ namespace EaseClub.Infrastructure.Data.Configurations
 
 
             builder.HasMany(x => x.Installments)
-            .WithOne()
+            .WithOne(x => x.MembershipCycle)
             .HasForeignKey(x => x.MembershipCycleId)
             .OnDelete(DeleteBehavior.Restrict);
 
