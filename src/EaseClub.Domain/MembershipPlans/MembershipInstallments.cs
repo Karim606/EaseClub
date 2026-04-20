@@ -19,6 +19,7 @@ namespace EaseClub.Domain.MembershipPlans
         public Guid ClubId { get; private set; }
         public Guid MembershipTypeId { get; private set; }
         public Guid MembershipPlanId { get; private set; }
+        public Guid MembershipId { get; private set; } 
         public Guid? InstallmentTemplateId { get; private set; }
         public BillingItemType GetBillingType() => BillingItemType.MembershipInstallment;
         public MembershipCycle MembershipCycle { get; private set; }

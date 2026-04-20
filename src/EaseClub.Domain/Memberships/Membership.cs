@@ -18,7 +18,7 @@ using System.Numerics;
 
 namespace EaseClub.Domain.Memberships
 {
-    public class Membership : AuditableEntity,IBelongToMember
+    public class Membership : AuditableEntity,IBelongToMember,IHaveClub
     {
 
         private Membership() { } // EF Core
@@ -29,6 +29,7 @@ namespace EaseClub.Domain.Memberships
             Guid clubId,
             Guid membershipTypeId,
             Guid membershipPlanId,
+            string membershipNumber,
             string? extraDataJson = null)  : base(id)
         {
             MemberId = memberId;
@@ -53,6 +54,7 @@ namespace EaseClub.Domain.Memberships
 
         private readonly List<MembershipCycle> _MembershipCycles = new List<MembershipCycle>();
         public IReadOnlyList<MembershipCycle> MembershipCycles => _MembershipCycles.AsReadOnly();
+        public string MembershipNumber { get; private set; }
         public string? ExtraDataJson { get; private set; }
 
         // Family members
@@ -69,7 +71,7 @@ namespace EaseClub.Domain.Memberships
 
         #region Factory Methods
 
-        public static Result<Membership> CreateFromPendingEnrollment(PendingEnrollment pendingEnrollment)
+        public static Result<Membership> CreateFromPendingEnrollment(PendingEnrollment pendingEnrollment, string membershipNumber)
         {
             if (pendingEnrollment.Status != PendingEnrollmentStatus.WaitingForFirstPayment)
                 return Error.Conflict(description: "Pending enrollment is not payable.");
@@ -79,7 +81,8 @@ namespace EaseClub.Domain.Memberships
                 pendingEnrollment.UserId,
                 pendingEnrollment.ClubId,
                 pendingEnrollment.MembershipTypeId,
-                pendingEnrollment.MembershipPlanId);
+                pendingEnrollment.MembershipPlanId,
+                membershipNumber);
 
             membership.MembershipApplicationId = pendingEnrollment.MembershipApplicationId;
 
@@ -189,7 +192,7 @@ namespace EaseClub.Domain.Memberships
 
         public Result<Success> Expire()
         {
-            if(!CurrentCycle.Period.IsExpired(DateTime.UtcNow))
+            if(!GetCurrentCycle().Period.IsExpired(DateTime.UtcNow))
                 return MembershipErrors.CannotPeriodOfCurrentCycleNotEnded;
 
             if (Status == MembershipStatus.Cancelled)
@@ -212,7 +215,7 @@ namespace EaseClub.Domain.Memberships
                     "Only active or expired memberships can be renewed.");
 
 
-            var oldEndDate = CurrentCycle.Period.EndDate;
+            var oldEndDate = GetCurrentCycle().Period.EndDate;
             var newStartDate = oldEndDate+TimeSpan.FromSeconds(1) > DateTime.UtcNow ? oldEndDate.AddSeconds(1) : DateTime.UtcNow;
             var newEndDate = newStartDate.AddYears(this.MembershipPlan.SubscriptionValidityInYears);
 
@@ -383,14 +386,31 @@ namespace EaseClub.Domain.Memberships
 
         #region Query Methods
 
-        public MembershipCycle CurrentCycle =>
-            _MembershipCycles.OrderByDescending(c => c.Period.StartDate)
-                             .FirstOrDefault(c => !c.Period.IsExpired(DateTime.UtcNow));
+        public MembershipCycle? GetCurrentCycle()
+        {
+            var now = DateTime.UtcNow;
+
+            // 1. Try to find the one that is active right now
+            var active = _MembershipCycles.FirstOrDefault(c => c.Period.IsActive(now));
+            if (active != null) return active;
+
+            // 2. If none active, find the one starting soonest (Future)
+            var future = _MembershipCycles
+                .Where(c => c.Period.IsFuture(now))
+                .OrderBy(c => c.Period.StartDate)
+                .FirstOrDefault();
+            if (future != null) return future;
+
+            // 3. Fallback: The most recently expired cycle
+            return _MembershipCycles
+                .OrderByDescending(c => c.Period.EndDate)
+                .FirstOrDefault();
+        }
 
         public bool IsActive()
         {
             return Status == MembershipStatus.Active &&
-                   CurrentCycle.Period.IsActive(DateTime.UtcNow);
+                   GetCurrentCycle()?.Period.IsActive(DateTime.UtcNow) == true;
         }
 
 
@@ -400,7 +420,7 @@ namespace EaseClub.Domain.Memberships
             if (Status == MembershipStatus.Expired || Status == MembershipStatus.Cancelled)
                 return 0;
 
-            return (CurrentCycle.Period.EndDate - DateTime.UtcNow).Days;
+            return (GetCurrentCycle()?.Period.EndDate - DateTime.UtcNow)?.Days ?? 0;
         }
 
         #endregion

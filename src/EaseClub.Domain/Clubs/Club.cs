@@ -19,7 +19,7 @@ namespace EaseClub.Domain.Clubs
         private Club()
         {
         }
-        private Club(Guid id, string name, string about, ContactInfo contactInfo, IEnumerable<WorkSchedule> workSchedules, IEnumerable<Amenity> amenities, string? logo = null, string? coverImage = null): base(id)
+        private Club(Guid id, string name, string about, ContactInfo contactInfo, IEnumerable<WorkSchedule> workSchedules, IEnumerable<Amenity> amenities,string code, string? logo = null, string? coverImage = null): base(id)
         {
             Name = name;
             About = about;
@@ -28,6 +28,7 @@ namespace EaseClub.Domain.Clubs
             _amenities = amenities.ToList();
             LogoUrl = logo;
             CoverImageUrl = coverImage;
+            Code = code;
         }
         
         public string Name { get; private set; }
@@ -50,10 +51,10 @@ namespace EaseClub.Domain.Clubs
 
         private readonly List<Amenity> _amenities = new();
         public IReadOnlyCollection<Amenity> Amenities => _amenities.AsReadOnly();
-
+        public string Code { get; private set; }
         public string About { get; private set; }
 
-        public static Result<Club> Create(Guid id, string name, string about, ContactInfo contactInfo, IEnumerable<WorkSchedule> workSchedules, IEnumerable<Amenity> amenities, string? logo = null, string? coverImage = null)
+        public static Result<Club> Create(Guid id, string name, string about, ContactInfo contactInfo, IEnumerable<WorkSchedule> workSchedules, IEnumerable<Amenity> amenities,string code, string? logo = null, string? coverImage = null)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
@@ -66,7 +67,7 @@ namespace EaseClub.Domain.Clubs
             }
 
             
-            return new Club(id, name, about, contactInfo, workSchedules, amenities, logo, coverImage);
+            return new Club(id, name, about, contactInfo, workSchedules, amenities,code, logo, coverImage);
         }
 
         public void SetWorkSchedules(IEnumerable<WorkSchedule> schedules)
