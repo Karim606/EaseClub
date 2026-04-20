@@ -2,7 +2,9 @@
 using EaseClub.Domain.ApplicationTemplates.SystemSections;
 using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Common;
+using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.Member;
 using EaseClub.Domain.MembershipApplications;
 using EaseClub.Domain.MembershipApplications.Enums;
 using EaseClub.Domain.MembershipApplications.ValueObjects;
@@ -16,20 +18,20 @@ using System.Numerics;
 
 namespace EaseClub.Domain.Memberships
 {
-    public class Membership : AuditableEntity
+    public class Membership : AuditableEntity,IBelongToMember
     {
 
         private Membership() { } // EF Core
 
         private Membership(
             Guid id,
-            Guid userId,
+            Guid memberId,
             Guid clubId,
             Guid membershipTypeId,
             Guid membershipPlanId,
             string? extraDataJson = null)  : base(id)
         {
-            UserId = userId;
+            MemberId = memberId;
             ClubId = clubId;
             MembershipTypeId = membershipTypeId;
             MembershipPlanId = membershipPlanId;
@@ -38,9 +40,10 @@ namespace EaseClub.Domain.Memberships
         }
 
         // Properties
-        public Guid UserId { get; private set; }
+        public Guid MemberId { get; private set; }
         public Guid ClubId { get; private set; }
         public Club Club { get; private set; }
+        public MemberUser Member { get; private set; }
         public Guid MembershipTypeId { get; private set; }
         public MembershipType MembershipType { get; private set; }
         public Guid MembershipPlanId { get; private set; }
@@ -155,7 +158,7 @@ namespace EaseClub.Domain.Memberships
 
             RaiseDomainEvent(new MembershipActivatedDomainEvent(
                 Id,
-                UserId,
+                MemberId,
                 DateTime.UtcNow
                 ));
 
@@ -176,7 +179,7 @@ namespace EaseClub.Domain.Memberships
 
             RaiseDomainEvent(new MembershipCancelledDomainEvent(
                 Id,
-                UserId,
+                MemberId,
                 reason,
                 DateTime.UtcNow
                 ));
@@ -197,7 +200,7 @@ namespace EaseClub.Domain.Memberships
 
             RaiseDomainEvent(new MembershipExpiredDomainEvent(
                 Id,
-                UserId,
+                MemberId,
                 DateTime.UtcNow));
             return Result.Success;
         }
@@ -241,7 +244,7 @@ namespace EaseClub.Domain.Memberships
 
             RaiseDomainEvent(new MembershipRenewedDomainEvent(
                 Id,
-                UserId,
+                MemberId,
                 oldEndDate,
                 newEndDate,
                 null,
@@ -274,7 +277,7 @@ namespace EaseClub.Domain.Memberships
 
             RaiseDomainEvent(new MembershipUpgradedDomainEvent(
                 Id,
-                UserId,
+                MemberId,
                 oldTypeId,
                 newMembershipTypeId,
                 oldPlanId,
@@ -307,7 +310,7 @@ namespace EaseClub.Domain.Memberships
 
             RaiseDomainEvent(new MembershipDowngradedDomainEvent(
                 Id,
-                UserId,
+                MemberId,
                 oldTypeId,
                 newMembershipTypeId,
                 oldPlanId,

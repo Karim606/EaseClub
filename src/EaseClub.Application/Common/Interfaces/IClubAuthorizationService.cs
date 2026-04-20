@@ -13,10 +13,10 @@ namespace EaseClub.Application.Common.Interfaces
         Task<bool> DoesResourceBelongToClubAsync<TEntity>(Guid entityId, Guid clubId) where TEntity : Entity, IHaveClub;
         Task<bool> DoesResourceBelongToUserAsync<TEntity>(
             Guid entityId,
-            Guid userId) where TEntity : Entity, IBelongToUser;
+            Guid userId) where TEntity : Entity, IBelongToMember;
         Task<bool> DoesResourceBelongToCurrentUserAsync<TEntity>(
             Guid entityId
-            ) where TEntity : Entity, IBelongToUser;
+            ) where TEntity : Entity, IBelongToMember;
 
         Task<bool> IsUserAdminOfClubAsync(Guid userId, Guid clubId);
         public  Task<bool> IsUserMemberOfClubAsync(Guid userId, Guid clubId);

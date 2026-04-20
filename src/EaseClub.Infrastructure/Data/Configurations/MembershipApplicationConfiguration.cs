@@ -118,9 +118,11 @@ namespace EaseClub.Infrastructure.Data.Configurations
 
             builder.HasOne(a => a.MembershipType).WithMany().HasForeignKey(a=> a.MembershipTypeId).OnDelete(DeleteBehavior.Restrict);
             builder.HasOne(a => a.MembershipPlan).WithMany().HasForeignKey(a => a.MembershipPlanId).OnDelete(DeleteBehavior.Restrict);
+            builder.HasOne(a =>a.Member).WithMany().HasForeignKey(a => a.MemberId).OnDelete(DeleteBehavior.Restrict);
+             builder.HasOne(a => a.Club).WithMany().HasForeignKey(a => a.ClubId).OnDelete(DeleteBehavior.Restrict);
             // 4. Indexes
             builder.HasIndex(a => a.TrackingNumber).IsUnique();
-            builder.HasIndex(a => a.UserId);
+            builder.HasIndex(a => a.MemberId);
             builder.HasIndex(a => a.ClubId);
             builder.HasIndex(a => a.Status);
         }

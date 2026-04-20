@@ -33,7 +33,7 @@ namespace EaseClub.Application.Features.Files.Commands
                 case FileOwnerType.Application:
                     var app = await appRepo.GetByIdAsync(fileResource.OwnerId);
                     if (app == null) return false;
-                    return app.UserId == userId || await authorizationService.IsUserAdminOfClubAsync(userId, app.ClubId);
+                    return app.MemberId == userId || await authorizationService.IsUserAdminOfClubAsync(userId, app.ClubId);
 
                 case FileOwnerType.User:
                     return fileResource.OwnerId == userId;

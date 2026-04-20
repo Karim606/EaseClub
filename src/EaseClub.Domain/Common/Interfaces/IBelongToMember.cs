@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Domain.Common.Interfaces
 {
-    public interface IBelongToUser
+    public interface IBelongToMember
     {
-        public Guid UserId { get; }
+        public Guid MemberId { get; }
     }
 }

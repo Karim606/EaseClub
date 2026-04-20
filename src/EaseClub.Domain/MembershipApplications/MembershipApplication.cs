@@ -1,4 +1,5 @@
-﻿using EaseClub.Domain.Common;
+﻿using EaseClub.Domain.Clubs;
+using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Member;
@@ -17,7 +18,7 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Domain.MembershipApplications
 {
-    public class MembershipApplication : AuditableEntity,IHaveClub,IBelongToUser
+    public class MembershipApplication : AuditableEntity,IHaveClub,IBelongToMember
     {
         private MembershipApplication() { }
 
@@ -25,7 +26,7 @@ namespace EaseClub.Domain.MembershipApplications
             Guid id,
             string trackingNumber,
             ApplicationTemplateSnapshot templateSnapshot,
-            Guid userId,
+            Guid memberId,
             Guid clubId,
             Guid membershipTypeId,
             Guid membershipPlanId,
@@ -36,7 +37,7 @@ namespace EaseClub.Domain.MembershipApplications
         {
             TrackingNumber = trackingNumber;
             TemplateSnapshot = templateSnapshot;
-            UserId = userId;
+            MemberId = memberId;
             ClubId = clubId;
             MembershipTypeId = membershipTypeId;
             MembershipPlanId = membershipPlanId;
@@ -59,13 +60,14 @@ namespace EaseClub.Domain.MembershipApplications
         public IReadOnlyList<ApplicationReview> Reviews => _Reviews.AsReadOnly();
 
 
-        public Guid UserId { get; private set; }
-        public MemberUser User { get; private set; }
+        public Guid MemberId { get; private set; }
+        public MemberUser Member { get; private set; }
         public Guid ClubId { get; private set; }
         public Guid? InstallmentTemplateId { get; private set; }
         public Guid MembershipTypeId { get; private set; }
         public Guid MembershipPlanId { get; private set; }
         public MembershipType MembershipType { get; private set; }
+        public Club  Club { get; private set; }
         public MembershipPlan MembershipPlan { get; private set; }
         public Guid TemplateId { get; private set; }// frozen template
         public ApplicationStatus Status { get; private set; }// Draft, Submitted, Paid
@@ -341,10 +343,10 @@ namespace EaseClub.Domain.MembershipApplications
             // Raise domain events
 
             if (review.Decision == DecisionsAboutApplication.Approved)
-                RaiseDomainEvent(new ApplicationApprovedEvent(UserId,Id, review.Id,review.Note));
+                RaiseDomainEvent(new ApplicationApprovedEvent(MemberId,Id, review.Id,review.Note));
 
             if (review.Decision == DecisionsAboutApplication.Rejected)
-                RaiseDomainEvent(new ApplicationRejectedEvent(UserId,Id, review.Id, review.Reason!));
+                RaiseDomainEvent(new ApplicationRejectedEvent(MemberId,Id, review.Id, review.Reason!));
 
             return Result.Success;
         }

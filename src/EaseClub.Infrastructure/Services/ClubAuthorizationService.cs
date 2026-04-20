@@ -42,19 +42,19 @@ namespace EaseClub.Infrastructure.Services
 
         public async Task<bool> DoesResourceBelongToUserAsync<TEntity>(
             Guid entityId,
-            Guid userId) where TEntity : Entity, IBelongToUser
+            Guid userId) where TEntity : Entity, IBelongToMember
         {
             return await _context.Set<TEntity>()
-                .AnyAsync(x => x.UserId == userId && x.Id == entityId);
+                .AnyAsync(x => x.MemberId == userId && x.Id == entityId);
         }
 
         public async Task<bool> DoesResourceBelongToCurrentUserAsync<TEntity>(
-            Guid entityId) where TEntity : Entity, IBelongToUser
+            Guid entityId) where TEntity : Entity, IBelongToMember
         {
-            var userId = Guid.Parse(_currentUserService.GetId());
+            var memberId = Guid.Parse(_currentUserService.GetId());
 
             return await _context.Set<TEntity>()
-                .AnyAsync(x => x.UserId == userId && x.Id == entityId);
+                .AnyAsync(x => x.MemberId == memberId && x.Id == entityId);
         }
 
         public async Task<bool> CheckAppTemplateComponentsOwnership(Type resourceType,Guid resourceId,Guid clubId)

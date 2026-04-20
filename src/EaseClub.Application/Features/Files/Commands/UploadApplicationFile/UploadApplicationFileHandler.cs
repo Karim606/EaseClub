@@ -43,7 +43,7 @@ namespace EaseClub.Application.Features.Files.Commands.UploadApplicationFile
 
             if (roles.Contains("Member"))
             {
-                if(app.UserId != userId) 
+                if(app.MemberId != userId) 
                     return Error.Unauthorized();
             }
             else if(!roles.Contains("SuperAdmin")) 

@@ -36,7 +36,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
             var query = Query();
 
             if (clubId.HasValue) query = query.Where(i => i.ClubId == clubId.Value);
-            if (userId.HasValue) query = query.Where(i => i.UserId == userId.Value);
+            if (userId.HasValue) query = query.Where(i => i.MemberId == userId.Value);
             if (status.HasValue) query = query.Where(i => i.Status == status.Value);
             if (billingItemType.HasValue) query = query.Where(i => i.BillingItemType == billingItemType.Value);
 
@@ -56,7 +56,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                 selector: i => new InvoiceDto
                 {
                     InvoiceId = i.Id,
-                    UserName = i.User != null ? i.User.FirstName + ' ' + i.User.LastName : string.Empty,
+                    UserName = i.Member != null ? i.Member.FirstName + ' ' + i.Member.LastName : string.Empty,
                     BillingItemId = i.BillingItemId,
                     BillingItemType = i.BillingItemType,
                     Amount = i.Amount,

@@ -140,7 +140,7 @@ namespace EaseClub.Domain.Memberships
                 template = res.Value;
             }
 
-            var req = new EnrollmentRequest(app.UserId,
+            var req = new EnrollmentRequest(app.MemberId,
                 app.ClubId,
                 plan,
                 template,
@@ -169,7 +169,7 @@ namespace EaseClub.Domain.Memberships
                     "This plan does not allow installments in renewal.");
 
             var req = new EnrollmentRequest(
-            membership.UserId,
+            membership.MemberId,
             membership.ClubId,
             plan,
             installmentTemplate,

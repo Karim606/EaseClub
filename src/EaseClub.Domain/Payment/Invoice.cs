@@ -15,7 +15,7 @@ using System.Transactions;
 
 namespace EaseClub.Domain.Payment
 {
-    public class Invoice : AuditableEntity,IBelongToUser
+    public class Invoice : AuditableEntity,IBelongToMember
     {
         public Guid BillingItemId { get; private set; }
         // InstallmentId or RegistrationId
@@ -24,8 +24,8 @@ namespace EaseClub.Domain.Payment
         // MembershipInstallment or EventRegistration
 
         public Guid ClubId { get; private set; }
-        public Guid UserId { get; private set; }
-        public MemberUser User { get; private set; }
+        public Guid MemberId { get; private set; }
+        public MemberUser Member { get; private set; }
         public Club Club { get; private set; }
         public decimal Amount { get; private set; }
         public InvoiceStatus Status { get; private set; }
@@ -42,14 +42,14 @@ namespace EaseClub.Domain.Payment
             BillingItemType billingItemType,
             string billingItemReadableId,
             Guid clubId,
-            Guid userId,
+            Guid memberId,
             decimal amount):base(id)
         {
             BillingItemId = billingItemId;
             BillingItemType = billingItemType;
             BillingItemReadableId = billingItemReadableId;
             ClubId = clubId;
-            UserId = userId;
+            MemberId = memberId;
             Amount = amount;
             Status = InvoiceStatus.Issued;
         }
@@ -57,7 +57,7 @@ namespace EaseClub.Domain.Payment
         public static Result<Invoice> Create(
             IBillingItem billingItem,
             Guid clubId,
-            Guid userId,
+            Guid memberId,
             decimal amount)
         {
             if (billingItem.Id == Guid.Empty)
@@ -71,7 +71,7 @@ namespace EaseClub.Domain.Payment
                 billingItem.GetBillingType(),
                 billingItem.ReadableId,
                 clubId,
-                userId,
+                memberId,
                 amount);
 
             invoice.ReadableId = InvoiceIdGenerator.Generate();
@@ -127,7 +127,7 @@ namespace EaseClub.Domain.Payment
             Status = InvoiceStatus.Paid;
 
             RaiseDomainEvent(new InvoicePaidEvent(
-                Id,BillingItemId,BillingItemType, Amount, UserId, ClubId));
+                Id,BillingItemId,BillingItemType, Amount, MemberId, ClubId));
 
             return Result.Success;
         }
@@ -196,7 +196,7 @@ namespace EaseClub.Domain.Payment
 
             // 4. Raise domain event (ONLY ONCE)
             RaiseDomainEvent(new InvoicePaidEvent(
-                Id, BillingItemId, BillingItemType, Amount, UserId, ClubId));
+                Id, BillingItemId, BillingItemType, Amount, MemberId, ClubId));
 
             return Result.Success;
         }

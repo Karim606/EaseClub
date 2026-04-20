@@ -29,7 +29,7 @@ namespace EaseClub.Application.Features.Payment.Commands.IntiatePayment
             if (invoice is null)
                 return Error.NotFound(description: "Invoice not found");
 
-            if (userId != invoice.UserId && userRoles.All(r => r != "SuperAdmin"))
+            if (userId != invoice.MemberId && userRoles.All(r => r != "SuperAdmin"))
             {
                 return Error.Unauthorized("You are not authorized to view these invoices.");
             }

@@ -27,7 +27,7 @@ namespace EaseClub.Infrastructure.Data.Configurations
             builder.Property(i => i.ClubId)
                 .IsRequired();
 
-            builder.Property(i => i.UserId)
+            builder.Property(i => i.MemberId)
                 .IsRequired();
 
             builder.Property(i => i.Amount)
@@ -44,9 +44,9 @@ namespace EaseClub.Infrastructure.Data.Configurations
                 .HasForeignKey(t => t.InvoiceId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasOne(i => i.User)
+            builder.HasOne(i => i.Member)
                 .WithMany()
-                .HasForeignKey(i => i.UserId)
+                .HasForeignKey(i => i.MemberId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(i => i.Club)

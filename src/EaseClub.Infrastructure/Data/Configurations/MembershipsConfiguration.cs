@@ -17,7 +17,7 @@ namespace EaseClub.Infrastructure.Data.Configurations
         public void Configure(EntityTypeBuilder<Membership> builder)
         {
             builder.HasKey(m => m.Id);
-            builder.HasIndex(m => new { m.MembershipTypeId, m.ClubId, m.UserId }).IsUnique();
+            builder.HasIndex(m => new { m.MembershipTypeId, m.ClubId, m.MemberId }).IsUnique();
 
             builder.HasOne(m => m.MembershipType).WithMany().HasForeignKey(m => m.MembershipTypeId).OnDelete(DeleteBehavior.Restrict);
             builder.HasOne(m => m.Club).WithMany(c => c.Memberships).HasForeignKey(m => m.ClubId).OnDelete(DeleteBehavior.Restrict);

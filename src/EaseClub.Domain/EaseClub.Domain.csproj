@@ -17,7 +17,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Include="Common\Interfaces\IBelongToUser.cs" />
+	  <None Include="Common\Interfaces\IBelongToMember.cs" />
 	</ItemGroup>
 	
 </Project>
