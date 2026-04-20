@@ -21,7 +21,7 @@ namespace EaseClub.Application.Features.Users.Queries.GetUserMemberClubs
             var res = Guid.TryParse(currentUserService.GetId(), out var userId);
             if (!res) return Error.Unauthorized();
             
-            var clubs = await  membershipRepository.GetByUserIdAsync(userId, cancellationToken);
+            var clubs = await  membershipRepository.GetByMemberIdAsync(userId, cancellationToken);
 
             return clubs.Select(m => new UserClubResponse(m.ClubId, m.Club.Name)).ToList();
         }

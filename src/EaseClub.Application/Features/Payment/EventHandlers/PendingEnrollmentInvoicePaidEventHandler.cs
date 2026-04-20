@@ -1,6 +1,8 @@
 using EaseClub.Application.Common;
 using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Features.Memberships;
 using EaseClub.Application.Features.Notifications;
+using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Memberships;
 using EaseClub.Domain.Notifications;
 using EaseClub.Domain.Payment;
@@ -16,11 +18,15 @@ namespace EaseClub.Application.Features.Payment.EventHandlers
         private readonly IPendingEnrollmentRepository _pendingEnrollmentRepository;
         private readonly IMembershipRepository _membershipRepository;
         private readonly IInvoiceRepository _invoiceRepository;
+        private readonly IClubRepository _clubRepository;
+        private readonly MembershipNumberGenerator _membershipNumberGenerator;
 
         public PendingEnrollmentInvoicePaidEventHandler(
             IPendingEnrollmentRepository pendingEnrollmentRepository,
             IMembershipRepository membershipRepository,
+            MembershipNumberGenerator membershipGenerator,
             IInvoiceRepository invoiceRepository,
+            IClubRepository clubRepository,
             IUnitOfWork unitOfWork,
             ILogger<PendingEnrollmentInvoicePaidEventHandler> logger,
             INotificationDispatcher notificationDispatcher,
@@ -29,6 +35,8 @@ namespace EaseClub.Application.Features.Payment.EventHandlers
             _pendingEnrollmentRepository = pendingEnrollmentRepository;
             _membershipRepository = membershipRepository;
             _invoiceRepository = invoiceRepository;
+            _clubRepository = clubRepository;
+            _membershipNumberGenerator = membershipGenerator;
         }
 
         protected override async Task HandleEvent(InvoicePaidEvent evt, CancellationToken ct)
@@ -56,8 +64,10 @@ namespace EaseClub.Application.Features.Payment.EventHandlers
                 if (existing != null)
                     return;
             }
+            var club = await _clubRepository.GetByIdAsync(pendingEnrollment.ClubId, ct);
+            var membershipNumber = await _membershipNumberGenerator.GenerateAsync(club.Code);
 
-            var membershipResult = Membership.CreateFromPendingEnrollment(pendingEnrollment);
+            var membershipResult = Membership.CreateFromPendingEnrollment(pendingEnrollment,membershipNumber);
             if (membershipResult.IsError)
             {
                 _logger.LogError(
@@ -68,7 +78,7 @@ namespace EaseClub.Application.Features.Payment.EventHandlers
             }
 
             var membership = membershipResult.Value;
-            var firstInstallment = membership.CurrentCycle?.Installments.OrderBy(x => x.Order).FirstOrDefault();
+            var firstInstallment = membership.GetCurrentCycle()?.Installments.OrderBy(x => x.Order).FirstOrDefault();
             if (firstInstallment == null)
             {
                 _logger.LogError("No first installment generated for membership {MembershipId}", membership.Id);
