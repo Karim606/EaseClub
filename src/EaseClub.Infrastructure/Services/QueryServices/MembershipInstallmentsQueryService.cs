@@ -31,28 +31,28 @@ namespace EaseClub.Infrastructure.Services.QueryServices
             {
                 query = query.Where(i => i.Status == status.Value);
             }
-            if (string.IsNullOrEmpty(search))
+            if (!string.IsNullOrWhiteSpace(search))
             {
-                query = query.Where(i => i.ReadableId.Contains(search)||
-                i.MembershipCycle.Membership.MembershipNumber.Contains(search));
+                query = query.Where(i => i.ReadableId.Contains(search) ||
+                    i.MembershipCycle.Membership.MembershipNumber.Contains(search));
 
             }
 
-           var res = await GetUnifiedPaginatedAsync<InstallmentAdminDto, DateTime>(
-           query,
-           paginationRequest,
-           selector: i => new InstallmentAdminDto(
-               i.Id,
-               i.MembershipCycle.Membership.MembershipNumber,
-               i.MembershipCycle.Period,
-               i.Amount,
-               i.DueDate,
-               i.Status.ToString(),
-               i.ReadableId,
-               i.InvoiceId
-           ),
-           orderSelector: i => i.DueDate, // Most professional to sort by date
-           cancellationToken);
+            var res = await GetUnifiedPaginatedAsync<InstallmentAdminDto, DateTime>(
+                query,
+                paginationRequest,
+                selector: i => new InstallmentAdminDto(
+                    i.Id,
+                    i.MembershipCycle.Membership.MembershipNumber,
+                    i.MembershipCycle.Period,
+                    i.Amount,
+                    i.DueDate,
+                    i.Status.ToString(),
+                    i.ReadableId,
+                    i.InvoiceId
+                ),
+                orderSelector: i => i.DueDate,
+                cancellationToken);
 
             return res;
         }

@@ -13,7 +13,12 @@ namespace EaseClub.Application.Features.Memberships.Queries.GetInstallmentsForAd
     {
         public async Task<Result<UnifiedPaginatedResponse<InstallmentAdminDto>>> Handle(GetInstallmentsForAdminQuery request, CancellationToken cancellationToken)
         {
-            var installments = await membershipInstallmentQueryService.GetInstallmentsForAdminAsync(request.ClubId, request.Status, request.Search, request.PaginationRequest);
+            var installments = await membershipInstallmentQueryService.GetInstallmentsForAdminAsync(
+                request.ClubId,
+                request.Status,
+                request.Search,
+                request.PaginationRequest,
+                cancellationToken);
 
             return installments;
         }

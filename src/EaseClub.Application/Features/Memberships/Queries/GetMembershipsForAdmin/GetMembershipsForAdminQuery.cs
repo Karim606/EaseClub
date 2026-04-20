@@ -1,17 +1,15 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Common.Pagination;
+using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Memberships;
 using EaseClub.Domain.Memberships.ValueObjects;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.Memberships.Queries.GetMembershipsForAdmin
 {
-    public record GetMembershipsForAdminQuery(Guid ClubId): IRequest<UnifiedPaginatedResponse<MembershipsAdminDto>>,IRequireClubAdmin;
+    public record GetMembershipsForAdminQuery(
+        Guid ClubId,
+        PaginationRequest PaginationRequest) : IRequest<Result<UnifiedPaginatedResponse<MembershipsAdminDto>>>, IRequireClubAdmin;
 
     public record MembershipsAdminDto(
         Guid Id,
@@ -19,8 +17,7 @@ namespace EaseClub.Application.Features.Memberships.Queries.GetMembershipsForAdm
         string MembershipNumber,
         string MembershipTypeName,
         string MembershipPlanName,
-        DateTime CreatedDate,
-        MembershipPeriod MembershipPeriod,
+        DateTime CreatedAt,
         MembershipStatus Status
     );
 }
