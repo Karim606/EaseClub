@@ -36,7 +36,7 @@ namespace EaseClub.Application.Features.Branches.Commands.CreateBranch
                 return Error.Conflict(description: $"Branch with name {request.Name} already exists for the club.");
             }
 
-            var result = Branch.Create(Guid.NewGuid(),request.ClubId,request.Name);
+            var result = Branch.Create(Guid.NewGuid(),request.ClubId,request.Name,request.Address);
             
             if(result.IsSuccess)
             await branchRepository.AddAsync(result.Value);

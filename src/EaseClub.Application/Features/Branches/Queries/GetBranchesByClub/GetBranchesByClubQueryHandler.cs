@@ -18,7 +18,7 @@ namespace EaseClub.Application.Features.Branches.Queries.GetBranchesByClub
         public async Task<Result<List<BranchResponse>>> Handle(GetBranchesByClubQuery request, CancellationToken cancellationToken)
         {
             var branches = await branchRepository.GetBranchesByClubIdAsync(request.ClubId,true);
-            var response = branches.Select(b => new BranchResponse(b.Id,b.ClubId,b.Name,DateOnly.FromDateTime(b.CreatedAt))).ToList();
+            var response = branches.Select(b => new BranchResponse(b.Id,b.ClubId,b.Name,b.Address,DateOnly.FromDateTime(b.CreatedAt))).ToList();
             return response;
         }
     }

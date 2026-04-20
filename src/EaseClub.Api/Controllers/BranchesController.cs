@@ -67,7 +67,7 @@ namespace EaseClub.Api.Controllers
 
         public async Task<IActionResult> Create([FromBody] CreateBranchRequest request)
         {
-            var result = await sender.Send(new CreateBranchCommand(request.clubId,request.Name));
+            var result = await sender.Send(new CreateBranchCommand(request.clubId,request.Name,request.Address));
 
            return result.Match(
                 (id) =>{return CreatedAtAction(nameof(GetByClub), new { version = "1.0", request.clubId }, id);},
@@ -96,7 +96,7 @@ namespace EaseClub.Api.Controllers
         [EndpointSummary("Edit the details of an existing branch.")]
         public async Task<IActionResult> Edit(Guid id, [FromBody] EditBranchRequest request)
         {
-            var result = await sender.Send(new EditBranchCommand(id, request.Name));
+            var result = await sender.Send(new EditBranchCommand(id, request.Name, request.Address));
 
             return result.Match(
                 _ => NoContent(),

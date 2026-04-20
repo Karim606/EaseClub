@@ -9,5 +9,5 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.Branches.Commands.CreateBranch
 {
-    public record CreateBranchCommand(Guid ClubId, string Name) : IRequest<Result<Guid>>, IRequireClubAdmin;
+    public record CreateBranchCommand(Guid ClubId, string Name, string Address) : IRequest<Result<Guid>>, IRequireClubAdmin;
 }

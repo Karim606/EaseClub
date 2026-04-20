@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.Branches.Commands.EditBranch
 {
-    public record EditBranchCommand(Guid Id, string Name) : IRequest<Result<Success>>, IRequireClubOwnershipValidation
+    public record EditBranchCommand(Guid Id, string Name, string Address) : IRequest<Result<Success>>, IRequireClubOwnershipValidation
     {
         public IEnumerable<OwnershipRule> Rules()
         {

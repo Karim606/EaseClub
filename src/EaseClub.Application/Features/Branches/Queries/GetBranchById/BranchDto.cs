@@ -13,14 +13,16 @@ namespace EaseClub.Application.Features.Branches.Queries.GetBranchById
             public Guid ClubId { get; init; }
             public string Name { get; init; }
             public DateTime CreatedAt { get; init; }
-            
-            public BranchDto(Guid id, Guid clubId, string name,DateTime createdAt)
+            public string Address { get; init; }
+
+        public BranchDto(Guid id, Guid clubId, string name,string address,DateTime createdAt)
             {
                 Id = id;
                 ClubId = ClubId;
                 Name = name;
                 CreatedAt = createdAt;
-            }
+                Address = address;
+        }
         }
 
 }

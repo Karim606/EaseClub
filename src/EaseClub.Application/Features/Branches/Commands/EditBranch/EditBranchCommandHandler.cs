@@ -27,7 +27,7 @@ namespace EaseClub.Application.Features.Branches.Commands.EditBranch
             var branch = await _repository.GetByIdAsync(request.Id, ct);
             if (branch is null) return Error.NotFound("Branch not found.");
 
-            var updateResult = branch.Update(request.Name);
+            var updateResult = branch.Update(request.Name, request.Address);
             if (updateResult.IsError) return updateResult.TopError;
 
             await _unitOfWork.SaveChangesAsync(ct);

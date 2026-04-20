@@ -9,5 +9,6 @@ namespace EaseClub.Application.Features.Branches.Commands.EditBranch
     public class EditBranchRequest
     {
         public string Name { get; set; }
+        public string Address { get; set; }
     }
 }

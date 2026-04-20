@@ -12,11 +12,13 @@ namespace EaseClub.Application.Features.Branches.Queries.GetBranchesByClub
         public Guid ClubId { get; init; }
         public string Name { get; init; }
         public DateOnly CreatedAt { get; init; }
-        public BranchResponse(Guid id,Guid clubId, string name, DateOnly createdAt)
+        public string Address { get; init; }
+        public BranchResponse(Guid id,Guid clubId, string name, string address, DateOnly createdAt)
         {
             Id = id;
             ClubId = clubId;
             Name = name;
+            Address = address;
             CreatedAt = createdAt;
         }
     }

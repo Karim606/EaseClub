@@ -25,7 +25,7 @@ namespace EaseClub.Application.Features.Branches.Queries.GetBranchById
             var branch = await _repository.GetByIdAsync(request.Id, ct);
             if (branch is null) return Error.NotFound("Branch not found.");
 
-            return new BranchDto(branch.Id, branch.ClubId, branch.Name,branch.CreatedAt);
+            return new BranchDto(branch.Id, branch.ClubId, branch.Name,branch.Address,branch.CreatedAt);
         }
     }
 }

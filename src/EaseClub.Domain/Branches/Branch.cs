@@ -16,20 +16,22 @@ namespace EaseClub.Domain.Branches
         private Branch()
         {
         }
-        private Branch(Guid id, Guid clubId, string name) : base(id)
+        private Branch(Guid id, Guid clubId, string name, string address) : base(id)
         {
             ClubId = clubId;
             Name = name;
+            Address = address;
         }
         public Guid ClubId { get; private set; }
         public string Name { get; private set; }
         public bool IsActive { get; private set; } = true;
+        public string Address { get; private set; }
         public Club Club { get; private set; }
 
         private readonly List<MembershipTypeBranch> _MembershipTypeBranches = new();
         public IReadOnlyList<MembershipTypeBranch> MembershipTypeBranchesList => _MembershipTypeBranches.AsReadOnly();
 
-        public static Result<Branch> Create(Guid id, Guid clubId, string name)
+        public static Result<Branch> Create(Guid id, Guid clubId, string name, string address)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
@@ -41,10 +43,10 @@ namespace EaseClub.Domain.Branches
                 return BranchErrors.Name_Length_NotSuitable;
             }
 
-            return new Branch(id, clubId, name);
+            return new Branch(id, clubId, name, address);
         }
 
-        public  Result<Success> Update(string name)
+        public  Result<Success> Update(string name, string address)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
@@ -57,6 +59,7 @@ namespace EaseClub.Domain.Branches
             }
 
             Name = name;
+            Address = address;
 
             return Result.Success;
         }

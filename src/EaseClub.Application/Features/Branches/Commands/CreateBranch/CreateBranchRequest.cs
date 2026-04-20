@@ -10,5 +10,6 @@ namespace EaseClub.Application.Features.Branches.Commands.CreateBranch
     {
         public string Name { get; init; }
         public Guid clubId { get; init; }
+        public string Address { get; init; }
     }
 }

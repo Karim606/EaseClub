@@ -16,6 +16,7 @@ namespace EaseClub.Application.Features.Branches.Queries.GetBranchesForAdmins
         public Guid ClubId { get; set; }
         public string Name { get; set; }
         public bool IsActive { get; set; }
+        public string Address { get; set; }
         public DateOnly CreatedAt { get; set; }
 
     }

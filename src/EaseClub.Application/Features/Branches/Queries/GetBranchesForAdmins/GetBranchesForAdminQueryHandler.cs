@@ -22,6 +22,7 @@ namespace EaseClub.Application.Features.Branches.Queries.GetBranchesForAdmins
                 Name = b.Name, 
                 ClubId = b.ClubId,
                 CreatedAt = DateOnly.FromDateTime(b.CreatedAt),
+                Address = b.Address,
                 IsActive = b.IsActive}
                 ).ToList();
             return response;

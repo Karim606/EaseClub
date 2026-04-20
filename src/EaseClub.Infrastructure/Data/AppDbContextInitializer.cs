@@ -317,7 +317,7 @@ namespace EaseClub.Infrastructure.Data
                 return;
             }
 
-            var branch = Branch.Create(Guid.NewGuid(), clubId, branchName).Value;
+            var branch = Branch.Create(Guid.NewGuid(), clubId, branchName, "Default Address").Value;
 
             await appDbContext.Branches.AddAsync(branch);
 
