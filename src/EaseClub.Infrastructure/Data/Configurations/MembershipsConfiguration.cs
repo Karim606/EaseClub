@@ -28,6 +28,14 @@ namespace EaseClub.Infrastructure.Data.Configurations
             builder.Navigation(x => x.MembershipCycles).HasField("_MembershipCycles").UsePropertyAccessMode(PropertyAccessMode.Field);
             builder.HasMany(x => x.FamilyMembers).WithOne(x => x.Membership).HasForeignKey(x => x.MembershipId);
             builder.Navigation(x => x.FamilyMembers).HasField("_FamilyMembers").UsePropertyAccessMode(PropertyAccessMode.Field);
+
+
+            builder.Property(x => x.MembershipNumber)
+            .IsRequired()
+            .HasMaxLength(30);
+
+            builder.HasIndex(x => x.MembershipNumber)
+                .IsUnique();
         }
     }
 }

@@ -294,7 +294,7 @@ namespace EaseClub.Infrastructure.Data
             PhoneNumber defaultPhone = PhoneNumber.Create("01000000000").Value;
             Email defaultEmail = Email.Create("Def@default.com").Value;
 
-            var club = Club.Create(clubId,name,"CLUB", new ContactInfo(defaultPhone,defaultEmail), new List<WorkSchedule>(), new List<Amenity>()).Value;
+            var club = Club.Create(clubId,name,"CLUB", new ContactInfo(defaultPhone,defaultEmail), new List<WorkSchedule>(), new List<Amenity>(),"CLU").Value;
 
             await appDbContext.Clubs.AddAsync(club);
             logger.LogInformation("Club {ClubName} created successfully", name);

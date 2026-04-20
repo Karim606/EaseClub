@@ -51,11 +51,11 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                 {
                     Id = p.Id,
                     ClubId = p.ClubId,
-                    UserId = p.UserId,
+                    UserId = p.MemberId,
                     TrackingNumber = p.TrackingNumber,
                     MembershipType = p.MembershipType.Name,
-                    Email = p.User.Email.Value,
-                    UserName = p.User.FirstName + " " + p.User.LastName,
+                    Email = p.Member.Email.Value,
+                    UserName = p.Member.FirstName + " " + p.Member.LastName,
                     MembershipPlanName = p.MembershipPlan.Name,
                     SubmittedAt = p.SubmittedAt!.Value,
                     Status = p.Status,
@@ -73,11 +73,11 @@ namespace EaseClub.Infrastructure.Services.QueryServices
             var query = Query();
             if (clubId != null)
             {
-                query = query.Where(p => p.ClubId == clubId && p.UserId == userId);
+                query = query.Where(p => p.ClubId == clubId && p.MemberId == userId);
             }
              if (userId != null)
             {
-                query = query.Where(p => p.UserId == userId);
+                query = query.Where(p => p.MemberId == userId);
             }
 
             if (status != null)
@@ -91,7 +91,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                 selector: p => new MembershipAppDto()
                 {
                     ClubId = p.ClubId,
-                    UserId = p.UserId,
+                    UserId = p.MemberId,
                     TrackingNumber = p.TrackingNumber,
                     MembershipType = p.MembershipType.Name,
                     MembershipPlanName = p.MembershipPlan.Name,

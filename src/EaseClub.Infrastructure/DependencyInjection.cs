@@ -7,6 +7,8 @@ using EaseClub.Application.Features.Files.Commands;
 using EaseClub.Application.Features.InstallmentTemplates.Queries;
 using EaseClub.Application.Features.MembershipApplications.Queries;
 using EaseClub.Application.Features.MembershipPlans.Queries;
+using EaseClub.Application.Features.Memberships;
+using EaseClub.Application.Features.Memberships.Queries;
 using EaseClub.Application.Features.MembershipTypes.Queries;
 using EaseClub.Application.Features.Notifications;
 using EaseClub.Application.Features.Notifications.Queries;
@@ -176,6 +178,7 @@ namespace EaseClub.Application
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             });
 
+            services.AddScoped<MembershipNumberGenerator>();
             return services;
         }
 
@@ -189,6 +192,7 @@ namespace EaseClub.Application
             services.AddScoped<IMembershipTypesQueryService, MembershipTypesQueryServices>();
             services.AddScoped<IClubsQueryService, ClubsQueryService>();
             services.AddScoped<IInvoiceQueryService, InvoiceQueryService>();
+            services.AddScoped<IMembershipInstallmentQueryService, MembershipInstallmentsQueryService>();
             return services;
         }
         private static IServiceCollection AddRepositories(this IServiceCollection Services)

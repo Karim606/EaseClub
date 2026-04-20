@@ -61,6 +61,10 @@ namespace EaseClub.Infrastructure.Data
             builder.Entity<ClubAdminUser>()
             .ToTable("ClubAdminUsers")
             .HasBaseType<UserBase>();
+
+            builder.HasSequence<int>("MembershipSequence")
+            .StartsAt(1)
+            .IncrementsBy(1);
         }
 
         public async Task<IDbContextTransaction> BeginTransactionAsync(
@@ -76,6 +80,15 @@ namespace EaseClub.Infrastructure.Data
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             return await base.SaveChangesAsync();
+        }
+
+        public async Task<int> GetNextMembershipSequenceAsync()
+        {
+            var value = await Database
+            .SqlQuery<int>($"SELECT NEXT VALUE FOR MembershipSequence")
+            .SingleAsync();
+
+            return value;
         }
 
         public DbSet<AuthUser> AuthUsers => Users;
@@ -107,6 +120,7 @@ namespace EaseClub.Infrastructure.Data
         public DbSet<PricingPolicyAssignment> PricingPolicyAssignments { get; set; }
 
         public DbSet<Membership>Memberships { get; set; }
+        public DbSet<MembershipCycle> MembershipCycles { get; set; }
         public DbSet<PendingEnrollment> PendingEnrollments { get; set; }
         public DbSet<FamilyMember> FamilyMembers { get; set; }
         public DbSet<FileResource> FileResources { get; set; }

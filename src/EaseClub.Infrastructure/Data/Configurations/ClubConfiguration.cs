@@ -33,6 +33,9 @@ namespace EaseClub.Infrastructure.Data.Configurations
                    .HasForeignKey(ca => ca. ClubId)
                    .OnDelete(DeleteBehavior.Cascade);
 
+            builder.HasIndex(x => x.Code)
+            .IsUnique();
+
             builder.Navigation(c => c.ClubAdmins).HasField("_ClubAdmins").UsePropertyAccessMode(PropertyAccessMode.Field);
 
             builder.Navigation(c => c.Memberships).HasField("_Memberships").UsePropertyAccessMode(PropertyAccessMode.Field);
