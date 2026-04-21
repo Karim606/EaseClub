@@ -22,6 +22,7 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.CreatePlan
     int subscriptionValidityInYears,
     int maxFamilyMembers,
     PaymentMode paymentMode,
+    List<Guid> InstallmentTemplateIds,
     Guid? ApplicationTemplateId = null,
     decimal RenewPrice = 0,
     bool InstallmentsAllowedInRenewal = false
@@ -32,6 +33,20 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.CreatePlan
             yield return new OwnershipRule( async(auth, clubId) => await auth.DoesResourceBelongToClubAsync<MembershipType>(MembershipTypeId, clubId),
                 nameof(MembershipType),
                 MembershipTypeId
+            );
+
+            yield return new OwnershipRule(
+                async (auth, clubId) => {
+                    foreach (var installmentTemplateId in InstallmentTemplateIds)
+                    {
+                        var belongs = await auth.DoesResourceBelongToClubAsync<InstallmentTemplate>(installmentTemplateId, clubId);
+                        if (!belongs) return false;
+                    }
+
+                    return true;
+                },
+                nameof(InstallmentTemplate),
+                Guid.Empty
             );
         }
 

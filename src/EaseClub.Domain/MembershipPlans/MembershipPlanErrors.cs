@@ -32,6 +32,10 @@ namespace EaseClub.Domain.MembershipPlans
          Error.Validation(code: "MembershipPlan.Must.Have.At.Least.One.InstallmentTemplate",
                 description: "Membership plan must have at least one installment template");
 
+        public static Error InstallmentTemplatesNotAllowedForCashMode =
+         Error.Validation(code: "MembershipPlan.InstallmentTemplates.Not.Allowed.For.CashMode",
+                description: "Installment templates are not allowed when payment mode is Cash.");
+
         public static Error MembershipTypeIdMustBeProvided =
          Error.Validation(code: "MembershipPlan.MembershipTypeId.Must.Be.Provided",
                 description: "Membership type ID must be provided for the membership plan.");

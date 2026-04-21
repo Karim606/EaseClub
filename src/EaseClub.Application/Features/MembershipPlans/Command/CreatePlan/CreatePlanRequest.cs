@@ -20,5 +20,6 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.CreatePlan
         public bool InstallmentsAllowedInRenewal { get; init; } = false;
         public decimal RenewPrice { get; init; }
         public PaymentMode paymentMode { get; init; }
+        public List<Guid> InstallmentTemplateIds { get; init; } = new();
     }
 }

@@ -16,6 +16,7 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.CreatePlan
 {
     public class CreateMembershipPlanHandler(IMembershipPlanRepository membershipPlanRepository,
             IUnitOfWork unitOfWork,IMembershipTypeRepository membershipTypeRepository,
+            IInstallmentsTemplatesRepository installmentsTemplatesRepository,
             ILogger<CreateMembershipPlanHandler>logger)
         : IRequestHandler<CreateMembershipPlanCommand, Result<Guid>>
     {
@@ -62,6 +63,27 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.CreatePlan
                 logger.LogWarning("Failed to create membership plan: {Errors}", 
                     string.Join(", ", planResult.Errors.Select(e => e.Description)));
                 return planResult.TopError;
+            }
+
+            var installmentTemplates = new List<InstallmentTemplate>();
+            foreach (var templateId in request.InstallmentTemplateIds)
+            {
+                var template = await installmentsTemplatesRepository.GetByIdAsync(templateId, cancellationToken);
+                if (template is null)
+                {
+                    logger.LogWarning("Installment template {InstallmentTemplateId} isnt found", templateId);
+                    return Error.NotFound(description: $"Installment template with id:{templateId} not found.");
+                }
+
+                installmentTemplates.Add(template);
+            }
+
+            var syncResult = planResult.Value.SyncInstallmentTemplates(installmentTemplates);
+            if (syncResult.IsError)
+            {
+                logger.LogWarning("Failed to sync installment templates during plan creation: {Errors}",
+                    string.Join(", ", syncResult.Errors.Select(e => e.Description)));
+                return syncResult.TopError;
             }
 
             // 3. Persist

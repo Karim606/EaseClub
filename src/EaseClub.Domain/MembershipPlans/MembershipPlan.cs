@@ -133,36 +133,53 @@ namespace EaseClub.Domain.MembershipPlans
         string name,
         string? description,
         decimal totalPrice,
-        decimal renewPrice,
-
-    IEnumerable<InstallmentTemplate> newTemplates)
+        decimal renewPrice)
         {
             // 1. Basic Validation
             if (string.IsNullOrWhiteSpace(name))
                 return MembershipPlanErrors.MembershipPlanNameMustNotBeEmpty;
             if (totalPrice <= 0)
                 return MembershipPlanErrors.MembershipPlanTotalPriceMustBeGreaterThanZero;
+            if (renewPrice <= 0)
+                return MembershipPlanErrors.MembershipPlanRenewPriceMustBeGreaterThanZero;
 
             // 2. Metadata Assignment
             Name = name;
             Description = description;
             TotalPrice = totalPrice;
+            RenewPrice = renewPrice;
 
-            // 3. Sync Installment Templates (Reconciliation)
-            var incomingIds = newTemplates.Select(t => t.Id).ToHashSet();
+            return Result.Success;
+        }
 
-            // Remove templates not in the new list
+        public Result<Success> SyncInstallmentTemplates(IEnumerable<InstallmentTemplate> newTemplates)
+        {
+            var templates = newTemplates.ToList();
+
+            if (PaymentMode == PaymentMode.Cash)
+            {
+                if (templates.Any())
+                    return MembershipPlanErrors.InstallmentTemplatesNotAllowedForCashMode;
+
+                _InstallmentTemplates.Clear();
+                return Result.Success;
+            }
+
+            if (PaymentMode == PaymentMode.Installments && !templates.Any())
+                return MembershipPlanErrors.MustHaveAtLeastOneInstallmentTemplate;
+
+            var incomingIds = templates.Select(t => t.Id).ToHashSet();
+
             _InstallmentTemplates.RemoveAll(it => !incomingIds.Contains(it.InstallmentTemplateId));
 
-            // Add only truly new templates
-            foreach (var template in newTemplates)
+            foreach (var template in templates)
             {
                 if (_InstallmentTemplates.Any(it => it.InstallmentTemplateId == template.Id))
                     continue;
 
-                // Reuse existing validation logic
                 var addResult = AddInstallmentTemplate(template);
-                if (addResult.IsError) return addResult.TopError;
+                if (addResult.IsError)
+                    return addResult.TopError;
             }
 
             return Result.Success;
