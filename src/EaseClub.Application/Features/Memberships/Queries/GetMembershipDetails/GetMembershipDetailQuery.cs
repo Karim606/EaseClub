@@ -32,10 +32,13 @@ namespace EaseClub.Application.Features.Memberships.Queries.GetMembershipDetails
             string MembershipPlan,
             DateTime CreatedAt,
             MembershipPeriod CurrentPeriod,
-            MembershipStatus Status
+            MembershipStatus Status,
+            List<FamilyMemberDto> FamilyMembers
         );
 
-    public record FamilyMemberDto(string FullName,
+    public record FamilyMemberDto(
+        Guid Id,
+        string FullName,
         FamilyRelationship Relationship,
         DateOnly DateOfBirth );
 

@@ -12,6 +12,8 @@ namespace EaseClub.Application.Features.Memberships.Queries.GetMembershipsForAdm
         {
             return await membershipQueryService.GetMembershipsForAdminAsync(
                 request.ClubId,
+                request.Status,
+                request.Search,
                 request.PaginationRequest,
                 cancellationToken);
         }

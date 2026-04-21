@@ -12,5 +12,5 @@ namespace EaseClub.Application.Features.Memberships.Queries.GetMembershipsForMem
 {
     public record  GetMembershipsForMemberQuery():IRequest<Result<List<MembershipForMemberDto>>>;
 
-        public record MembershipForMemberDto(Guid Id, string MembershipNumber,string ClubName, MembershipStatus Status);
+        public record MembershipForMemberDto(Guid Id, string MembershipNumber,Guid ClubId,string ClubName, MembershipStatus Status);
 }

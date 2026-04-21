@@ -23,7 +23,7 @@ namespace EaseClub.Application.Features.Memberships.Queries.GetMembershipsForMem
 
             var memberships =await  membershipRepository.GetByMemberIdAsync(userId);
 
-            return memberships.Select( x => new MembershipForMemberDto(x.Id,x.MembershipNumber,x.Club.Name,x.Status)
+            return memberships.Select( x => new MembershipForMemberDto(x.Id,x.MembershipNumber,x.Club.Id,x.Club.Name,x.Status)
             ).ToList();
         }
     }

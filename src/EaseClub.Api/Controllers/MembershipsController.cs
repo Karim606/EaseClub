@@ -5,6 +5,7 @@ using EaseClub.Application.Features.Memberships.Queries.GetMembershipDetails;
 using EaseClub.Application.Features.Memberships.Queries.GetMembershipsForAdmin;
 using EaseClub.Application.Features.Memberships.Queries.GetMembershipsForMember;
 using EaseClub.Domain.MembershipPlans;
+using EaseClub.Domain.Memberships;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -52,9 +53,9 @@ namespace EaseClub.Api.Controllers
             "Pagination:\n" +
             "- Supports the unified pagination request used across the API."
         )]
-        public async Task<IActionResult> GetForAdmin(Guid clubId, [FromQuery] PaginationRequest pagination, CancellationToken ct)
+        public async Task<IActionResult> GetForAdmin(Guid clubId, [FromQuery]MembershipStatus? status, [FromQuery] string search, [FromQuery] PaginationRequest pagination, CancellationToken ct)
         {
-            var result = await sender.Send(new GetMembershipsForAdminQuery(clubId, pagination), ct);
+            var result = await sender.Send(new GetMembershipsForAdminQuery(clubId, status, search, pagination), ct);
             return result.Match(Ok, Problem);
         }
 

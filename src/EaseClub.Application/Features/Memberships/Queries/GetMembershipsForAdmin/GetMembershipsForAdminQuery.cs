@@ -9,6 +9,8 @@ namespace EaseClub.Application.Features.Memberships.Queries.GetMembershipsForAdm
 {
     public record GetMembershipsForAdminQuery(
         Guid ClubId,
+        MembershipStatus? Status,
+        string Search,
         PaginationRequest PaginationRequest) : IRequest<Result<UnifiedPaginatedResponse<MembershipsAdminDto>>>, IRequireClubAdmin;
 
     public record MembershipsAdminDto(
@@ -17,6 +19,8 @@ namespace EaseClub.Application.Features.Memberships.Queries.GetMembershipsForAdm
         string MembershipNumber,
         string MembershipTypeName,
         string MembershipPlanName,
+        bool IsFamilyMembership,
+        MembershipCycle CurrentCycle,
         DateTime CreatedAt,
         MembershipStatus Status
     );
