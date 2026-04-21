@@ -5,6 +5,7 @@ using EaseClub.Application.Features.MembershipPlans.Command.AddTemplateToPlan;
 using EaseClub.Application.Features.MembershipPlans.Command.CreatePlan;
 using EaseClub.Application.Features.MembershipPlans.Command.DeleteMembershipPlan;
 using EaseClub.Application.Features.MembershipPlans.Command.RemoveInstallmentTemplateFromPlan;
+using EaseClub.Application.Features.MembershipPlans.Command.SyncInstallmentTemplates;
 using EaseClub.Application.Features.MembershipPlans.Command.UpdatePlan;
 using EaseClub.Application.Features.Memberships;
 using EaseClub.Application.Features.Memberships.Commands.StartDirectPayEnrollment;
@@ -100,6 +101,13 @@ This endpoint supports two modes of pagination:
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [EndpointName("CreateMembershipPlan")]
         [EndpointSummary("Creates a new membership plan for the specified club.")]
+        [EndpointDescription(
+            "Creates a membership plan and optionally assigns installment templates at creation time.\n\n" +
+            "Payment mode rules:\n" +
+            "- Cash: installment templates are not allowed.\n" +
+            "- Mixed: installment templates are optional.\n" +
+            "- Installments: at least one installment template is required."
+        )]
 
         public async Task<IActionResult> CreatePlan(Guid clubId, CreatePlanRequest request)
         {
@@ -113,6 +121,7 @@ This endpoint supports two modes of pagination:
                 request.SubscriptionValidityInYears,
                 request.MaxFamilyMembers,
                 request.paymentMode,
+                request.InstallmentTemplateIds,
                 request.ApplicationTemplateId,
                 request.RenewPrice,
                 request.InstallmentsAllowedInRenewal
@@ -169,14 +178,40 @@ This endpoint supports two modes of pagination:
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        [EndpointName("UpdateMembershipPlanWithTemplates")]
-        [EndpointSummary("Updates plan details and synchronizes its associated installment templates.")]
+        [EndpointName("UpdateMembershipPlan")]
+        [EndpointSummary("Updates membership plan details without changing installment template assignments.")]
         public async Task<IActionResult> Update(Guid planId, [FromBody] UpdateMembershipPlanCommand command)
         {
             var cmd = command with { PlanId = planId };
             var result = await sender.Send(cmd);
             return result.Match(_ => NoContent()
                 , Problem);
+        }
+
+        [Authorize(Roles = "ClubAdmin,SuperAdmin")]
+        [HttpPut("{planId:guid}/installment-templates")]
+        [MapToApiVersion("1.0")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+        [EndpointName("SyncMembershipPlanInstallmentTemplates")]
+        [EndpointSummary("Synchronizes the installment templates assigned to a membership plan.")]
+        [EndpointDescription(
+            "Replaces the membership plan installment template assignments with the provided set.\n\n" +
+            "Business rules:\n" +
+            "- Cash plans must not have installment templates.\n" +
+            "- Installments plans must have at least one installment template.\n" +
+            "- Mixed plans may have zero or more installment templates."
+        )]
+        public async Task<IActionResult> SyncInstallmentTemplates(Guid planId, [FromBody] SyncMembershipPlanInstallmentTemplatesCommand command, CancellationToken ct)
+        {
+            var cmd = command with { PlanId = planId };
+            var result = await sender.Send(cmd, ct);
+
+            return result.Match(_ => NoContent(), Problem);
         }
 
         [Authorize(Roles = "ClubAdmin,SuperAdmin")]
