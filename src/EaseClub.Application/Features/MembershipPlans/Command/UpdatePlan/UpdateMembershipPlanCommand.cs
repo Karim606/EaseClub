@@ -16,8 +16,7 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.UpdatePlan
     string Name,
     string? Description,
     decimal TotalPrice,
-    decimal RenewPrice,
-    List<Guid> InstallmentTemplateIds
+    decimal RenewPrice
         ) : IRequest<Result<Success>>, IRequireClubOwnershipValidation
     {
         [JsonIgnore]
@@ -27,17 +26,6 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.UpdatePlan
             yield return new OwnershipRule(
                 (auth, clubId) => auth.DoesResourceBelongToClubAsync<MembershipPlan>(PlanId, clubId),
                 nameof(MembershipPlan),
-                PlanId);
-
-            yield return new OwnershipRule(
-                async (auth, clubId) => {
-                    foreach (var installmentTemplateId in InstallmentTemplateIds) {
-                       var res = await auth.DoesResourceBelongToClubAsync<InstallmentTemplate>(installmentTemplateId, clubId);
-                       if (!res) return false;
-                    }
-                    return true;
-                },
-                nameof(InstallmentTemplate),
                 PlanId);
         }
     };
