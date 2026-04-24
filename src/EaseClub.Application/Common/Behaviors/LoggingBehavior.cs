@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.Common.Interfaces;
+using EaseClub.Domain.Common.Interfaces;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Logging;
@@ -23,7 +23,7 @@ namespace EaseClub.Application.Common.Behaviors
         public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
             string requestName = typeof(TRequest).Name;
-            _logger.LogInformation("processing Request {RequestName}.",requestName);
+            _logger.LogInformation("processing Request {RequestName} with Data: {@Request}", requestName, request);
 
            TResponse response= await next();
             if (response.IsSuccess)
@@ -33,7 +33,7 @@ namespace EaseClub.Application.Common.Behaviors
             else
             {
                 using (LogContext.PushProperty("Errors", response.Errors,true)) {
-                    _logger.LogWarning("Request {RequestName} processed with errors.", requestName);
+                    _logger.LogWarning("Request {RequestName} processed with errors. Data: {@Request}", requestName, request);
                 }
                 
             }
