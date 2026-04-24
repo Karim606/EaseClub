@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.ApplicationTemplates.Repositories;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
@@ -20,9 +20,7 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Commands.Template.U
         public async Task<Result<Success>> Handle(UpdateTemplateCommand request, CancellationToken ct)
         {
             var template = await repository.GetByIdAsync(request.TemplateId, ct);
-            if (template == null) return Error.NotFound("Template.NotFound", "Template not found.");
-
-
+            if (template == null) { logger.LogError("NotFound error in UpdateTemplateCommandHandler: {Error}", Error.NotFound("Template.NotFound", "Template not found.").ToLogObject()); return Error.NotFound("Template.NotFound", "Template not found."); }
             var res = template.Update(request.Name);
 
             if (res.IsError)
@@ -30,7 +28,6 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Commands.Template.U
                 logger.LogError("Failed to update template with id:{TemplateId}, reason:{Error}", request.TemplateId,res.TopError);
                 return res.TopError;
             }
-
             await unitOfWork.SaveChangesAsync(ct);
             return Result.Success;
         }

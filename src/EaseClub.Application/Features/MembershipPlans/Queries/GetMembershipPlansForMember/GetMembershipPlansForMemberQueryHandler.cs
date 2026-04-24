@@ -1,4 +1,5 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using Microsoft.Extensions.Logging;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Common.Pagination;
 using EaseClub.Application.Common.Pagination.Results;
 using EaseClub.Domain.Common.Results;
@@ -14,7 +15,8 @@ namespace EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPla
 {
     public class GetMembershipPlansForMemberQueryHandler(IMembershipPlanRepository membershipPlanRepository,
         IMembershipPlanQueryService membershipPlanQueryService,
-        IClubAuthorizationService clubAuthorizationService)
+        IClubAuthorizationService clubAuthorizationService,
+        ILogger<GetMembershipPlansForMemberQueryHandler> logger)
     : IRequestHandler<GetMembershipPlansForMemberQuery, Result<UnifiedPaginatedResponse<MembershipPlanDto>>>
     {
         public async Task<Result<UnifiedPaginatedResponse<MembershipPlanDto>>> Handle(

@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Common.Pagination.Results;
 using EaseClub.Application.Features.ApplicationTemplates.Commands;
 using EaseClub.Domain.Common.Results;
@@ -28,7 +28,6 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Queries.GetTemplate
                 logger.LogError("failed to get templates with ClubId:{ClubId}", request.ClubId);
                 return result.TopError; 
             }
-
             return result;
         }
     }

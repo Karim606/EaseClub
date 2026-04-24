@@ -1,4 +1,5 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using Microsoft.Extensions.Logging;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.ClubAdmin;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
@@ -15,15 +16,14 @@ namespace EaseClub.Application.Features.Notifications.Commands.MarkNotificationA
     public class MarkNotificationAsReadCommandHandler(INotificationRepository notificationRepository,
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
-        IClubAdminUserRepository clubAdminUserRepository) : IRequestHandler<MarkNotificationAsReadCommand,Result<Success>>
+        IClubAdminUserRepository clubAdminUserRepository,
+        ILogger<MarkNotificationAsReadCommandHandler> logger) : IRequestHandler<MarkNotificationAsReadCommand,Result<Success>>
     {
         public async Task<Result<Success>> Handle(MarkNotificationAsReadCommand request, CancellationToken ct)
         {
             var notification = await notificationRepository.GetByIdAsync(request.NotificationId);
 
-            if (notification == null)
-                return Error.NotFound();
-
+            if (notification == null) { logger.LogError("NotFound error in MarkNotificationAsReadCommandHandler: {Error}", Error.NotFound().ToLogObject()); return Error.NotFound(); }
             var roles = currentUserService.GetRoles();
 
             if (!Guid.TryParse(currentUserService.GetId(), out var userId))
@@ -37,18 +37,14 @@ namespace EaseClub.Application.Features.Notifications.Commands.MarkNotificationA
             {
                 var admin = await clubAdminUserRepository.GetByIdAsync(userId);
 
-                if (admin == null)
-                    return Error.Unauthorized();
-
-                if (!notification.ClubId.HasValue || admin.ClubId != notification.ClubId)
-                    return Error.Forbidden();
+                if (admin == null) { logger.LogError("Unauthorized error in MarkNotificationAsReadCommandHandler: {Error}", Error.Unauthorized().ToLogObject()); return Error.Unauthorized(); }
+            if (!notification.ClubId.HasValue || admin.ClubId != notification.ClubId) { logger.LogError("Forbidden error in MarkNotificationAsReadCommandHandler: {Error}", Error.Forbidden().ToLogObject()); return Error.Forbidden(); }
             }
 
             // MEMBER ACCESS
             else if (isMember)
             {
-                if (!notification.UserId.HasValue || notification.UserId != userId)
-                    return Error.Forbidden();
+                if (!notification.UserId.HasValue || notification.UserId != userId) { logger.LogError("Forbidden error in MarkNotificationAsReadCommandHandler: {Error}", Error.Forbidden().ToLogObject()); return Error.Forbidden(); }
             }
 
             // Optional: deny unknown roles

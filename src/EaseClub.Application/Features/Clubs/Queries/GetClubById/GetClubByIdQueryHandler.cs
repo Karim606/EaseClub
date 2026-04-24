@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
@@ -24,8 +24,6 @@ namespace EaseClub.Application.Features.Clubs.Queries.GetClubById
                 logger.LogWarning("Club with Id {ClubId} not found", request.Id);
                 return Error.NotFound(description: $"Club with Id {request.Id} not found");
             }
-
-
             var response = new ClubResponse
             {
                 Id = club.Id,

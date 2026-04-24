@@ -1,4 +1,5 @@
-﻿using EaseClub.Application.Common.Pagination;
+using Microsoft.Extensions.Logging;
+using EaseClub.Application.Common.Pagination;
 using EaseClub.Domain.Common.Results;
 using MediatR;
 using System;
@@ -9,7 +10,8 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.MembershipTypes.Queries.GetMembershipTypesForAdmin
 {
-    public class GetMembershipTypesForAdminQueryHandler(IMembershipTypesQueryService membershipTypesQueryService) :
+    public class GetMembershipTypesForAdminQueryHandler(IMembershipTypesQueryService membershipTypesQueryService,
+        ILogger<GetMembershipTypesForAdminQueryHandler> logger) :
        IRequestHandler<GetMembershipTypesForAdminQuery, Result<UnifiedPaginatedResponse<MembershipTypeAdminDto>>>
     {
 

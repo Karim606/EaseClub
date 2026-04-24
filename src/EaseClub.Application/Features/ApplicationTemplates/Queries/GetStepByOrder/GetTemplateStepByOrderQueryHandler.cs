@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Features.ApplicationTemplates.Commands;
+using EaseClub.Application.Features.ApplicationTemplates.Commands;
 using EaseClub.Domain.ApplicationTemplates.Repositories;
 using EaseClub.Domain.Common.Results;
 using MediatR;
@@ -26,7 +26,6 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Queries.GetStepByOr
                     request.Order, request.TemplateId);
                 return res.TopError; 
             }
-
             return res;
         }
     }

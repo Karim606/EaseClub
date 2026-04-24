@@ -1,4 +1,5 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using Microsoft.Extensions.Logging;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.ApplicationTemplates.Repositories;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
@@ -12,10 +13,10 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.PricingPolicies.Commands.AssignPolicy
 {
-    public class AssignPoliciesCommandHandler(
-    IPricingPolicyRepository policyRepo,
+    public class AssignPoliciesCommandHandler(IPricingPolicyRepository policyRepo,
     IApplicationTemplateRepository templateRepo,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+        ILogger<AssignPoliciesCommandHandler> logger)
     : IRequestHandler<AssignPoliciesCommand, Result<Success>>
     {
         public async Task<Result<Success>> Handle(
@@ -25,23 +26,22 @@ namespace EaseClub.Application.Features.PricingPolicies.Commands.AssignPolicy
 
             var policies = await policyRepo.GetPoliciesByIdAsync(request.Policies.Select(x => x.PolicyId).ToList());
 
-            if (policies.Count != request.Policies.Count)
-                return Error.NotFound("Policies.SomeNotFound", "One or more pricing policies were not found.");
+            if (policies.Count != request.Policies.Count) { logger.LogError("NotFound error in AssignPoliciesCommandHandler: {Error}", Error.NotFound("Policies.SomeNotFound", "One or more pricing policies were not found.").ToLogObject()); return Error.NotFound("Policies.SomeNotFound", "One or more pricing policies were not found."); }
 
             // 3. Assign
             switch (request.TargetType)
             {
                 case PricingPolicyTargetType.ApplicationTemplate:
                     var template = await templateRepo.GetFullTemplateAsync(request.TargetId);
-                    if (template == null) return Error.NotFound("Template.NotFound");
-                    foreach (var policyRequest in request.Policies)
+                    if (template == null) { logger.LogError("NotFound error in AssignPoliciesCommandHandler: {Error}", Error.NotFound("Template.NotFound").ToLogObject()); return Error.NotFound("Template.NotFound"); }
+            foreach (var policyRequest in request.Policies)
                     {
                         var policy = policies.First(p => p.Id == policyRequest.PolicyId);
 
                         // Let the Domain Entity handle the business rules (like priority conflicts)
                         var result = template.AssignPolicy(policy, policyRequest.Priority);
 
-                        if (result.IsError) return result; // Fail fast if a domain rule is broken
+                        if (result.IsError) { logger.LogError("Error in AssignPoliciesCommandHandler: {Error}", result.TopError.ToLogObject()); return result.TopError; }// Fail fast if a domain rule is broken
                     }
                     break;
 

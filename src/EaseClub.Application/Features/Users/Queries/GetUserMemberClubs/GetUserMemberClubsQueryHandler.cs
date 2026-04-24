@@ -1,4 +1,5 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using Microsoft.Extensions.Logging;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Memberships;
@@ -12,15 +13,14 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.Users.Queries.GetUserMemberClubs
 {
-    public class GetUserMemberClubsQueryHandler(
-        IMembershipRepository membershipRepository,
-        ICurrentUserService currentUserService) : IRequestHandler<GetUserMemberClubsQuery, Result<List<UserClubResponse>>>
+    public class GetUserMemberClubsQueryHandler(IMembershipRepository membershipRepository,
+        ICurrentUserService currentUserService,
+        ILogger<GetUserMemberClubsQueryHandler> logger) : IRequestHandler<GetUserMemberClubsQuery, Result<List<UserClubResponse>>>
     {
         public async Task<Result<List<UserClubResponse>>> Handle(GetUserMemberClubsQuery request, CancellationToken cancellationToken)
         {
             var res = Guid.TryParse(currentUserService.GetId(), out var userId);
-            if (!res) return Error.Unauthorized();
-            
+            if (!res) { logger.LogError("Unauthorized access in GetUserMemberClubsQueryHandler: {Error}", Error.Unauthorized().ToLogObject()); return Error.Unauthorized(); }
             var clubs = await  membershipRepository.GetByMemberIdAsync(userId, cancellationToken);
 
             return clubs.Select(m => new UserClubResponse(m.ClubId, m.Club.Name)).ToList();

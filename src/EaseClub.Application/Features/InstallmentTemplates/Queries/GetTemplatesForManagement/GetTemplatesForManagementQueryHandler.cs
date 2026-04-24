@@ -1,4 +1,5 @@
-﻿using EaseClub.Domain.Common.Results;
+using Microsoft.Extensions.Logging;
+using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipPlans.Repositories;
 using MediatR;
 using System;
@@ -9,8 +10,8 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.InstallmentTemplates.Queries.GetTemplatesForManagement
 {
-    public class GetTemplatesForManagementQueryHandler(
-        IInstallmentsTemplatesRepository installmentsTemplatesRepository) : IRequestHandler<GetTemplatesForManagementQuery, Result<List<InstallmentTemplateAdminsDto>>>
+    public class GetTemplatesForManagementQueryHandler(IInstallmentsTemplatesRepository installmentsTemplatesRepository,
+        ILogger<GetTemplatesForManagementQueryHandler> logger) : IRequestHandler<GetTemplatesForManagementQuery, Result<List<InstallmentTemplateAdminsDto>>>
     {
         public async Task<Result<List<InstallmentTemplateAdminsDto>>> Handle(GetTemplatesForManagementQuery request, CancellationToken cancellationToken)
         {

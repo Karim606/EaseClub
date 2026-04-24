@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.Common;
+using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipPlans;
 using EaseClub.Domain.MembershipPlans.Repositories;
@@ -27,8 +27,7 @@ namespace EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPla
                 logger.LogWarning("plan with id={PlanId} is not found", request.PlanId);
                 return Error.NotFound(description: "plan is not found");
             }
-
-               var temp = await installmentsTemplatesRepository.GetByPlanIdAsync(plan.Id, cancellationToken);
+            var temp = await installmentsTemplatesRepository.GetByPlanIdAsync(plan.Id, cancellationToken);
 
            var dto = new MembershipPlanDetailsDto(plan.Id,plan.Name,plan.Description,plan.MaxPaymentPeriodInDays,plan.TotalPrice,plan.IsActive,
                 temp.Select( x => new InstallmentsTemplateDto(x.Id,x.Name)).ToList());

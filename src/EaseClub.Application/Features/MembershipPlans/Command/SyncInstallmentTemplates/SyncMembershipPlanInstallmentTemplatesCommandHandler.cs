@@ -18,9 +18,7 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.SyncInstallmentT
         public async Task<Result<Success>> Handle(SyncMembershipPlanInstallmentTemplatesCommand request, CancellationToken cancellationToken)
         {
             var plan = await membershipPlanRepository.GetPlanWithDetailsAsync(request.PlanId, cancellationToken);
-            if (plan is null)
-                return Error.NotFound(description: "Membership plan not found.");
-
+            if (plan is null) { logger.LogError("NotFound error in SyncMembershipPlanInstallmentTemplatesCommandHandler: {Error}", Error.NotFound(description: "Membership plan not found.").ToLogObject()); return Error.NotFound(description: "Membership plan not found."); }
             var requestedTemplateIds = request.InstallmentTemplateIds ?? [];
             var templates = new List<InstallmentTemplate>();
             foreach (var templateId in requestedTemplateIds)
@@ -34,11 +32,8 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.SyncInstallmentT
 
                 templates.Add(template);
             }
-
             var syncResult = plan.SyncInstallmentTemplates(templates);
-            if (syncResult.IsError)
-                return syncResult.TopError;
-
+            if (syncResult.IsError) { logger.LogError("Error in SyncMembershipPlanInstallmentTemplatesCommandHandler: {Error}", syncResult.TopError.ToLogObject()); return syncResult.TopError; }
             await unitOfWork.SaveChangesAsync(cancellationToken);
             return Result.Success;
         }

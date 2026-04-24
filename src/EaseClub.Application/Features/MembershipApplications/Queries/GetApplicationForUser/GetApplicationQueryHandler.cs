@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Features.ApplicationTemplates.Commands;
 using EaseClub.Domain.ClubAdmin;
 using EaseClub.Domain.Common;
@@ -35,10 +35,7 @@ namespace EaseClub.Application.Features.MembershipApplications.Queries.GetApplic
                 logger.LogWarning("The application was not found.");
                 return Error.NotFound("Application.NotFound", "The application was not found.");
             }
-
-            if (app.Status != ApplicationStatus.Draft) return Error.Conflict("application isnt in draft status");
-
-
+            if (app.Status != ApplicationStatus.Draft) { logger.LogError("Conflict error in GetApplicationQueryHandler: {Error}", Error.Conflict("application isnt in draft status").ToLogObject()); return Error.Conflict("application isnt in draft status"); }
             var answers = app.Answers.ToDictionary(a => (a.FieldDefinitionId, a.InstanceIndex), a => a.Value);
 
             var steps = app.TemplateSnapshot.Steps

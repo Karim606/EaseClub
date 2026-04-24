@@ -1,4 +1,5 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using Microsoft.Extensions.Logging;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipTypes;
@@ -11,18 +12,15 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.MembershipTypes.Commands.ToggleMembershipTypeActivation
 {
-    public class ToggleTypeActivationHandler(
-    IMembershipTypeRepository repository,
-    IUnitOfWork unitOfWork) : IRequestHandler<ToggleTypeActivationCommand, Result<Success>>
+    public class ToggleTypeActivationHandler(IMembershipTypeRepository repository,
+    IUnitOfWork unitOfWork,
+        ILogger<ToggleTypeActivationHandler> logger) : IRequestHandler<ToggleTypeActivationCommand, Result<Success>>
     {
         public async Task<Result<Success>> Handle(ToggleTypeActivationCommand request, CancellationToken ct)
         {
             var membershipType = await repository.GetByIdAsync(request.Id, ct);
 
-            if (membershipType is null)
-            {
-                return Error.NotFound("Membership type not found.");
-            }
+            if (membershipType is null) { logger.LogError("NotFound error in ToggleTypeActivationHandler: {Error}", Error.NotFound("Membership type not found.").ToLogObject()); return Error.NotFound("Membership type not found."); }
 
             // Logic: Flip the status
             if (membershipType.IsActive)

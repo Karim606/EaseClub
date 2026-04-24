@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Features.Auth.Common.Dtos;
 using EaseClub.Application.Features.Auth.Common.Interfaces;
 using EaseClub.Domain.Common;
@@ -54,8 +54,7 @@ namespace EaseClub.Application.Features.Auth.Commands.Register
                     await transaction.RollbackAsync(cancellationToken);
                     return phoneResult.TopError;
                 }
-
-                var emailResult = Email.Create(request.Email);
+            var emailResult = Email.Create(request.Email);
                 if (emailResult.IsError)
                 {
                     await transaction.RollbackAsync(cancellationToken);

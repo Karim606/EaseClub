@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.ApplicationTemplates;
 using EaseClub.Domain.ApplicationTemplates.Repositories;
 using EaseClub.Domain.Common.Results;
@@ -29,7 +29,6 @@ namespace EaseClub.Application.Features.ApplicationTemplates.Commands.Template.C
             if (templateResult.IsError) {
                 logger.LogError("Creation of application-template failed Error: {Error}", templateResult.TopError);
                 return templateResult.TopError; }
-
             await repository.AddAsync(templateResult.Value, ct);
             await unitOfWork.SaveChangesAsync(ct);
 

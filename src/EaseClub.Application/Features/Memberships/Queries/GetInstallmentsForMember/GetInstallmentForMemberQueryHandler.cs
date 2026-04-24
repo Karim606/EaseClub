@@ -1,4 +1,5 @@
-﻿using EaseClub.Domain.Common.Results;
+using Microsoft.Extensions.Logging;
+using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Memberships;
 using MediatR;
 using System;
@@ -9,7 +10,8 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.Memberships.Queries.GetInstallmentsForMember
 {
-    public class GetInstallmentForMemberQueryHandler(IMembershipRepository membershipRepository) : IRequestHandler<GetInstallmentForMemberQuery, Result<List<InstallmentMemberDto>>>
+    public class GetInstallmentForMemberQueryHandler(IMembershipRepository membershipRepository,
+        ILogger<GetInstallmentForMemberQueryHandler> logger) : IRequestHandler<GetInstallmentForMemberQuery, Result<List<InstallmentMemberDto>>>
     {
         public async Task<Result<List<InstallmentMemberDto>>> Handle(GetInstallmentForMemberQuery request, CancellationToken cancellationToken)
         {

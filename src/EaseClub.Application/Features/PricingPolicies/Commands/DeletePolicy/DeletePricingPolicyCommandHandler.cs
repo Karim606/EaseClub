@@ -1,4 +1,5 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using Microsoft.Extensions.Logging;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.PricingPolices;
@@ -12,13 +13,13 @@ using System.Threading.Tasks;
 namespace EaseClub.Application.Features.PricingPolicies.Commands.DeletePolicy
 {
     public class DeletePricingPolicyCommandHandler(IPricingPolicyRepository policyRepo,
-        IUnitOfWork unitOfWork) : IRequestHandler<DeletePricingPolicyCommand, Result<Success>>
+        IUnitOfWork unitOfWork,
+        ILogger<DeletePricingPolicyCommandHandler> logger) : IRequestHandler<DeletePricingPolicyCommand, Result<Success>>
     {
         public async Task<Result<Success>> Handle(DeletePricingPolicyCommand request, CancellationToken cancellationToken)
         {
            var policy = await policyRepo.GetByIdAsync(request.Id);
-            if(policy == null) return Error.NotFound(description: "Policy not found");
-
+            if (policy == null) { logger.LogError("NotFound error in DeletePricingPolicyCommandHandler: {Error}", Error.NotFound(description: "Policy not found").ToLogObject()); return Error.NotFound(description: "Policy not found"); }
             await policyRepo.DeleteAsync(policy,cancellationToken);
 
             await unitOfWork.SaveChangesAsync(cancellationToken);

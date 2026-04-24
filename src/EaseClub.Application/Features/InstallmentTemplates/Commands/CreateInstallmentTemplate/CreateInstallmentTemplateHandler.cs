@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipPlans;
 using EaseClub.Domain.MembershipPlans.Repositories;
@@ -28,16 +28,13 @@ namespace EaseClub.Application.Features.InstallmentTemplates.Commands.CreateInst
                 foreach (var installment in request.Installments)
                 {
                     var res = Installment.Create(installment.Percentage, installment.DueAfterDays, installment.Order);
-                    if (res.IsError) return res.TopError;
-                    installments.Add(res.Value);
+                    if (res.IsError) { logger.LogError("Error in CreateInstallmentTemplateHandler: {Error}", res.TopError.ToLogObject()); return res.TopError; }installments.Add(res.Value);
                 }
             }
-
-                var templateResult = InstallmentTemplate.Create(Guid.NewGuid(), request.ClubId, request.Name, request.NumOfInstallments,
+            var templateResult = InstallmentTemplate.Create(Guid.NewGuid(), request.ClubId, request.Name, request.NumOfInstallments,
                     request.DurationInDays, installments);
 
-            if (templateResult.IsError) return templateResult.TopError;
-
+            if (templateResult.IsError) { logger.LogError("Error in CreateInstallmentTemplateHandler: {Error}", templateResult.TopError.ToLogObject()); return templateResult.TopError; }
             await repository.AddAsync(templateResult.Value);
             await unitOfWork.SaveChangesAsync(cancellationToken);
 

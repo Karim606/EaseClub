@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common;
+using EaseClub.Application.Common;
 using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Features.Memberships;
 using EaseClub.Application.Features.Notifications;
@@ -48,7 +48,6 @@ namespace EaseClub.Application.Features.MembershipApplications.EventHandlers
                 _logger.LogError("Application {ApplicationId} not found", evt.ApplicationId);
                 return;
             }
-
             var existingPending = await _pendingEnrollmentRepo.GetActiveByApplicationIdAsync(app.Id, ct);
             if (existingPending != null) {
                 _logger.LogError("Active pending enrollment already exists for application {ApplicationId}", app.Id);
@@ -60,7 +59,6 @@ namespace EaseClub.Application.Features.MembershipApplications.EventHandlers
                 _logger.LogError("plan with id:{planId} not found", app.MembershipPlanId);
                 return;
             }
-
             var pendingEnrollmentResult = PendingEnrollment.CreateFromApprovedApplication(app,plan);
             if (pendingEnrollmentResult.IsError) {
                 _logger.LogError("Failed to create pending enrollment for application {ApplicationId}: {Errors}", app.Id, pendingEnrollmentResult.Errors);
@@ -79,7 +77,6 @@ namespace EaseClub.Application.Features.MembershipApplications.EventHandlers
                 _logger.LogError("Failed to create invoice for pending enrollment {PendingEnrollmentId}: {Errors}", pendingEnrollment.Id, invoiceResult.Errors);
                 return;
             }
-
             var invoice = invoiceResult.Value;
             var attachResult = pendingEnrollment.AttachFirstInvoice(invoice.Id);
             if (attachResult.IsError)

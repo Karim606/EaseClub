@@ -1,4 +1,5 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using Microsoft.Extensions.Logging;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.ClubAdmin;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
@@ -20,28 +21,23 @@ namespace EaseClub.Application.Features.Files.Commands.UploadClubFile
         IFileRepository fileRepository,
         IClubAdminUserRepository clubAdminUserRepository,
         IUnitOfWork unitOfWork,
-        ICurrentUserService currentUserService) : IRequestHandler<UploadClubFileCommand, Result<SecureFileResponse>>
+        ICurrentUserService currentUserService,
+        ILogger<UploadClubFileCommandHandler> logger) : IRequestHandler<UploadClubFileCommand, Result<SecureFileResponse>>
     {
 
 
         public async Task<Result<SecureFileResponse>> Handle(UploadClubFileCommand request, CancellationToken ct)
         {
-            if (request.File == null || request.File.Length == 0)
-                return Error.Validation("File is empty");
-
+            if (request.File == null || request.File.Length == 0) { logger.LogError("Validation error in UploadClubFileCommandHandler: {Error}", Error.Validation("File is empty").ToLogObject()); return Error.Validation("File is empty"); }
             var roles = currentUserService.GetRoles();
 
             var parsingRes = Guid.TryParse(currentUserService.GetId(), out var userId);
-            if (!parsingRes)
-                return Error.Unauthorized();
-
+            if (!parsingRes) { logger.LogError("Unauthorized error in UploadClubFileCommandHandler: {Error}", Error.Unauthorized().ToLogObject()); return Error.Unauthorized(); }
             if (roles.Contains("ClubAdmin"))
             {
                 var admin = await clubAdminUserRepository.GetByIdAsync(userId, ct);
-                if(admin == null) return Error.Unauthorized();
-
-                if (admin.ClubId != request.ClubId)
-                    return Error.Forbidden();
+                if (admin == null) { logger.LogError("Unauthorized error in UploadClubFileCommandHandler: {Error}", Error.Unauthorized().ToLogObject()); return Error.Unauthorized(); }
+            if (admin.ClubId != request.ClubId) { logger.LogError("Forbidden error in UploadClubFileCommandHandler: {Error}", Error.Forbidden().ToLogObject()); return Error.Forbidden(); }
 
             }
 
@@ -51,12 +47,10 @@ namespace EaseClub.Application.Features.Files.Commands.UploadClubFile
 
             var res = await fileStorageService.UploadFileAsync(request.File.OpenReadStream(), request.File.Name, true, $"clubs/{request.ClubId}/", cancellationToken: ct);
 
-            if (res.IsError) return res.TopError;
-
+            if (res.IsError) { logger.LogError("Error in UploadClubFileCommandHandler: {Error}", res.TopError.ToLogObject()); return res.TopError; }
             var file = FileResource.Create(Guid.NewGuid(), res.Value.FileName, res.Value.FilePath, request.File.ContentType, res.Value.Size, userId, true, request.ClubId,request.Purpose, FileOwnerType.Club);
 
-            if (file.IsError) return file.TopError;
-
+            if (file.IsError) { logger.LogError("Error in UploadClubFileCommandHandler: {Error}", file.TopError.ToLogObject()); return file.TopError; }
             await fileRepository.AddAsync(file.Value, ct);
             await unitOfWork.SaveChangesAsync(ct);
 

@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Features.Branches.Queries.GetBranchesByClub;
+using EaseClub.Application.Features.Branches.Queries.GetBranchesByClub;
 using EaseClub.Domain.Branches;
 using EaseClub.Domain.Common.Results;
 using MediatR;
@@ -11,7 +11,8 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.Branches.Queries.GetBranchesForAdmins
 {
-    public class GetBranchesForAdminQueryHandler(IBranchRepository branchRepository)
+    public class GetBranchesForAdminQueryHandler(IBranchRepository branchRepository,
+        ILogger<GetBranchesForAdminQueryHandler> logger)
     : IRequestHandler<GetBranchesForAdminQuery, Result<List<BranchAdminDto>>>
     {
         public async Task<Result<List<BranchAdminDto>>> Handle(GetBranchesForAdminQuery request, CancellationToken cancellationToken)

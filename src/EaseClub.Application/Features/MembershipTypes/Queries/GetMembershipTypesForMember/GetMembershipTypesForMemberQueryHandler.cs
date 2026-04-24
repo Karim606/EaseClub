@@ -1,4 +1,5 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using Microsoft.Extensions.Logging;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Common.Pagination;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipTypes;
@@ -11,10 +12,9 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.MembershipTypes.Queries.GetMembershipsTypesForMember
 {
-    public class GetMembershipTypesForMemberQueryHandler(
-        ICurrentUserService currentUserService,
-        IMembershipTypesQueryService membershipTypeQueryService
-        ) : IRequestHandler<GetMembershipTypesForMemberQuery, Result<UnifiedPaginatedResponse<MembershipTypeDto>>>
+    public class GetMembershipTypesForMemberQueryHandler(ICurrentUserService currentUserService,
+        IMembershipTypesQueryService membershipTypeQueryService,
+        ILogger<GetMembershipTypesForMemberQueryHandler> logger) : IRequestHandler<GetMembershipTypesForMemberQuery, Result<UnifiedPaginatedResponse<MembershipTypeDto>>>
     {
         public async Task<Result<UnifiedPaginatedResponse<MembershipTypeDto>>> Handle(GetMembershipTypesForMemberQuery request, CancellationToken cancellationToken)
         {

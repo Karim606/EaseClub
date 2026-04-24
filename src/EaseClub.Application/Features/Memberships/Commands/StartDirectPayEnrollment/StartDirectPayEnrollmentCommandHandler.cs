@@ -28,31 +28,21 @@ namespace EaseClub.Application.Features.Memberships.Commands.StartDirectPayEnrol
                 return Error.Unauthorized(description: "Invalid user ID");
 
             var membershipType = await membershipTypeRepository.GetByIdAsync(request.MembershipTypeId, ct);
-            if (membershipType == null)
-                return Error.NotFound(description: "Membership type not found.");
-
+            if (membershipType == null) { logger.LogError("NotFound error in StartDirectPayEnrollmentCommandHandler: {Error}", Error.NotFound(description: "Membership type not found.").ToLogObject()); return Error.NotFound(description: "Membership type not found."); }
             var plan = await membershipPlanRepository.GetPlanWithDetailsAsync(request.MembershipPlanId);
-            if (plan == null)
-                return Error.NotFound(description: "plan not found");
-
-            if (plan.MembershipTypeId != membershipType.Id)
-                return Error.Conflict(description: "MembershipPlan isnt associated with this MembershipType");
+            if (plan == null) { logger.LogError("NotFound error in StartDirectPayEnrollmentCommandHandler: {Error}", Error.NotFound(description: "plan not found").ToLogObject()); return Error.NotFound(description: "plan not found"); }
+            if (plan.MembershipTypeId != membershipType.Id) { logger.LogError("Conflict error in StartDirectPayEnrollmentCommandHandler: {Error}", Error.Conflict(description: "MembershipPlan isnt associated with this MembershipType").ToLogObject()); return Error.Conflict(description: "MembershipPlan isnt associated with this MembershipType"); }
 
             InstallmentTemplate? template = null;
             if (request.InstallmentTemplateId.HasValue)
             {
                 template = await installmentTemplatesRepository.GetByIdAsync(request.InstallmentTemplateId.Value, ct);
-                if (template == null)
-                    return Error.NotFound(description: "Installment Template not found");
-
-                if (!plan.SupportsTemplate(template.Id))
+                if (template == null) { logger.LogError("NotFound error in StartDirectPayEnrollmentCommandHandler: {Error}", Error.NotFound(description: "Installment Template not found").ToLogObject()); return Error.NotFound(description: "Installment Template not found"); }
+            if (!plan.SupportsTemplate(template.Id))
                     return Error.Conflict(description: "InstallmentTemplate isnt associated with this MembershipPlan");
             }
-
             var pendingEnrollmentResult = PendingEnrollment.CreateForDirectPay(userId, request.ClubId, plan, template);
-            if (pendingEnrollmentResult.IsError)
-                return pendingEnrollmentResult.TopError;
-
+            if (pendingEnrollmentResult.IsError) { logger.LogError("Error in StartDirectPayEnrollmentCommandHandler: {Error}", pendingEnrollmentResult.TopError.ToLogObject()); return pendingEnrollmentResult.TopError; }
             var pendingEnrollment = pendingEnrollmentResult.Value;
             var invoiceResult = Invoice.Create(
                pendingEnrollment,
@@ -65,7 +55,6 @@ namespace EaseClub.Application.Features.Memberships.Commands.StartDirectPayEnrol
                 logger.LogError("Failed to create invoice for pending enrollment {PendingEnrollmentId}: {Errors}", pendingEnrollment.Id, invoiceResult.Errors);
                 return invoiceResult.TopError;
             }
-
             var invoice = invoiceResult.Value;
             var attachResult = pendingEnrollment.AttachFirstInvoice(invoice.Id);
             if (attachResult.IsError)
@@ -73,7 +62,6 @@ namespace EaseClub.Application.Features.Memberships.Commands.StartDirectPayEnrol
                 logger.LogError("Failed to attach invoice {InvoiceId} to pending enrollment {PendingEnrollmentId}: {Errors}", invoice.Id, pendingEnrollment.Id, attachResult.Errors);
                 return attachResult.TopError;
             }
-
             await invoiceRepository.AddAsync(invoice, ct);
 
             await unitOfWork.SaveChangesAsync(ct);

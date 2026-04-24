@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Features.ApplicationTemplates.Queries;
 using EaseClub.Domain.ApplicationTemplates.Repositories;
 using EaseClub.Domain.Common;
@@ -38,26 +38,21 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.CreateAp
         {
             // 1. Fetch Live Template
             var resOfParse = Guid.TryParse(currentUserService.GetId(), out var userId);
-            if (!resOfParse)
-                return Error.Unauthorized(description: "Invalid user ID");
+            if (!resOfParse) { logger.LogError("Unauthorized error in CreateApplicationCommandHandler: {Error}", Error.Unauthorized(description: "Invalid user ID").ToLogObject()); return Error.Unauthorized(description: "Invalid user ID"); }
 
             // 1.2 Fetch Membership Plan
             var plan = await membershipPlanRepo.GetPlanWithDetailsAsync(request.MembershipPlanId);
 
-            if (plan == null)
-                return Error.NotFound(description: "plan not found");
-
+            if (plan == null) { logger.LogError("NotFound error in CreateApplicationCommandHandler: {Error}", Error.NotFound(description: "plan not found").ToLogObject()); return Error.NotFound(description: "plan not found"); }
             var template = await tempRepo.GetFullTemplateAsync(plan.ApplicationTemplateId!.Value, ct);
-            if (template == null) return Error.NotFound("Template not found");
+            if (template == null) { logger.LogError("NotFound error in CreateApplicationCommandHandler: {Error}", Error.NotFound("Template not found").ToLogObject()); return Error.NotFound("Template not found"); }
 
             // 1.1 Fetch Membership Type
             var memType = await membershipTyeRepo.GetByIdAsync(request.MembershipTypeId);
-            if (memType == null)
-                return Error.NotFound(description: "Membership type not found.");
+            if (memType == null) { logger.LogError("NotFound error in CreateApplicationCommandHandler: {Error}", Error.NotFound(description: "Membership type not found.").ToLogObject()); return Error.NotFound(description: "Membership type not found."); }
 
             // 1.3 Validate Enrollment Mode
-            if(plan.EnrollmentMode != EnrollmentMode.ApplicationForm) 
-                return Error.Conflict(description: "Plan WrongEnrollmentMode");
+            if (plan.EnrollmentMode != EnrollmentMode.ApplicationForm) { logger.LogError("Conflict error in CreateApplicationCommandHandler: {Error}", Error.Conflict(description: "Plan WrongEnrollmentMode").ToLogObject()); return Error.Conflict(description: "Plan WrongEnrollmentMode"); }
 
             // 2. Fetch Installments Template if exists
             List<Installment> installments = new List<Installment>();
@@ -73,8 +68,7 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.CreateAp
             {
                  installmentTemplate = await installmentsTemplatesRepository.GetByIdAsync(request.InstallmentTemplateId.Value);
 
-                if (installmentTemplate == null)
-                    return Error.NotFound(description: "Installment Template not found");
+                if (installmentTemplate == null) { logger.LogError("NotFound error in CreateApplicationCommandHandler: {Error}", Error.NotFound(description: "Installment Template not found").ToLogObject()); return Error.NotFound(description: "Installment Template not found"); }
 
                 installments = installmentTemplate.Installments.ToList();
             }
@@ -94,7 +88,6 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.CreateAp
                 if (policy != null)
                     policySnapshots.Add(policy.ToSnapshot(assignment.Priority));
             }
-
             var snapshot = template.ToSnapshot(plan.TotalPrice,
                 policySnapshots,
                 plan.ToSnapshot(),

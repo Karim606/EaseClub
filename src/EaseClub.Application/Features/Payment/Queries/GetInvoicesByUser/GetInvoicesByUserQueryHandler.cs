@@ -1,4 +1,5 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using Microsoft.Extensions.Logging;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Common.Pagination;
 using EaseClub.Application.Features.Payment.Queries.GetInvoicesForClub;
 using EaseClub.Domain.Common;
@@ -13,7 +14,8 @@ using System.Threading.Tasks;
 namespace EaseClub.Application.Features.Payment.Queries.GetInvoicesByUser
 {
 
-    public class GetInvoicesByUserQueryHandler(IInvoiceQueryService queryService,ICurrentUserService currentUserService) : IRequestHandler<GetInvoicesByUserQuery, Result<UnifiedPaginatedResponse<InvoiceDto>>>
+    public class GetInvoicesByUserQueryHandler(IInvoiceQueryService queryService,ICurrentUserService currentUserService,
+        ILogger<GetInvoicesByUserQueryHandler> logger) : IRequestHandler<GetInvoicesByUserQuery, Result<UnifiedPaginatedResponse<InvoiceDto>>>
 
     {
         public async Task<Result<UnifiedPaginatedResponse<InvoiceDto>>> Handle(GetInvoicesByUserQuery request, CancellationToken cancellationToken)
@@ -25,7 +27,6 @@ namespace EaseClub.Application.Features.Payment.Queries.GetInvoicesByUser
             {
                 return Error.Unauthorized("You are not authorized to view these invoices.");
             }
-
             var query = await queryService.GetInvoicesAsync(request.filters.ClubId, request.UserId, request.filters.status, request.filters.BillingItemType, request.filters.search,
                 request.paginationRequest, cancellationToken);
 

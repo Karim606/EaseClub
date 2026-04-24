@@ -1,4 +1,5 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using Microsoft.Extensions.Logging;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Common.Pagination;
 using EaseClub.Application.Features.Payment.Queries.GetInvoicesForClub;
 using EaseClub.Domain.Common.Results;
@@ -11,7 +12,8 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.Payment.Queries.GetInvoicesByClub
 {
-    public class GetInvoicesByClubQueryHandler(IInvoiceQueryService queryService,ICurrentUserService currentUserService) : IRequestHandler<GetInvoicesByClubQuery, Result<UnifiedPaginatedResponse<InvoiceDto>>>
+    public class GetInvoicesByClubQueryHandler(IInvoiceQueryService queryService,ICurrentUserService currentUserService,
+        ILogger<GetInvoicesByClubQueryHandler> logger) : IRequestHandler<GetInvoicesByClubQuery, Result<UnifiedPaginatedResponse<InvoiceDto>>>
 
     {
         public async Task<Result<UnifiedPaginatedResponse<InvoiceDto>>> Handle(GetInvoicesByClubQuery request, CancellationToken cancellationToken)

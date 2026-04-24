@@ -1,4 +1,5 @@
-﻿using EaseClub.Application.Common.Pagination.Results;
+using Microsoft.Extensions.Logging;
+using EaseClub.Application.Common.Pagination.Results;
 using EaseClub.Domain.Common.Results;
 using MediatR;
 using System;
@@ -9,8 +10,8 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.MembershipApplications.Queries.GetApplicationsForManagement
 {
-    public class GetApplicationsForManagementHandler(
-        IMembershipApplicationQueryService membershipApplicationQueryService) : IRequestHandler<GetApplicationsForManagementQuery, Result<OffsetPaginatedResult<MembershipAppAdminDto>>>
+    public class GetApplicationsForManagementHandler(IMembershipApplicationQueryService membershipApplicationQueryService,
+        ILogger<GetApplicationsForManagementHandler> logger) : IRequestHandler<GetApplicationsForManagementQuery, Result<OffsetPaginatedResult<MembershipAppAdminDto>>>
     {
         public async Task<Result<OffsetPaginatedResult<MembershipAppAdminDto>>> Handle(GetApplicationsForManagementQuery request, CancellationToken cancellationToken)
         {

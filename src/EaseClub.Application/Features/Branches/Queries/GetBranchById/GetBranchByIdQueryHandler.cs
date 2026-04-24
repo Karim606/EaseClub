@@ -1,4 +1,5 @@
-﻿using EaseClub.Application.Features.Branches.Queries.GetBranchesByClub;
+using Microsoft.Extensions.Logging;
+using EaseClub.Application.Features.Branches.Queries.GetBranchesByClub;
 using EaseClub.Domain.Branches;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
@@ -11,20 +12,13 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.Branches.Queries.GetBranchById
 {
-    public class GetBranchByIdQueryHandler : IRequestHandler<GetBranchByIdQuery, Result<BranchDto>>
+    public class GetBranchByIdQueryHandler(IBranchRepository repository,ILogger<GetBranchByIdQueryHandler> logger) : IRequestHandler<GetBranchByIdQuery, Result<BranchDto>>
     {
-        private readonly IBranchRepository _repository;
-
-        public GetBranchByIdQueryHandler(IBranchRepository repository)
-        {
-            _repository = repository;
-        }
 
         public async Task<Result<BranchDto>> Handle(GetBranchByIdQuery request, CancellationToken ct)
         {
-            var branch = await _repository.GetByIdAsync(request.Id, ct);
-            if (branch is null) return Error.NotFound("Branch not found.");
-
+            var branch = await repository.GetByIdAsync(request.Id, ct);
+            if (branch is null) { logger.LogError("NotFound error in GetBranchByIdQueryHandler: {Error}", Error.NotFound("Branch not found.").ToLogObject()); return Error.NotFound("Branch not found."); }
             return new BranchDto(branch.Id, branch.ClubId, branch.Name,branch.Address,branch.CreatedAt);
         }
     }

@@ -1,4 +1,5 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using Microsoft.Extensions.Logging;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Features.Notifications.Commands.MarkNotificationAsRead;
 using EaseClub.Domain.ClubAdmin;
 using EaseClub.Domain.Common;
@@ -16,7 +17,8 @@ namespace EaseClub.Application.Features.Notifications.Commands.MarkAllNotificati
     public class MarkNotificationAsReadCommandHandler(INotificationRepository notificationRepository,
        IUnitOfWork unitOfWork,
        ICurrentUserService currentUserService,
-       IClubAdminUserRepository clubAdminUserRepository) : IRequestHandler<MarkAllNotificationsAsReadCommand, Result<Success>>
+       IClubAdminUserRepository clubAdminUserRepository,
+        ILogger<MarkNotificationAsReadCommandHandler> logger) : IRequestHandler<MarkAllNotificationsAsReadCommand, Result<Success>>
     {
         public async Task<Result<Success>> Handle(MarkAllNotificationsAsReadCommand request, CancellationToken ct)
         {
@@ -33,7 +35,6 @@ namespace EaseClub.Application.Features.Notifications.Commands.MarkAllNotificati
             {
                 return Error.Unauthorized();
             }
-
             var roles = currentUserService.GetRoles();
             var isSuperAdmin = roles.Contains("SuperAdmin");
 
@@ -43,8 +44,7 @@ namespace EaseClub.Application.Features.Notifications.Commands.MarkAllNotificati
                 // User-level access
                 if (request.UserId != null)
                 {
-                    if (request.UserId != userId)
-                        return Error.Forbidden();
+                    if (request.UserId != userId) { logger.LogError("Forbidden error in MarkNotificationAsReadCommandHandler: {Error}", Error.Forbidden().ToLogObject()); return Error.Forbidden(); }
                 }
 
                 // Club-level access
@@ -55,8 +55,7 @@ namespace EaseClub.Application.Features.Notifications.Commands.MarkAllNotificati
 
                     var admin = await clubAdminUserRepository.GetByIdAsync(userId);
 
-                    if (admin == null || admin.ClubId != request.ClubId)
-                        return Error.Forbidden();
+                    if (admin == null || admin.ClubId != request.ClubId) { logger.LogError("Forbidden error in MarkNotificationAsReadCommandHandler: {Error}", Error.Forbidden().ToLogObject()); return Error.Forbidden(); }
                 }
             }
 

@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.Branches;
+using EaseClub.Domain.Branches;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 
@@ -12,7 +12,8 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.Branches.Queries.GetBranchesByClub
 {
-    public class GetBranchesByClubQueryHandler(IBranchRepository branchRepository)
+    public class GetBranchesByClubQueryHandler(IBranchRepository branchRepository,
+        ILogger<GetBranchesByClubQueryHandler> logger)
         :IRequestHandler<GetBranchesByClubQuery, Result<List<BranchResponse>>>
     {
         public async Task<Result<List<BranchResponse>>> Handle(GetBranchesByClubQuery request, CancellationToken cancellationToken)

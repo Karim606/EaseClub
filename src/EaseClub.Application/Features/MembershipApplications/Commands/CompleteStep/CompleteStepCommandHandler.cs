@@ -1,4 +1,5 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using Microsoft.Extensions.Logging;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.ApplicationTemplates.Repositories;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Interfaces;
@@ -15,15 +16,14 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.MembershipApplications.Commands.CompleteStep
 {
-    public class CompleteStepHandler(
-        IMembershipApplicationRepository appRepo,
-        IUnitOfWork unitOfWork
-        ) : IRequestHandler<CompleteStepCommand, Result<StepProgressResponse>>
+    public class CompleteStepHandler(IMembershipApplicationRepository appRepo,
+        IUnitOfWork unitOfWork,
+        ILogger<CompleteStepHandler> logger) : IRequestHandler<CompleteStepCommand, Result<StepProgressResponse>>
     {
         public async Task<Result<StepProgressResponse>> Handle(CompleteStepCommand request, CancellationToken ct)
         {
             var app = await appRepo.GetByIdAsync(request.ApplicationId, ct);
-            if (app == null) return Error.NotFound("Application not found");
+            if (app == null) { logger.LogError("NotFound error in CompleteStepHandler: {Error}", Error.NotFound("Application not found").ToLogObject()); return Error.NotFound("Application not found"); }
 
             // 1. Get all fields defined in the current step from the backend snapshot
             var stepFields = app.TemplateSnapshot.Steps
@@ -60,7 +60,6 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.Complete
 
                 domainAnswers.Add(answerResult.Value);
             }
-
             if (mappingErrors.Any()) return mappingErrors;
 
             var result = app.CompleteStep(request.StepOrder, domainAnswers);

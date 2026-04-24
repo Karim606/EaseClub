@@ -1,4 +1,5 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using Microsoft.Extensions.Logging;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Features.MembershipPlans.Command.AddTemplateToPlan;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipPlans;
@@ -14,7 +15,8 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.AddInstallmentTe
 {
     public class AddInstallmentTemplateToPlanHandler(IMembershipPlanRepository planRepository,
         IInstallmentsTemplatesRepository installmentsTemplatesRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        ILogger<AddInstallmentTemplateToPlanHandler> logger)
     : IRequestHandler<AddInstallmentTemplateToPlanCommand, Result<Success>>
     {
 
@@ -28,8 +30,7 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.AddInstallmentTe
             if (template == null) return MembershipPlanErrors.InstallmentTemplateDoesntExist;
 
             var result = plan.AddInstallmentTemplate(template);
-            if (result.IsError) return result.TopError;
-
+            if (result.IsError) { logger.LogError("Error in AddInstallmentTemplateToPlanHandler: {Error}", result.TopError.ToLogObject()); return result.TopError; }
             await unitOfWork.SaveChangesAsync(cancellationToken);
             return Result.Success;
         }

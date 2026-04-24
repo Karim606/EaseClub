@@ -1,4 +1,5 @@
-﻿using EaseClub.Application.Common.Dtos;
+using Microsoft.Extensions.Logging;
+using EaseClub.Application.Common.Dtos;
 using EaseClub.Application.Features.PricingPolicies.Queries.GetPolicyById;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.PricingPolices;
@@ -11,7 +12,8 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.PricingPolicies.Queries.GetPolicyByClubId
 {
-    public class GetPricingPoliciesByClubQueryHandler(IPricingPolicyRepository policyRepository)
+    public class GetPricingPoliciesByClubQueryHandler(IPricingPolicyRepository policyRepository,
+        ILogger<GetPricingPoliciesByClubQueryHandler> logger)
         : IRequestHandler<GetPricingPoliciesByClubQuery, Result<List<PricingPolicyResponse>>>
     {
         public async Task<Result<List<PricingPolicyResponse>>> Handle(GetPricingPoliciesByClubQuery request, CancellationToken ct)

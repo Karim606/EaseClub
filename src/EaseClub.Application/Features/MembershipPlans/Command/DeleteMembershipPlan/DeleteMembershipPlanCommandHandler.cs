@@ -1,4 +1,5 @@
-﻿using EaseClub.Application.Common;
+using Microsoft.Extensions.Logging;
+using EaseClub.Application.Common;
 using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
@@ -14,9 +15,9 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.MembershipPlans.Command.DeleteMembershipPlan
 {
-    public class DeleteMembershipPlanHandler(
-     IMembershipPlanRepository repository,
-     IUnitOfWork unitOfWork) : IRequestHandler<DeleteMembershipPlanCommand, Result<Success>>
+    public class DeleteMembershipPlanHandler(IMembershipPlanRepository repository,
+     IUnitOfWork unitOfWork,
+        ILogger<DeleteMembershipPlanHandler> logger) : IRequestHandler<DeleteMembershipPlanCommand, Result<Success>>
     {
         public async Task<Result<Success>> Handle(DeleteMembershipPlanCommand request, CancellationToken ct)
         {

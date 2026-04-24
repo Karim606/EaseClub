@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common;
+using EaseClub.Application.Common;
 using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Features.Notifications;
 using EaseClub.Domain.MembershipApplications;
@@ -37,7 +37,6 @@ namespace EaseClub.Application.Features.MembershipApplications.EventHandlers
             //        evt.ApplicationId);
             //    return;
             //}
-
             _logger.LogInformation(
                 "Application {ApplicationId} rejected. Reason: {Reason}",
                 evt.ApplicationId,

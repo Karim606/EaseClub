@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Branches;
 using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Common;
@@ -27,7 +27,6 @@ namespace EaseClub.Application.Features.Branches.Commands.CreateBranch
                 logger.LogWarning("Club with Id {ClubId} not found", request.ClubId);
                 return Error.NotFound(description: $"Club with Id {request.ClubId} not found");
             }
-
             var isBranchExist = await branchRepository.IsExistByName(request.ClubId,request.Name);
 
             if(isBranchExist) {
@@ -35,7 +34,6 @@ namespace EaseClub.Application.Features.Branches.Commands.CreateBranch
                     request.Name,request.ClubId);
                 return Error.Conflict(description: $"Branch with name {request.Name} already exists for the club.");
             }
-
             var result = Branch.Create(Guid.NewGuid(),request.ClubId,request.Name,request.Address);
             
             if(result.IsSuccess)

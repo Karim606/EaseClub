@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipPlans;
@@ -24,8 +24,7 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.UpdatePlan
             // 1. Fetch the Aggregate
             var plan = await repository.GetPlanWithDetailsAsync(request.PlanId, ct);
 
-            if (plan is null )
-                return Error.NotFound("Membership plan not found.");
+            if (plan is null ) { logger.LogError("NotFound error in UpdateMembershipPlanHandler: {Error}", Error.NotFound("Membership plan not found.").ToLogObject()); return Error.NotFound("Membership plan not found."); }
 
             // 2. Delegate to Domain Entity
             var updateResult = plan.Update(

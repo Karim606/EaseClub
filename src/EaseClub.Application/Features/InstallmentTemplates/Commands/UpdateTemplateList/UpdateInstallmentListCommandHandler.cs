@@ -1,4 +1,5 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using Microsoft.Extensions.Logging;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipPlans;
@@ -14,19 +15,18 @@ namespace EaseClub.Application.Features.InstallmentTemplates.Commands.UpdateTemp
 {
    
         public class UpdateInstallmentListCommandHandler(IInstallmentsTemplatesRepository repository,
-        IUnitOfWork unitOfWork) : IRequestHandler<UpdateInstallmentListCommand, Result<Success>>
+        IUnitOfWork unitOfWork,
+        ILogger<UpdateInstallmentListCommandHandler> logger) : IRequestHandler<UpdateInstallmentListCommand, Result<Success>>
         {
            
             public async Task<Result<Success>> Handle(UpdateInstallmentListCommand request, CancellationToken ct)
             {
                 var template = await repository.GetByIdAsync(request.TemplateId, ct);
-                if (template is null) return Error.NotFound("Template not found.");
+                if (template is null) { logger.LogError("NotFound error in UpdateInstallmentListCommandHandler: {Error}", Error.NotFound("Template not found.").ToLogObject()); return Error.NotFound("Template not found."); }
+            var result = template.UpdateInstallments(request.newPercentages);
 
-                var result = template.UpdateInstallments(request.newPercentages);
-
-                if (result.IsError) return result.TopError;
-
-                await unitOfWork.SaveChangesAsync(ct);
+                if (result.IsError) { logger.LogError("Error in UpdateInstallmentListCommandHandler: {Error}", result.TopError.ToLogObject()); return result.TopError; }
+            await unitOfWork.SaveChangesAsync(ct);
                 return Result.Success;
             }
         }

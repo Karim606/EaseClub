@@ -1,4 +1,5 @@
-﻿using EaseClub.Domain.Common;
+using Microsoft.Extensions.Logging;
+using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipPlans.Repositories;
 using MediatR;
@@ -10,7 +11,8 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.InstallmentTemplates.Queries.GetTemplateById
 {
-    public class GetInstallmentTemplateQueryHandler(IInstallmentsTemplatesRepository repository)
+    public class GetInstallmentTemplateQueryHandler(IInstallmentsTemplatesRepository repository,
+        ILogger<GetInstallmentTemplateQueryHandler> logger)
     : IRequestHandler<GetInstallmentTemplateQuery, Result<InstallmentTemplateResponse>>
     {
     
@@ -21,11 +23,7 @@ namespace EaseClub.Application.Features.InstallmentTemplates.Queries.GetTemplate
         {
             var template = await repository.GetByIdAsync(request.Id);
 
-            if (template is null)
-            {
-                return Error.NotFound(description:"Installment template not found.");
-            }
-
+            if (template is null) { logger.LogError("NotFound error in GetInstallmentTemplateQueryHandler: {Error}", Error.NotFound(description:"Installment template not found.").ToLogObject()); return Error.NotFound(description:"Installment template not found."); }
             return new InstallmentTemplateResponse(
                 template.Id,
                 template.Name,

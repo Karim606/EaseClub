@@ -1,4 +1,5 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using Microsoft.Extensions.Logging;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Payment.Enums;
@@ -13,17 +14,16 @@ using System.Threading.Tasks;
 namespace EaseClub.Application.Features.Payment.Commands.ProcessPaymentGatewayWebhookCommand
 {
     public class ProcessPaymentGatewayWebhookCommandHandler(IInvoiceRepository invoiceRepository,
-        IPaymentTransactionRepository transactionRepository,IUnitOfWork unitOfWork, IPaymentGateway paymentGateway) : IRequestHandler<ProcessPaymentGatewayWebhookCommand, Result<Success>>
+        IPaymentTransactionRepository transactionRepository,IUnitOfWork unitOfWork, IPaymentGateway paymentGateway,
+        ILogger<ProcessPaymentGatewayWebhookCommandHandler> logger) : IRequestHandler<ProcessPaymentGatewayWebhookCommand, Result<Success>>
     {
         public async Task<Result<Success>> Handle(ProcessPaymentGatewayWebhookCommand request, CancellationToken cancellationToken)
         {
 
             var payload = paymentGateway.ValidateCallbackSignature(request.WebhookRequest);
-            if (payload.IsError) return payload.TopError;
-
+            if (payload.IsError) { logger.LogError("Error in ProcessPaymentGatewayWebhookCommandHandler: {Error}", payload.TopError.ToLogObject()); return payload.TopError; }
             var result = await HandleTransactionAndInvoice(payload.Value);
-            if (result.IsError) return result.TopError;
-
+            if (result.IsError) { logger.LogError("Error in ProcessPaymentGatewayWebhookCommandHandler: {Error}", result.TopError.ToLogObject()); return result.TopError; }
             await unitOfWork.SaveChangesAsync(cancellationToken);
             return Result.Success;
         }
@@ -31,14 +31,9 @@ namespace EaseClub.Application.Features.Payment.Commands.ProcessPaymentGatewayWe
         private async Task<Result<Success>> HandleTransactionAndInvoice(CallBackResultDto payload)
         {
             var transaction = await transactionRepository.GetByIdAsync(payload.TransactionId);
-            if (transaction == null) return Error.NotFound("Transaction not found");
-
-            if (transaction.Amount != payload.Amount)
-                return Error.Failure("Amount mismatch");
-
-            if (transaction.Currency != payload.Currency)
-                return Error.Failure("Currency mismatch");
-
+            if (transaction == null) { logger.LogError("NotFound error in ProcessPaymentGatewayWebhookCommandHandler: {Error}", Error.NotFound("Transaction not found").ToLogObject()); return Error.NotFound("Transaction not found"); }
+            if (transaction.Amount != payload.Amount) { logger.LogError("Failure error in ProcessPaymentGatewayWebhookCommandHandler: {Error}", Error.Failure("Amount mismatch").ToLogObject()); return Error.Failure("Amount mismatch"); }
+            if (transaction.Currency != payload.Currency) { logger.LogError("Failure error in ProcessPaymentGatewayWebhookCommandHandler: {Error}", Error.Failure("Currency mismatch").ToLogObject()); return Error.Failure("Currency mismatch"); }
             if (transaction.Status == PaymentTransactionStatus.Succeeded)
                 return Result.Success;
 
@@ -49,8 +44,7 @@ namespace EaseClub.Application.Features.Payment.Commands.ProcessPaymentGatewayWe
                 transaction.AttachExternalRef(payload.ExternalRef);
 
             var invoice  = await invoiceRepository.GetInvoiceWithTransactions(transaction.InvoiceId);
-            if (invoice == null) return Error.NotFound("Invoice not found");
-
+            if (invoice == null) { logger.LogError("NotFound error in ProcessPaymentGatewayWebhookCommandHandler: {Error}", Error.NotFound("Invoice not found").ToLogObject()); return Error.NotFound("Invoice not found"); }
             var transactionId = transaction.Id;
 
             if (transaction.Status == PaymentTransactionStatus.Failed && payload.IsSuccess)
@@ -67,7 +61,6 @@ namespace EaseClub.Application.Features.Payment.Commands.ProcessPaymentGatewayWe
             {
                 invoice.FailPayment(transactionId, payload.Message ?? "Payment failed");
             }
-
             return Result.Success;
         }
     }

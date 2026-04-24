@@ -50,14 +50,12 @@ namespace EaseClub.Application.Features.Payment.EventHandlers
                 _logger.LogWarning("Pending enrollment {PendingEnrollmentId} not found", evt.billingItemId);
                 return;
             }
-
             if (pendingEnrollment.IsExpired(DateTime.UtcNow))
             {
                 pendingEnrollment.MarkExpired();
                 await _unitOfWork.SaveChangesAsync(ct);
                 return;
             }
-
             if (pendingEnrollment.MembershipApplicationId.HasValue)
             {
                 var existing = await _membershipRepository.GetByApplicationIdAsync(pendingEnrollment.MembershipApplicationId.Value, ct);
@@ -76,7 +74,6 @@ namespace EaseClub.Application.Features.Payment.EventHandlers
                     membershipResult.TopError.Description);
                 return;
             }
-
             var membership = membershipResult.Value;
             var firstInstallment = membership.GetCurrentCycle()?.Installments.OrderBy(x => x.Order).FirstOrDefault();
             if (firstInstallment == null)
@@ -84,7 +81,6 @@ namespace EaseClub.Application.Features.Payment.EventHandlers
                 _logger.LogError("No first installment generated for membership {MembershipId}", membership.Id);
                 return;
             }
-
             var markPaidResult = firstInstallment.MarkPaid(evt.Id);
             if (markPaidResult.IsError)
             {
@@ -94,7 +90,6 @@ namespace EaseClub.Application.Features.Payment.EventHandlers
                     markPaidResult.TopError.Description);
                 return;
             }
-
             var invoice = await _invoiceRepository.GetByIdAsync(evt.Id);
             if (invoice == null)
             {
@@ -113,7 +108,6 @@ namespace EaseClub.Application.Features.Payment.EventHandlers
                     completeResult.TopError.Description);
                 return;
             }
-
             await _membershipRepository.AddAsync(membership, ct);
             await _unitOfWork.SaveChangesAsync(ct);
 

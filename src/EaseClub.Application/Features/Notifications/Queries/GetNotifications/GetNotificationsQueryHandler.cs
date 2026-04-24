@@ -1,4 +1,5 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using Microsoft.Extensions.Logging;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Common.Pagination;
 using EaseClub.Domain.ClubAdmin;
 using EaseClub.Domain.Common;
@@ -14,15 +15,15 @@ namespace EaseClub.Application.Features.Notifications.Queries.GetNotifications
 {
     public class GetNotificationsQueryHandler(INotificationQueryService queryService,
         ICurrentUserService currentUserService,
-        IClubAdminUserRepository clubAdminUserRepository) : IRequestHandler<GetNotificationsQuery, Result< UnifiedPaginatedResponse<NotificationDto> >>
+        IClubAdminUserRepository clubAdminUserRepository,
+        ILogger<GetNotificationsQueryHandler> logger) : IRequestHandler<GetNotificationsQuery, Result< UnifiedPaginatedResponse<NotificationDto> >>
     {
         public async Task<Result<UnifiedPaginatedResponse<NotificationDto>>> Handle(GetNotificationsQuery request, CancellationToken cancellationToken)
         {
             if((request.UserId==null&&request.ClubId==null)||(request.UserId!=null&&request.ClubId!=null)) return Error.Validation(description:"UserId and ClubId cannot be null or have values at the same time give a value to one of them");
 
             var res = Guid.TryParse(currentUserService.GetId(),out var userId);
-            if (!res) return Error.Unauthorized();
-
+            if (!res) { logger.LogError("Unauthorized access in GetNotificationsQueryHandler: {Error}", Error.Unauthorized().ToLogObject()); return Error.Unauthorized(); }
             var roles = currentUserService.GetRoles();
 
             var isSuperAdmin = roles.Any(x => x == "SuperAdmin");
@@ -39,8 +40,7 @@ namespace EaseClub.Application.Features.Notifications.Queries.GetNotifications
             // 4. User-based access
             if (request.UserId != null)
             {
-                if (request.UserId != userId)
-                    return Error.Forbidden();
+                if (request.UserId != userId) { logger.LogError("Forbidden error in GetNotificationsQueryHandler: {Error}", Error.Forbidden().ToLogObject()); return Error.Forbidden(); }
             }
 
             // 5. Club-based access
@@ -51,8 +51,7 @@ namespace EaseClub.Application.Features.Notifications.Queries.GetNotifications
 
                 var admin = await clubAdminUserRepository.GetByIdAsync(userId);
 
-                if (admin == null || admin.ClubId != request.ClubId)
-                    return Error.Forbidden();
+                if (admin == null || admin.ClubId != request.ClubId) { logger.LogError("Forbidden error in GetNotificationsQueryHandler: {Error}", Error.Forbidden().ToLogObject()); return Error.Forbidden(); }
             }
 
             // 6. Execute query

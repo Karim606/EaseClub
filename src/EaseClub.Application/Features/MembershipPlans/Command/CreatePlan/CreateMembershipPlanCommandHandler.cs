@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipPlans;
@@ -64,7 +64,6 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.CreatePlan
                     string.Join(", ", planResult.Errors.Select(e => e.Description)));
                 return planResult.TopError;
             }
-
             var installmentTemplates = new List<InstallmentTemplate>();
             foreach (var templateId in request.InstallmentTemplateIds)
             {
@@ -77,7 +76,6 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.CreatePlan
 
                 installmentTemplates.Add(template);
             }
-
             var syncResult = planResult.Value.SyncInstallmentTemplates(installmentTemplates);
             if (syncResult.IsError)
             {

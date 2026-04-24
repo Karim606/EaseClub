@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Branches;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipTypes;
@@ -20,7 +20,8 @@ namespace EaseClub.Application.Features.MembershipTypes.Commands.CreateMembershi
        
         public async Task<Result<Guid>> Handle(CreateMembershipTypeCommand request, CancellationToken cancellationToken)
         {
-            logger.LogInformation("Creating membership type {MembershipTypeName} for club {ClubId}",request.Name,request.ClubId);
+            logger.LogInformation("Creating membership type {MembershipTypeName}"+
+            "for club {ClubId}",request.Name,request.ClubId);
 
             var type = await membershipTypeRepository.GetByClubIdAndNameAsync(request.ClubId, request.Name);
 
@@ -31,7 +32,6 @@ namespace EaseClub.Application.Features.MembershipTypes.Commands.CreateMembershi
 
                 return MembershipTypeErrors.MembershipTypeNameMustBeUniquePerClub;
             }
-
             var result = MembershipType.Create(Guid.NewGuid(), request.ClubId, request.Name);
 
             if (result.IsError) {
@@ -72,7 +72,6 @@ namespace EaseClub.Application.Features.MembershipTypes.Commands.CreateMembershi
                 //  Apply restriction to aggregate
                 type.RestrictToBranches(existingBranchIds);
             }
-
             await membershipTypeRepository.AddAsync(type);
             await unitOfWork.SaveChangesAsync();
 

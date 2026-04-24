@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipPlans.Repositories;
@@ -25,7 +25,6 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.RemoveInstallmen
                 logger.LogWarning("installment template not found for club with id={ClubId}", request.ClubId);
                 return Error.NotFound(description: "installment template not found ");
             }
-
             var plan = await membershipPlanRepository.GetByIdAsync(request.PlanId);
             if (plan == null) {
                 logger.LogWarning("plan not found for club with id={ClubId}", request.ClubId);

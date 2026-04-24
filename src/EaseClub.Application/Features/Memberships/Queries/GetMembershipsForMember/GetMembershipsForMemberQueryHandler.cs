@@ -1,4 +1,5 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using Microsoft.Extensions.Logging;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Memberships;
@@ -11,16 +12,14 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.Memberships.Queries.GetMembershipsForMember
 {
-    public class GetMembershipsForMemberQueryHandler(IMembershipRepository membershipRepository,ICurrentUserService currentUserService) : IRequestHandler<GetMembershipsForMemberQuery, Result<List<MembershipForMemberDto>>>
+    public class GetMembershipsForMemberQueryHandler(IMembershipRepository membershipRepository,ICurrentUserService currentUserService,
+        ILogger<GetMembershipsForMemberQueryHandler> logger) : IRequestHandler<GetMembershipsForMemberQuery, Result<List<MembershipForMemberDto>>>
     {
         public async Task<Result<List<MembershipForMemberDto>>> Handle(GetMembershipsForMemberQuery request, CancellationToken cancellationToken)
         {
             var id = currentUserService.GetId();
             var parseRes = Guid.TryParse(id, out var userId);
-            if (parseRes == false) { 
-                return Error.Unauthorized();
-            }
-
+            if (parseRes == false) { logger.LogError("Unauthorized error in GetMembershipsForMemberQueryHandler: {Error}", Error.Unauthorized().ToLogObject()); return Error.Unauthorized(); }
             var memberships =await  membershipRepository.GetByMemberIdAsync(userId);
 
             return memberships.Select( x => new MembershipForMemberDto(x.Id,x.MembershipNumber,x.Club.Id,x.Club.Name,x.Status)
