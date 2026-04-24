@@ -20,40 +20,62 @@ namespace EaseClub.Application.Features.Notifications.Commands.MarkAllNotificati
     {
         public async Task<Result<Success>> Handle(MarkAllNotificationsAsReadCommand request, CancellationToken ct)
         {
-            var res = Guid.TryParse(currentUserService.GetId(), out var userId);
+            // 1. Validate request shape
+            if ((request.UserId == null && request.ClubId == null) ||
+                (request.UserId != null && request.ClubId != null))
+            {
+                return Error.Validation(
+                    description: "Provide either UserId or ClubId, not both.");
+            }
 
-            if (!res) return Error.Unauthorized();
-
-            if ((request.UserId == null && request.ClubId == null) || (request.UserId != null && request.ClubId != null)) return Error.Validation(description: "UserId and ClubId cannot be null or have values at the same time give a value to one of them");
+            // 2. Validate current user
+            if (!Guid.TryParse(currentUserService.GetId(), out var userId))
+            {
+                return Error.Unauthorized();
+            }
 
             var roles = currentUserService.GetRoles();
-            List<Notification> notifications = new List<Notification>();
             var isSuperAdmin = roles.Contains("SuperAdmin");
 
-            if (isSuperAdmin)
+            // 3. Authorization rules (skip for SuperAdmin)
+            if (!isSuperAdmin)
             {
-                notifications = await notificationRepository.GetUnReadNotificationsAsync(request.UserId, request.ClubId, ct);
-            }
-            else if (roles.Contains("ClubAdmin"))
-            {
-                var admin = await clubAdminUserRepository.GetByIdAsync(userId);
-                if (admin == null) return Error.Unauthorized();
-                if (admin.ClubId != request.ClubId) return Error.Forbidden();
-                notifications = await notificationRepository.GetUnReadNotificationsAsync(request.UserId, request.ClubId, ct);
-            }
-            else if (roles.Contains("Member"))
-            {
-                if (request.UserId != userId) return Error.Forbidden();
-                notifications = await notificationRepository.GetUnReadNotificationsAsync(userId, request.ClubId, ct);
-            }
-            else
-            {
-                return Error.Forbidden();
+                // User-level access
+                if (request.UserId != null)
+                {
+                    if (request.UserId != userId)
+                        return Error.Forbidden();
+                }
+
+                // Club-level access
+                if (request.ClubId != null)
+                {
+                    if (!roles.Contains("ClubAdmin"))
+                        return Error.Forbidden();
+
+                    var admin = await clubAdminUserRepository.GetByIdAsync(userId);
+
+                    if (admin == null || admin.ClubId != request.ClubId)
+                        return Error.Forbidden();
+                }
             }
 
+            // 4. Resolve target scope safely
+            var targetUserId = request.UserId ?? userId;
+
+            // 5. Fetch unread notifications (single source of truth)
+            var notifications = await notificationRepository.GetUnReadNotificationsAsync(
+                targetUserId,
+                request.ClubId,
+                ct);
+
+            // 6. Mark as read
             foreach (var notification in notifications)
-                    notification.MarkAsRead();
+            {
+                notification.MarkAsRead();
+            }
 
+            // 7. Persist changes
             await unitOfWork.SaveChangesAsync(ct);
 
             return Result.Success;

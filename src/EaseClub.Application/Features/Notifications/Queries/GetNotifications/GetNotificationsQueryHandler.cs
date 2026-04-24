@@ -20,23 +20,47 @@ namespace EaseClub.Application.Features.Notifications.Queries.GetNotifications
         {
             if((request.UserId==null&&request.ClubId==null)||(request.UserId!=null&&request.ClubId!=null)) return Error.Validation(description:"UserId and ClubId cannot be null or have values at the same time give a value to one of them");
 
-            var res = Guid.TryParse(currentUserService.GetId(),out var UserId);
+            var res = Guid.TryParse(currentUserService.GetId(),out var userId);
             if (!res) return Error.Unauthorized();
 
             var roles = currentUserService.GetRoles();
 
             var isSuperAdmin = roles.Any(x => x == "SuperAdmin");
 
-            if(!isSuperAdmin && request.UserId!=null&&UserId != request.UserId) return Error.Forbidden();
-            else if (request.ClubId != null && roles.Contains("ClubAdmin"))
+            if (isSuperAdmin)
             {
-                var admin = await clubAdminUserRepository.GetByIdAsync(UserId);
-                if (admin.ClubId != request.ClubId) return Error.Forbidden();
+                return await queryService.GetNotificationsAsync(
+                    request.UserId,
+                    request.ClubId,
+                    request.IsRead,
+                    request.PaginationParameters);
             }
-            else if(!isSuperAdmin) return Error.Forbidden();
 
+            // 4. User-based access
+            if (request.UserId != null)
+            {
+                if (request.UserId != userId)
+                    return Error.Forbidden();
+            }
 
-                return await queryService.GetNotificationsAsync(request.UserId, request.ClubId, request.IsRead, request.PaginationParameters);
+            // 5. Club-based access
+            if (request.ClubId != null)
+            {
+                if (!roles.Contains("ClubAdmin"))
+                    return Error.Forbidden();
+
+                var admin = await clubAdminUserRepository.GetByIdAsync(userId);
+
+                if (admin == null || admin.ClubId != request.ClubId)
+                    return Error.Forbidden();
+            }
+
+            // 6. Execute query
+            return await queryService.GetNotificationsAsync(
+                request.UserId,
+                request.ClubId,
+                request.IsRead,
+                request.PaginationParameters);
         }
     }
 }
