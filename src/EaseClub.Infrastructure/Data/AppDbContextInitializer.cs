@@ -100,6 +100,8 @@ namespace EaseClub.Infrastructure.Data
         private static readonly Guid SeedClubAdminId =
         Guid.Parse("9f3a7b4e-2a7d-4b5c-9d9c-1e8c4c2f7a31");
 
+        private static readonly Guid SeedMemberId = Guid.Parse("d865c243-2d37-4feb-9c01-77d39c6c7912");
+
         private static readonly Guid SeedMembershipTypeId = Guid.Parse("a1e8b6f2-4f6c-4c4a-9d0f-2a8b7e3c1d94");
 
         private static readonly Guid SeedMembershipPlanId = Guid.Parse("7c2d4a8e-1b9f-4e2a-8f3c-5b6d9a1e0c47");
@@ -157,7 +159,7 @@ namespace EaseClub.Infrastructure.Data
                 );
 
             await AddMemberUser(
-                    id: Guid.NewGuid(),
+                    id:SeedMemberId,
                     firstName: "Ali",
                     lastName: "Asad",
                     phoneNumber: "01012345678",

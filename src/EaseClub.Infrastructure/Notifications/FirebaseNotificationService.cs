@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Features.Notifications;
+using EaseClub.Application.Features.Notifications;
 using EaseClub.Infrastructure.Notifications.UserDevices;
 using FirebaseAdmin;
 using FirebaseAdmin.Messaging;
@@ -18,8 +18,13 @@ namespace EaseClub.Infrastructure.Notifications
         private readonly IDeviceRepository _deviceRepo;
         private readonly ILogger<FirebaseNotificationService> _logger;
         private readonly FirebaseSettings _firebaseSettings;
-        public FirebaseNotificationService(IOptions<FirebaseSettings> firebaseOptions)
+        public FirebaseNotificationService(
+            IDeviceRepository deviceRepo,
+            ILogger<FirebaseNotificationService> logger,
+            IOptions<FirebaseSettings> firebaseOptions)
         {
+            _deviceRepo = deviceRepo;
+            _logger = logger;
             _firebaseSettings = firebaseOptions.Value;
 
             if (FirebaseApp.DefaultInstance == null)

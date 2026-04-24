@@ -29,7 +29,9 @@ namespace EaseClub.Api.Common
 
         public List<string> GetRoles()
         {
-            var roles = _user?.FindAll("role").Select(r => r.Value).ToList() ?? new List<string>();
+            var roles = _user?.FindAll(ClaimTypes.Role)
+                       .Select(r => r.Value)
+                       .ToList() ?? new List<string>();
             return roles;
         }
 

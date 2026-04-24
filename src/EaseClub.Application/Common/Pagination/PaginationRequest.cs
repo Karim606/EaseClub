@@ -25,7 +25,7 @@ namespace EaseClub.Application.Common.Pagination
         // Helper to convert to your Domain/Application parameters
         public PaginationParameters ToParameters()
         {
-            if (!string.IsNullOrEmpty(Cursor))
+            if (Page == null)
             {
                 return new CursorPaginationParameters
                 {
@@ -34,14 +34,17 @@ namespace EaseClub.Application.Common.Pagination
                     SortDesc = SortDesc
                 };
             }
-
-            return new OffsetPaginationParameters
+            else
             {
-                Page = Page ?? 1,
-                Limit = Limit,
-                SortBy = SortBy,
-                SortDesc = SortDesc
-            };
+
+                return new OffsetPaginationParameters
+                {
+                    Page = Page ?? 1,
+                    Limit = Limit,
+                    SortBy = SortBy,
+                    SortDesc = SortDesc
+                };
+            }
         }
     }
 }
