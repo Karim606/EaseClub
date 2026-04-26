@@ -12,7 +12,7 @@ namespace EaseClub.Application.Features.Memberships.Commands.StartDirectPayEnrol
         Guid MembershipTypeId,
         Guid MembershipPlanId,
         Guid? InstallmentTemplateId
-        ) : IRequest<Result<EnrollmentPaymentResponse>>, IRequireClubOwnershipValidation
+        ) : IRequest<Result<EnrollmentPaymentResponse>>, IRequireResourceValidation
     {
         public IEnumerable<OwnershipRule> Rules()
         {

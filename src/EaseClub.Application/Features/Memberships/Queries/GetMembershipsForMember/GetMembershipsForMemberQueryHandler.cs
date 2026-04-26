@@ -17,12 +17,11 @@ namespace EaseClub.Application.Features.Memberships.Queries.GetMembershipsForMem
     {
         public async Task<Result<List<MembershipForMemberDto>>> Handle(GetMembershipsForMemberQuery request, CancellationToken cancellationToken)
         {
-            var id = currentUserService.GetId();
-            var parseRes = Guid.TryParse(id, out var userId);
-            if (parseRes == false) { logger.LogError("Unauthorized error in GetMembershipsForMemberQueryHandler: {Error}", Error.Unauthorized().ToLogObject()); return Error.Unauthorized(); }
-            var memberships =await  membershipRepository.GetByMemberIdAsync(userId);
+          
 
-            return memberships.Select( x => new MembershipForMemberDto(x.Id,x.MembershipNumber,x.Club.Id,x.Club.Name,x.Status)
+            var memberships = await  membershipRepository.GetByMemberIdAsync(request.userId,request.Status);
+
+            return memberships.Select( x => new MembershipForMemberDto(x.Id,x.MembershipNumber,x.Club.Id,x.Club.Name,x.Status,x.GetCurrentCycle().Period)
             ).ToList();
         }
     }

@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common;
+using EaseClub.Application.Common;
 using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Memberships;
@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.Memberships.Queries.GetInstallmentsForMember
 {
-    public record GetInstallmentForMemberQuery(Guid MembershipId) : IRequest<Result<List<InstallmentMemberDto>>>, IRequireClubOwnershipValidation
+    public record GetInstallmentForMemberQuery(Guid MembershipId) : IRequest<Result<List<InstallmentMemberDto>>>, IRequireResourceValidation
     {
         public IEnumerable<OwnershipRule> Rules()
         {

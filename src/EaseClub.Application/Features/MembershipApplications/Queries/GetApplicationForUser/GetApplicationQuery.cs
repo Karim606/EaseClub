@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common;
+using EaseClub.Application.Common;
 using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.ApplicationTemplates;
 using EaseClub.Domain.ApplicationTemplates.ValueObjects.RepeatRule;
@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.MembershipApplications.Queries.GetApplication
 {
-    public record GetApplicationQuery(Guid ApplicationId) : IRequest<Result<ApplicationUserResponse>>, IRequireClubOwnershipValidation
+    public record GetApplicationQuery(Guid ApplicationId) : IRequest<Result<ApplicationUserResponse>>, IRequireResourceValidation
     {
         public IEnumerable<OwnershipRule> Rules()
         {

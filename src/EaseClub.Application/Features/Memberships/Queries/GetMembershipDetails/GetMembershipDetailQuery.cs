@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common;
+using EaseClub.Application.Common;
 using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Memberships;
@@ -14,7 +14,7 @@ using static EaseClub.Application.Features.Memberships.Queries.GetMembershipDeta
 namespace EaseClub.Application.Features.Memberships.Queries.GetMembershipDetails
 {
     public record GetMembershipDetailQuery(
-        Guid MembershipId) : IRequest<Result<MembershipDetailDto>>, IRequireClubOwnershipValidation
+        Guid MembershipId) : IRequest<Result<MembershipDetailDto>>, IRequireResourceValidation
     {
         public IEnumerable<OwnershipRule> Rules()
         {

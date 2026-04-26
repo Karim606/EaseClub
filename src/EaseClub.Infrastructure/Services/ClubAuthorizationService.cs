@@ -87,6 +87,12 @@ namespace EaseClub.Infrastructure.Services
         {
             throw new NotImplementedException();
         }
+
+        public bool IsUserMatch(Guid id)
+        {
+            var currentUserId = Guid.Parse(_currentUserService.GetId());
+            return currentUserId == id;
+        }
     }
 
 }

@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.MembershipPlans;
+using EaseClub.Domain.MembershipPlans;
 using EaseClub.Domain.Memberships;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -32,9 +32,19 @@ namespace EaseClub.Infrastructure.Data.Repositories
             return await _context.Memberships.FirstOrDefaultAsync(x => x.MembershipApplicationId == applicationId, ct);
         }
 
-        public async Task<List<Membership>> GetByMemberIdAsync(Guid userId, CancellationToken ct = default)
+        public async Task<List<Membership>> GetByMemberIdAsync(Guid userId,MembershipStatus? status, CancellationToken ct = default)
         {
-            return await _context.Memberships.Where(x => x.MemberId == userId).Include(m => m.Club).ToListAsync(ct);
+            var query = _context.Memberships.Where(x => x.MemberId == userId);
+            if (status.HasValue)
+            {
+                query = query.Where(x => x.Status == status.Value);
+            }
+             query = query.Include(m => m.Club);
+
+            query = query.Include(m => m.MembershipCycles);
+              
+                return await query.ToListAsync(ct);
+
         }
         public async Task<List<MembershipInstallment>> GetInstallmentsForCurrentCycleAsync(
             Guid membershipId,
@@ -49,6 +59,15 @@ namespace EaseClub.Infrastructure.Data.Repositories
                           .FirstOrDefault())
           .OrderBy(i => i.DueDate)
           .ToListAsync(ct);
+        }
+        public async Task<Membership?> GetByInstallmentIdAsync(Guid installmentId, CancellationToken ct = default)
+        {
+            return await _context.Memberships
+                .Include(m => m.MembershipCycles)
+                    .ThenInclude(c => c.Installments)
+                .FirstOrDefaultAsync(m => m.MembershipCycles
+                    .SelectMany(c => c.Installments)
+                    .Any(i => i.Id == installmentId), ct);
         }
 
     }

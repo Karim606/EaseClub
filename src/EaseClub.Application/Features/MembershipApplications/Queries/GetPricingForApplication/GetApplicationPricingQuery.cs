@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common;
+using EaseClub.Application.Common;
 using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipApplications;
@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 namespace EaseClub.Application.Features.MembershipApplications.Queries.GetPricingForApplication
 {
     public record GetApplicationPricingQuery(Guid ApplicationId)
-    : IRequest<Result<Pricing>>, IRequireClubOwnershipValidation
+    : IRequest<Result<Pricing>>, IRequireResourceValidation
     {
         public IEnumerable<OwnershipRule> Rules()
         {

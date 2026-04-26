@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common;
+using EaseClub.Application.Common;
 using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.ApplicationTemplates;
 using EaseClub.Domain.Common.Results;
@@ -17,7 +17,7 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.CreateAp
     Guid ClubId,
     Guid MembershipTypeId,
     Guid MembershipPlanId,
-    Guid? InstallmentTemplateId) : IRequest<Result<Guid>>, IRequireClubOwnershipValidation
+    Guid? InstallmentTemplateId) : IRequest<Result<Guid>>, IRequireResourceValidation
     {
         public IEnumerable<OwnershipRule> Rules()
         {
