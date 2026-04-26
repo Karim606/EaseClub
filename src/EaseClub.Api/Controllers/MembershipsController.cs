@@ -54,7 +54,7 @@ namespace EaseClub.Api.Controllers
             "Pagination:\n" +
             "- Supports the unified pagination request used across the API."
         )]
-        public async Task<IActionResult> GetForAdmin(Guid clubId, [FromQuery]MembershipStatus? status, [FromQuery] string search, [FromQuery] PaginationRequest pagination, CancellationToken ct)
+        public async Task<IActionResult> GetForAdmin(Guid clubId, [FromQuery]MembershipStatus? status, [FromQuery] string? search, [FromQuery] PaginationRequest pagination, CancellationToken ct)
         {
             var result = await sender.Send(new GetMembershipsForAdminQuery(clubId, status, search, pagination), ct);
             return result.Match(Ok, Problem);
