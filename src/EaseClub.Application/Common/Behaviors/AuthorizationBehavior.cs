@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.ClubAdmin;
 using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Common;
@@ -86,6 +86,23 @@ namespace EaseClub.Application.Common.Behaviors
                             _logger.LogWarning("Ownership Failure: Resource {ResId} does not belong to Club {ClubId}",
                                 rule.ResourceId, targetClubId);
                             return (dynamic)Error.Forbidden($"The {rule.ResourceName} does not belong to the selected club.");
+                        }
+                    }
+                }
+
+                // 4. Validate General Resource Access (Doesn't require club ownership by user)
+                if (request is IRequireResourceValidation resourceValidationRequest)
+                {
+                    foreach (var rule in resourceValidationRequest.Rules())
+                    {
+                        // For general resource validation, we pass Guid.Empty as the rule is expected to handle its own context or check current user
+                        var isValid = await rule.Check(_clubAuthorizationService, Guid.Empty);
+
+                        if (!isValid)
+                        {
+                            _logger.LogWarning("Resource Validation Failure: Resource {ResId} of type {ResName} failed validation",
+                                rule.ResourceId, rule.ResourceName);
+                            return (dynamic)Error.Forbidden($"The {rule.ResourceName} validation failed.");
                         }
                     }
                 }
