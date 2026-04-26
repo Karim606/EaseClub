@@ -16,7 +16,7 @@ namespace EaseClub.Api.Controllers
     [Route("api/v{version:ApiVersion}/memberships")]
     public class MembershipsController(ISender sender) : ApiController
     {
-        [Authorize(Roles = "MemberUser,SuperAdmin")]
+        [Authorize(Roles = "Member,SuperAdmin")]
         [HttpGet("me")]
         [MapToApiVersion("1.0")]
         [ProducesResponseType(typeof(List<MembershipForMemberDto>), StatusCodes.Status200OK)]
@@ -59,7 +59,7 @@ namespace EaseClub.Api.Controllers
             return result.Match(Ok, Problem);
         }
 
-        [Authorize(Roles = "MemberUser,ClubAdmin,SuperAdmin")]
+        [Authorize(Roles = "Member,ClubAdmin,SuperAdmin")]
         [HttpGet("{membershipId:guid}")]
         [MapToApiVersion("1.0")]
         [ProducesResponseType(typeof(MembershipDetailDto), StatusCodes.Status200OK)]
@@ -82,7 +82,7 @@ namespace EaseClub.Api.Controllers
             return result.Match(Ok, Problem);
         }
 
-        [Authorize(Roles = "MemberUser,ClubAdmin,SuperAdmin")]
+        [Authorize(Roles = "Member,ClubAdmin,SuperAdmin")]
         [HttpGet("{membershipId:guid}/installments")]
         [MapToApiVersion("1.0")]
         [ProducesResponseType(typeof(List<InstallmentMemberDto>), StatusCodes.Status200OK)]

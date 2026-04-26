@@ -12,7 +12,7 @@ namespace EaseClub.Api.Controllers
     public class InvoicesController(ISender sender) : ApiController
     {
 
-        [Authorize("ClubAdmin,SuperAdmin")]
+        [Authorize(Roles = "ClubAdmin,SuperAdmin")]
         [HttpGet("/api/v{version:ApiVersion}/clubs/{clubId}/invoices")]
 
         [ProducesResponseType(typeof(UnifiedPaginatedResponse<InvoiceDto>), StatusCodes.Status200OK)]
@@ -46,7 +46,7 @@ namespace EaseClub.Api.Controllers
             );
         }
 
-        [Authorize("MemberUser,SuperAdmin")]
+        [Authorize(Roles = "Member,SuperAdmin")]
         [HttpGet]
 
         [ProducesResponseType(typeof(UnifiedPaginatedResponse<InvoiceDto>), StatusCodes.Status200OK)]
