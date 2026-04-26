@@ -17,7 +17,7 @@ namespace EaseClub.Api.Controllers
     public class MembershipsController(ISender sender) : ApiController
     {
         [Authorize(Roles = "Member,SuperAdmin")]
-        [HttpGet("me")]
+        [HttpGet("/api/v{version:ApiVersion}/{userId}/memberships")]
         [MapToApiVersion("1.0")]
         [ProducesResponseType(typeof(List<MembershipForMemberDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
@@ -27,13 +27,14 @@ namespace EaseClub.Api.Controllers
         [EndpointDescription(
             "Returns all memberships that belong to the current authenticated member user.\n\n" +
             "Security:\n" +
+            "it support filteration with membership status, so members can easily find memberships in a specific state (e.g. active, expired).\n\n" +
             "- MemberUser sees their own memberships.\n" +
             "- SuperAdmin can call the endpoint in an authenticated context.\n\n" +
             "Each result includes the membership identifier, membership number, club name, and current status."
         )]
-        public async Task<IActionResult> GetMyMemberships(CancellationToken ct)
+        public async Task<IActionResult> GetMyMemberships(Guid userId, MembershipStatus? status, CancellationToken ct)
         {
-            var result = await sender.Send(new GetMembershipsForMemberQuery(), ct);
+            var result = await sender.Send(new GetMembershipsForMemberQuery(userId, status), ct);
             return result.Match(Ok, Problem);
         }
 
