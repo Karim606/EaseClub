@@ -44,6 +44,10 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.CreateAp
             var plan = await membershipPlanRepo.GetPlanWithDetailsAsync(request.MembershipPlanId);
 
             if (plan == null) { logger.LogError("NotFound error in CreateApplicationCommandHandler: {Error}", Error.NotFound(description: "plan not found").ToLogObject()); return Error.NotFound(description: "plan not found"); }
+            if (plan.EnrollmentMode != EnrollmentMode.ApplicationForm) { logger.LogError("Conflict error in CreateApplicationCommandHandler: {Error}", Error.Conflict(description: "Plan WrongEnrollmentMode").ToLogObject()); return Error.Conflict(description: "Plan WrongEnrollmentMode"); }
+            if (plan.ApplicationTemplateId == null) { logger.LogError("Conflict error in CreateApplicationCommandHandler: {Error}", Error.Conflict(description: "Plan hasnt any app template").ToLogObject()); return Error.Conflict(description: "Plan hasnt any app template"); }
+
+
             var template = await tempRepo.GetFullTemplateAsync(plan.ApplicationTemplateId!.Value, ct);
             if (template == null) { logger.LogError("NotFound error in CreateApplicationCommandHandler: {Error}", Error.NotFound("Template not found").ToLogObject()); return Error.NotFound("Template not found"); }
 
@@ -51,8 +55,6 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.CreateAp
             var memType = await membershipTyeRepo.GetByIdAsync(request.MembershipTypeId);
             if (memType == null) { logger.LogError("NotFound error in CreateApplicationCommandHandler: {Error}", Error.NotFound(description: "Membership type not found.").ToLogObject()); return Error.NotFound(description: "Membership type not found."); }
 
-            // 1.3 Validate Enrollment Mode
-            if (plan.EnrollmentMode != EnrollmentMode.ApplicationForm) { logger.LogError("Conflict error in CreateApplicationCommandHandler: {Error}", Error.Conflict(description: "Plan WrongEnrollmentMode").ToLogObject()); return Error.Conflict(description: "Plan WrongEnrollmentMode"); }
 
             // 2. Fetch Installments Template if exists
             List<Installment> installments = new List<Installment>();
@@ -97,7 +99,7 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.CreateAp
           
             // 4. Initialize the Aggregate
             var trackingNumber = $"APP-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString()[..8].ToUpper()}";
-            var application = MembershipApplication.Create(
+            var appResult = MembershipApplication.Create(
                 Guid.NewGuid(),
                 trackingNumber,
                 snapshot,
@@ -106,7 +108,15 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.CreateAp
                 plan,
                 installmentTemplate,
                 memType,
-                plan.ApplicationTemplateId!.Value).Value;
+                plan.ApplicationTemplateId!.Value);
+
+            if (appResult.IsError)
+            {
+                logger.LogError("Application creation failed: {Error}", appResult.TopError.ToLogObject());
+                return appResult.TopError;
+            }
+
+            var application = appResult.Value;
 
             await appRepo.AddAsync(application);
             await unitOfWork.SaveChangesAsync(ct);
