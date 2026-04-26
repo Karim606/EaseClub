@@ -99,7 +99,7 @@ namespace EaseClub.Domain.MembershipApplications
 
             if(plan.MembershipTypeId != membershipType.Id) return Error.Conflict(description: "MembershipPlan isnt associated with this MembershipType");
 
-            if(installmentTemplate != null && !plan.InstallmentTemplates.All(i => i.InstallmentTemplateId != installmentTemplate.Id)) 
+            if(installmentTemplate != null && !plan.InstallmentTemplates.Any(i => i.InstallmentTemplateId == installmentTemplate.Id)) 
                 return Error.Conflict(description:"InstallmentTemplate isnt associated with this MembershipPlan");
             
             if (userId == Guid.Empty)
