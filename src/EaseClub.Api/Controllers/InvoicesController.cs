@@ -1,6 +1,9 @@
-﻿using EaseClub.Application.Common.Pagination;
+using EaseClub.Application.Common.Pagination;
 using EaseClub.Application.Features.Payment.Queries.GetInvoicesByUser;
 using EaseClub.Application.Features.Payment.Queries.GetInvoicesForClub;
+using EaseClub.Application.Features.Payment.Commands.IssueInvoice;
+using EaseClub.Application.Features.Payment.Queries.GetInvoiceStatus;
+using EaseClub.Domain.Payment.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -82,5 +85,39 @@ namespace EaseClub.Api.Controllers
                 Problem
             );
         }
+        [Authorize(Roles = "Member,ClubAdmin,SuperAdmin")]
+        [HttpPost("issue")]
+        [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [EndpointName("IssueInvoice")]
+        [EndpointSummary("Issues an invoice for a specific billing item")]
+        [EndpointDescription("Creates a new invoice for a PendingEnrollment or MembershipInstallment if it doesn't already have one.")]
+        public async Task<IActionResult> IssueInvoice([FromBody] IssueInvoiceRequest request, CancellationToken ct)
+        {
+            var result = await sender.Send(new IssueInvoiceCommand(request.BillingItemId, request.Type), ct);
+
+            return result.Match(
+                id => Ok(id),
+                Problem
+            );
+        }
+
+        [Authorize(Roles = "Member,ClubAdmin,SuperAdmin")]
+        [HttpGet("{invoiceId:guid}/status")]
+        [ProducesResponseType(typeof(InvoiceStatusDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [EndpointName("GetInvoiceStatus")]
+        [EndpointSummary("Retrieves the current status of an invoice")]
+        public async Task<IActionResult> GetStatus(Guid invoiceId, CancellationToken ct)
+        {
+            var result = await sender.Send(new GetInvoiceStatusQuery(invoiceId), ct);
+
+            return result.Match(
+                status => Ok(status),
+                Problem
+            );
+        }
     }
+
 }
