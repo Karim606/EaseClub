@@ -6,6 +6,7 @@ using EaseClub.Infrastructure.Notifications.RealTime;
 using Microsoft.OpenApi;
 using Serilog;
 using Serilog.Core;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using System.Text.Json;
 namespace EaseClub.Api
@@ -19,7 +20,10 @@ namespace EaseClub.Api
 
             var envName = builder.Environment.EnvironmentName.ToLower();
 
+            JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+
             // This finds the folder where the .sln usually sits
+
             var projectRoot = Directory.GetParent(AppContext.BaseDirectory)?.Parent?.Parent?.Parent?.Parent?.Parent?.FullName;
             var envPath = Path.Combine(projectRoot ?? "", ".env." + envName.ToLower());
 
