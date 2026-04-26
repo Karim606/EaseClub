@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.Clubs;
+using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
@@ -55,6 +55,14 @@ namespace EaseClub.Domain.MembershipPlans
                 return Result.Success;
             }
             return MembershipInstallmentErrors.OnlyPendingInstallmentOrOverDueCanBePaid;
+        }
+        public Result<Success> AttachInvoice(Guid invoiceId)
+        {
+            if (InvoiceId == invoiceId) return Result.Success;
+            if (InvoiceId.HasValue)
+                return Error.Conflict(description: "Installment already has an invoice attached.");
+            InvoiceId = invoiceId;
+            return Result.Success;
         }
 
         public Result<Success> MarkOverdue()
