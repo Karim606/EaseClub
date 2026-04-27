@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.Common;
+using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Payment.Enums;
 using System;
@@ -34,6 +34,8 @@ namespace EaseClub.Domain.Payment
         public decimal Amount { get; private set; }
         public string Currency { get; private set; }
         public string? ExternalRef { get; private set; }
+        public string? GatewaySessionId { get; private set; }
+        public string? GatewayOrderId { get; private set; }
         public string Gateway { get; private set; }
         public string? Method { get; private set; }
         public PaymentTransactionStatus Status { get; private set; }
@@ -71,6 +73,12 @@ namespace EaseClub.Domain.Payment
             ExternalRef = externalRef;
 
             return Result.Success;
+        }
+
+        public void SetGatewayIdentifiers(string sessionId, string orderId)
+        {
+            GatewaySessionId = sessionId;
+            GatewayOrderId = orderId;
         }
     }
 }
