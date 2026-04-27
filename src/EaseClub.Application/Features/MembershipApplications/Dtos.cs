@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.ApplicationTemplates;
+using EaseClub.Domain.ApplicationTemplates;
 using EaseClub.Domain.MembershipApplications.Enums;
 using EaseClub.Domain.MembershipApplications.ValueObjects;
 using EaseClub.Domain.PricingPolices;
@@ -25,6 +25,7 @@ namespace EaseClub.Application.Features.MembershipApplications
         public DateTime? SubmittedAt { get; set; }
 
         public ApplicationStatus Status { get; set; } //Status
+        public Guid? EnrollmentInvoiceId { get; set; }
 
     }
 

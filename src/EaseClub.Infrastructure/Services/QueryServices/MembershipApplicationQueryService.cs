@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Pagination;
+using EaseClub.Application.Common.Pagination;
 using EaseClub.Application.Common.Pagination.Parameters;
 using EaseClub.Application.Common.Pagination.Results;
 using EaseClub.Application.Features.MembershipApplications;
@@ -7,6 +7,7 @@ using EaseClub.Application.Features.MembershipApplications.Queries.GetApplicatio
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipApplications;
 using EaseClub.Domain.MembershipApplications.Enums;
+using EaseClub.Domain.Memberships;
 using EaseClub.Infrastructure.Common.QueryServices;
 using EaseClub.Infrastructure.Data;
 using Microsoft.Extensions.Logging;
@@ -97,7 +98,10 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                     MembershipPlanName = p.MembershipPlan.Name,
                     SubmittedAt = p.SubmittedAt,
                     Status = p.Status,
-
+                    EnrollmentInvoiceId = _context.PendingEnrollments
+                        .Where(pe => pe.MembershipApplicationId == p.Id && pe.Status == PendingEnrollmentStatus.WaitingForFirstPayment)
+                        .Select(pe => pe.FirstInvoiceId)
+                        .FirstOrDefault()
                 },
                 orderSelector: p => p.CreatedAt,
                 ct
