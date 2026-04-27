@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Features.Payment;
+using EaseClub.Application.Features.Payment;
 using EaseClub.Application.Features.Payment.Commands.ProcessPaymentGatewayWebhookCommand;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
@@ -32,54 +32,161 @@ namespace EaseClub.Infrastructure.Services.Payment
 
         public async Task<Result<PaymentSessionResult>> CreateSessionAsync(PaymentTransaction transaction, CancellationToken ct)
         {
-            var timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
-
-            var signature = GenerateSignature(
-                transaction.Amount,
-                _options.Currency,
-                transaction.Id.ToString(), // Using transactionId as MerchantReferenceId
-                timestamp
-                );
-
             var requestBody = new
             {
                 amount = transaction.Amount,
-                currency = "EGP",
-                merchantReferenceId = transaction.Id.ToString(), // Link Geidea to our InvoiceId
-                timestamp,
-                signature,
-                callbackUrl = _options.CallbackUrl,
-                returnUrl = _options.SuccessUrl,
+                currency = transaction.Currency,
+                merchantReferenceId = transaction.Id.ToString(),
+                timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
                 paymentOperation = "Pay"
             };
-            // 3. ADD BASIC AUTHENTICATION HEADER
-            var authInfo = $"{_options.PublicKey}:{_options.ApiPassword}";
-            var authHeader = Convert.ToBase64String(Encoding.ASCII.GetBytes(authInfo));
 
-            using var request = new HttpRequestMessage(HttpMethod.Post, $"{_options.BaseUrl}/payment-intent/api/v2/direct/session");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Basic", authHeader);
-            request.Content = JsonContent.Create(requestBody);
-
-            var response = await _httpClient.SendAsync(request, ct);
-            using var doc = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(ct));
-            var root = doc.RootElement;
-
-            // Navigate the JSON tree: session -> id
-            var sessionId = root.GetProperty("session").GetProperty("id").GetString();
-
-
-            if (!response.IsSuccessStatusCode || string.IsNullOrEmpty(sessionId))
+            var response = await PostToGatewayAsync("payment-intent/api/v2/direct/session", requestBody, ct);
+            if (!response.IsSuccessStatusCode)
             {
-                var content = await response.Content.ReadAsStringAsync();
-                // Log EVERYTHING
-                _logger.LogError("Geidea request failed. Status: {StatusCode}, Response: {Content}",
-                    response.StatusCode, content);
-
-                throw new Exception($"Payment request failed: {response.StatusCode} - {content}");
+                return await HandleGatewayError<PaymentSessionResult>(response, "Session creation failed");
             }
 
-            return new PaymentSessionResult(sessionId);
+            using var doc = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(ct));
+            var sessionId = doc.RootElement.GetProperty("session").GetProperty("id").GetString();
+
+            return new PaymentSessionResult(sessionId!);
         }
+
+        public async Task<Result<DirectPaymentResult>> ProcessPaymentAsync(PaymentTransaction transaction, CardDetailsDto cardDetails, CancellationToken ct)
+        {
+            // 1. Session
+            var sessionResult = await CreateSessionAsync(transaction, ct);
+            if (!sessionResult.IsSuccess) return sessionResult.TopError;
+            var sessionId = sessionResult.Value.sessionId;
+
+            // 2. Initiate
+            var initiateResult = await InitiateAuthenticationInternalAsync(sessionId, transaction, cardDetails, ct);
+            if (!initiateResult.IsSuccess) return initiateResult.TopError;
+            var orderId = initiateResult.Value;
+
+            transaction.SetGatewayIdentifiers(sessionId, orderId);
+
+            // 3. Authenticate Payer
+            return await AuthenticatePayerInternalAsync(sessionId, orderId, cardDetails, transaction, ct);
+        }
+
+        public async Task<Result<DirectPaymentResult>> FinalizePaymentAsync(PaymentTransaction transaction, string threeDSecureId, CancellationToken ct)
+        {
+            var payRequestBody = new
+            {
+                sessionId = transaction.GatewaySessionId,
+                orderId = transaction.GatewayOrderId,
+                threeDSecureId = threeDSecureId
+            };
+
+            var response = await PostToGatewayAsync("pgw/api/v2/direct/pay", payRequestBody, ct);
+            if (!response.IsSuccessStatusCode)
+            {
+                return await HandleGatewayError<DirectPaymentResult>(response, "Payment finalization failed");
+            }
+
+            using var doc = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(ct));
+            var status = doc.RootElement.GetProperty("order").GetProperty("status").GetString();
+
+            if (status == "Success" || status == "Paid")
+            {
+                return new DirectPaymentResult("Success", OrderId: transaction.GatewayOrderId);
+            }
+
+            return new DirectPaymentResult("Failed", Message: status);
+        }
+
+        #region Private Helpers
+
+        private async Task<Result<string>> InitiateAuthenticationInternalAsync(string sessionId, PaymentTransaction transaction, CardDetailsDto cardDetails, CancellationToken ct)
+        {
+            var body = new
+            {
+                sessionId,
+                cardDetails = new { cardNumber = cardDetails.Number },
+                orderAction = "Pay",
+                amount = transaction.Amount,
+                currency = transaction.Currency
+            };
+
+            var response = await PostToGatewayAsync("pgw/api/v6/direct/authenticate/initiate", body, ct);
+            if (!response.IsSuccessStatusCode)
+            {
+                return await HandleGatewayError<string>(response, "Authentication initiation failed");
+            }
+
+            using var doc = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(ct));
+            return doc.RootElement.GetProperty("order").GetProperty("orderId").GetString()!;
+        }
+
+        private async Task<Result<DirectPaymentResult>> AuthenticatePayerInternalAsync(string sessionId, string orderId, CardDetailsDto cardDetails, PaymentTransaction transaction, CancellationToken ct)
+        {
+            var body = new
+            {
+                sessionId,
+                orderId,
+                cardDetails = new
+                {
+                    cardNumber = cardDetails.Number,
+                    cardHolderName = cardDetails.HolderName,
+                    expiryMonth = int.Parse(cardDetails.ExpiryMonth),
+                    expiryYear = int.Parse(cardDetails.ExpiryYear[^2..]),
+                    cvv = cardDetails.Cvv
+                },
+                paymentOperation = "Pay",
+                callbackUrl = _options.CallbackUrl,
+                returnUrl = _options.SuccessUrl
+            };
+
+            var response = await PostToGatewayAsync("pgw/api/v6/direct/authenticate/payer", body, ct);
+            var content = await response.Content.ReadAsStringAsync(ct);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError("Geidea Auth Payer failed: {Content}", content);
+                return Error.Failure(description: "Authentication step failed.");
+            }
+
+            using var doc = JsonDocument.Parse(content);
+            var root = doc.RootElement;
+            var status = root.GetProperty("order").GetProperty("status").GetString();
+
+            if (status is "Success" or "Authorized")
+            {
+                var threeDSecureId = root.GetProperty("threeDSecure").GetProperty("threeDSecureId").GetString();
+                return await FinalizePaymentAsync(transaction, threeDSecureId!, ct);
+            }
+
+            if (status is "RequiresAction" or "AuthenticationRequired")
+            {
+                var redirectUrl = root.GetProperty("nextStep").GetProperty("redirectUrl").GetString();
+                return new DirectPaymentResult("RequiresAction", RedirectUrl: redirectUrl, TransactionId: transaction.Id.ToString(), OrderId: orderId);
+            }
+
+            return new DirectPaymentResult("Failed", Message: status);
+        }
+
+        private async Task<HttpResponseMessage> PostToGatewayAsync<TRequest>(string endpoint, TRequest body, CancellationToken ct)
+        {
+            var authInfo = $"{_options.PublicKey}:{_options.ApiPassword}";
+            var authHeader = Convert.ToBase64String(Encoding.UTF8.GetBytes(authInfo));
+
+            using var request = new HttpRequestMessage(HttpMethod.Post, $"{_options.BaseUrl.TrimEnd('/')}/{endpoint}");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Basic", authHeader);
+            request.Content = JsonContent.Create(body);
+
+            return await _httpClient.SendAsync(request, ct);
+        }
+
+        private async Task<Result<T>> HandleGatewayError<T>(HttpResponseMessage response, string context)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            _logger.LogError("Geidea Gateway Error [{Context}]: {Status} - {Content}", context, response.StatusCode, content);
+            return Error.Failure(description: $"{context}. Status: {response.StatusCode}");
+        }
+
+        #endregion
 
 
 
