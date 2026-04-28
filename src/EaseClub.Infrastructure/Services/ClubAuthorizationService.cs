@@ -1,4 +1,4 @@
-﻿using Azure.Core;
+using Azure.Core;
 using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.ApplicationTemplates;
 using EaseClub.Domain.Common;
@@ -55,32 +55,6 @@ namespace EaseClub.Infrastructure.Services
 
             return await _context.Set<TEntity>()
                 .AnyAsync(x => x.MemberId == memberId && x.Id == entityId);
-        }
-
-        public async Task<bool> CheckAppTemplateComponentsOwnership(Type resourceType,Guid resourceId,Guid clubId)
-        {
-            if(resourceType == typeof(ApplicationStepDefinition))
-            {
-                return await _context.ApplicationStepDefinitions
-                    .AnyAsync(s => s.Id == resourceId &&
-                                   s.Template.ClubId == clubId);
-            }
-
-            if (resourceType == typeof(ApplicationSectionDefinition))
-            {
-                return await _context.ApplicationSectionDefinitions
-                    .AnyAsync(sec => sec.Id == resourceId &&
-                                     sec.Step.Template.ClubId == clubId);
-            }
-
-            if (resourceType == typeof(ApplicationFieldDefinition))
-            {
-                return await _context.ApplicationFieldDefinitions
-                    .AnyAsync(f => f.Id == resourceId &&
-                                   f.Section.Step.Template.ClubId == clubId);
-            }
-
-            return false;
         }
 
         public Task<bool> IsUserMemberOfClubAsync(Guid userId, Guid clubId)

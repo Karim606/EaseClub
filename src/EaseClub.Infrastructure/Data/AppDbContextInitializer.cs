@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.Branches;
+using EaseClub.Domain.Branches;
 using EaseClub.Domain.ClubAdmin;
 using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Common.ValueObjects;
@@ -21,6 +21,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using EaseClub.Domain.Clubs.ValueObjects;
+using EaseClub.Domain.ApplicationTemplates;
+using EaseClub.Domain.ApplicationTemplates.SystemSections;
+using EaseClub.Domain.ApplicationTemplates.ValueObjects.ValidationRulesSet;
+using EaseClub.Domain.MembershipApplications.ValueObjects;
+using EaseClub.Domain.PricingPolices;
+using EaseClub.Domain.MembershipApplications;
 
 namespace EaseClub.Infrastructure.Data
 {
@@ -106,7 +112,14 @@ namespace EaseClub.Infrastructure.Data
 
         private static readonly Guid SeedMembershipPlanId = Guid.Parse("7c2d4a8e-1b9f-4e2a-8f3c-5b6d9a1e0c47");
 
-        private static readonly Guid SeedInstallmentTemplateId = Guid.Parse("7c2d4a8e-1b9f-4e2a-8f3c-5b6d9a1e0c47");
+        private static readonly Guid SeedInstallmentTemplateId = Guid.Parse("7c2d4a8e-1b9f-4e2a-8f3c-5b6d9a1e0c48");
+
+        private static readonly Guid SeedApplicationTemplateId = Guid.Parse("5a1e8b6f-4f6c-4c4a-9d0f-2a8b7e3c1d95");
+        private static readonly Guid SeedMembershipType2Id = Guid.Parse("b2e8b6f2-4f6c-4c4a-9d0f-2a8b7e3c1d96");
+        private static readonly Guid SeedMembershipPlan2Id = Guid.Parse("c3e8b6f2-4f6c-4c4a-9d0f-2a8b7e3c1d97");
+        private static readonly Guid SeedMembershipApplicationId = Guid.Parse("d4e8b6f2-4f6c-4c4a-9d0f-2a8b7e3c1d98");
+        private static readonly Guid SeedPricingPolicy1Id = Guid.Parse("e5e8b6f2-4f6c-4c4a-9d0f-2a8b7e3c1d99");
+        private static readonly Guid SeedPricingPolicy2Id = Guid.Parse("f6e8b6f2-4f6c-4c4a-9d0f-2a8b7e3c1d00");
 
         public async Task SeedAsync()
         {
@@ -135,8 +148,9 @@ namespace EaseClub.Infrastructure.Data
         {
             await SeedClubsAndBranches();
             await SeedRolesAndUsers();
+            await SeedPricingPolicies();
             await SeedMembershipType_Plan_InstallmentTemplate();
-            
+            await SeedMembershipApplications();
         }
 
         #region SeedUserAndRoles
@@ -335,31 +349,170 @@ namespace EaseClub.Infrastructure.Data
 
         public async Task SeedMembershipType_Plan_InstallmentTemplate()
         {
-            // Check MembershipType
+            // 1. Check MembershipType (pro)
             if (!await appDbContext.MembershipTypes.AnyAsync(x => x.Id == SeedMembershipTypeId))
             {
                 var membershipType = MembershipType.Create(SeedMembershipTypeId, SeedClubId, "pro").Value;
                 await appDbContext.MembershipTypes.AddAsync(membershipType);
             }
 
-            // Check MembershipPlan
+            // 2. Check ApplicationTemplate (Standard Form)
+            if (!await appDbContext.ApplicationTemplateDefinitions.AnyAsync(x => x.Id == SeedApplicationTemplateId))
+            {
+                var template = ApplicationTemplateDefinition.Create(SeedApplicationTemplateId, SeedClubId, "Standard Membership Form").Value;
+                
+                // Seed a simple step with Member Identity
+                var stepId = Guid.NewGuid();
+                var sectionId = Guid.NewGuid();
+                var fieldId = Guid.NewGuid();
+
+                var steps = new List<StepSnapshot>
+                {
+                    new StepSnapshot(stepId, "Personal Information", 1, new List<SectionSnapshot>
+                    {
+                        new SectionSnapshot(sectionId, "Identity", 1, null, SectionIntent.General, new List<FieldSnapshot>
+                        {
+                            new FieldSnapshot(fieldId, "sys_full_name", "Full Name", FieldType.Text, 
+                                ValidationRuleSet.Create(true, 3, 100).Value.ToSnapshot(), null, null, 1, true)
+                        })
+                    })
+                };
+                template.UpdateSteps(steps);
+                await appDbContext.ApplicationTemplateDefinitions.AddAsync(template);
+            }
+
+            // 3. Check MembershipType (Premium)
+            if (!await appDbContext.MembershipTypes.AnyAsync(x => x.Id == SeedMembershipType2Id))
+            {
+                var membershipType = MembershipType.Create(SeedMembershipType2Id, SeedClubId, "Premium").Value;
+                await appDbContext.MembershipTypes.AddAsync(membershipType);
+            }
+
+            // 4. Check MembershipPlan (Direct Pay)
             if (!await appDbContext.MembershipPlans.AnyAsync(x => x.Id == SeedMembershipPlanId))
             {
                 var membershipPlan = MembershipPlan.Create(
-                    SeedMembershipPlanId, SeedClubId, SeedMembershipTypeId,EnrollmentMode.DirectPay,null,1,3,"ca", 2000, 60, 1000, false,PaymentMode.Cash
+                    SeedMembershipPlanId, SeedClubId, SeedMembershipTypeId, EnrollmentMode.DirectPay, null, 1, 3, "Elite Monthly", 2000, 60, 1000, false, PaymentMode.Cash
                 ).Value;
                 await appDbContext.MembershipPlans.AddAsync(membershipPlan);
             }
 
-            // Check InstallmentTemplate
-            if (!await appDbContext.InstallmentTemplates.AnyAsync(x => x.Id == SeedInstallmentTemplateId))
+            // 5. Check InstallmentTemplate — must exist BEFORE MembershipPlan2 is created
+            //    so we can immediately link them via AddInstallmentTemplate.
+            InstallmentTemplate? installmentTemplate = await appDbContext.InstallmentTemplates
+                .FirstOrDefaultAsync(x => x.Id == SeedInstallmentTemplateId);
+
+            if (installmentTemplate == null)
             {
-                var installmentTemplate = InstallmentTemplate.Create(
-                    SeedInstallmentTemplateId, SeedClubId, "se", 4, 60, null
+                installmentTemplate = InstallmentTemplate.Create(
+                    SeedInstallmentTemplateId, SeedClubId, "Quarterly Plan", 4, 365, null
                 ).Value;
                 await appDbContext.InstallmentTemplates.AddAsync(installmentTemplate);
+                // Flush so the installment template gets its Id persisted before the plan references it
+                await appDbContext.SaveChangesAsync();
             }
+
+            // 6. Check MembershipPlan2 (Application Form) — created AFTER InstallmentTemplate exists
+            if (!await appDbContext.MembershipPlans.AnyAsync(x => x.Id == SeedMembershipPlan2Id))
+            {
+                var membershipPlan = MembershipPlan.Create(
+                    SeedMembershipPlan2Id, SeedClubId, SeedMembershipType2Id, EnrollmentMode.ApplicationForm, SeedApplicationTemplateId, 1, 5, "Premium Annual (Application)", 5000, 365, 4500, true, PaymentMode.Mixed
+                ).Value;
+
+                // Link the installment template — it now definitely exists
+                membershipPlan.AddInstallmentTemplate(installmentTemplate);
+
+                await appDbContext.MembershipPlans.AddAsync(membershipPlan);
+            }
+
+            await appDbContext.SaveChangesAsync();
         }
 
+        private async Task SeedPricingPolicies()
+        {
+            if (await appDbContext.PricingPolicies.AnyAsync(x => x.Id == SeedPricingPolicy1Id))
+                return;
+
+            var policy1 = PricingPolicy.Create(
+                SeedPricingPolicy1Id,
+                SeedClubId,
+                "Late Fee",
+                true, // Increase
+                100m, // Fixed Amount
+                null,
+                null
+            ).Value;
+
+            var policy2 = PricingPolicy.Create(
+                SeedPricingPolicy2Id,
+                SeedClubId,
+                "Early Bird Discount",
+                false, // Decrease
+                null,
+                10m, // 10%
+                null
+            ).Value;
+
+            await appDbContext.PricingPolicies.AddRangeAsync(policy1, policy2);
+            logger.LogInformation("Seed PricingPolicies created successfully.");
+        }
+
+        private async Task SeedMembershipApplications()
+        {
+            if (await appDbContext.MembershipApplications.AnyAsync(x => x.Id == SeedMembershipApplicationId))
+            {
+                logger.LogInformation("Seed MembershipApplication already exists.");
+                return;
+            }
+
+            var plan = await appDbContext.MembershipPlans
+                .Include(p => p.MembershipType)
+                .Include(p => p.InstallmentTemplates)
+                .FirstOrDefaultAsync(p => p.Id == SeedMembershipPlan2Id);
+
+            var template = await appDbContext.ApplicationTemplateDefinitions
+                .FirstOrDefaultAsync(t => t.Id == SeedApplicationTemplateId);
+
+            var installmentTemplate = await appDbContext.InstallmentTemplates
+                .FirstOrDefaultAsync(x => x.Id == SeedInstallmentTemplateId);
+
+            if (plan == null || template == null || installmentTemplate == null)
+            {
+                logger.LogWarning("Seeding Application failed: Required data missing (Plan, Template, or InstallmentTemplate).");
+                return;
+            }
+
+            logger.LogInformation("Creating Seed MembershipApplication...");
+            
+            // 1. Create Application
+            var instRules = installmentTemplate.Installments.Select(i => i.ToSnapshot()).ToList();
+            var snapshot = template.ToSnapshot(0, new(), plan.ToSnapshot(), instRules);
+            
+            var application = MembershipApplication.Create(
+                SeedMembershipApplicationId,
+                "APP-2024-001",
+                snapshot,
+                SeedMemberId,
+                SeedClubId,
+                plan,
+                installmentTemplate, 
+                plan.MembershipType,
+                template.Id
+            ).Value;
+
+            // 2. Add some sample answers to complete the first step
+            var step = snapshot.Steps.First();
+            var field = step.Sections.First().Fields.First();
+            
+            var answers = new List<UserAnswer>
+            {
+                new UserAnswer(field.Id, field.Key, "Seed User Name", null, field.Type)
+            };
+
+            application.CompleteStep(step.Order, answers);
+
+            await appDbContext.MembershipApplications.AddAsync(application);
+            logger.LogInformation("Seed MembershipApplication created successfully with ID: {AppId}", SeedMembershipApplicationId);
+        }
     }
 }

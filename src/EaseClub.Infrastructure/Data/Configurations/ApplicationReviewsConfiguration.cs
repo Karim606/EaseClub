@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.MembershipApplications;
+using EaseClub.Domain.MembershipApplications;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
@@ -24,8 +24,7 @@ namespace EaseClub.Infrastructure.Data.Configurations
                 .HasConversion<string>(); // Stores 'Approved', 'Reject', etc. as readable strings
 
             builder.Property(r => r.Reason)
-                .HasMaxLength(1000) // Reviews might need long explanations
-                .IsRequired(); // Since the factory handles empty as string.Empty
+                .HasMaxLength(1000); // Reviews might need long explanations
 
             builder.Property(r => r.Date)
                 .IsRequired();

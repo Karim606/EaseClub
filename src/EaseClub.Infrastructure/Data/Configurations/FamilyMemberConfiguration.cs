@@ -1,6 +1,7 @@
-﻿using EaseClub.Domain.Memberships;
+using EaseClub.Domain.Memberships;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,7 +38,11 @@ namespace EaseClub.Infrastructure.Data.Configurations
                     v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null!),
                     v => JsonSerializer.Deserialize<Dictionary<string, string>>(v, (JsonSerializerOptions)null!)
                          ?? new Dictionary<string, string>()
-                );
+                )
+                .Metadata.SetValueComparer(new ValueComparer<IReadOnlyDictionary<string, string>>(
+                    (c1, c2) => c1.Count == c2.Count && !c1.Except(c2).Any(),
+                    c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                    c => c.ToDictionary(k => k.Key, v => v.Value)));
 
         }
     }

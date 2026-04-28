@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.Common;
+using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipApplications;
 using EaseClub.Domain.MembershipApplications.Enums;
@@ -193,7 +193,7 @@ namespace EaseClub.Domain.Memberships
             if (req.ApplicationId != null && req.ExistingMembershipId != null)
                 return Error.Conflict(description: "Linking existing membership and application is not allowed, linking application for creation of membership , linking membershipId for renewal only.");
 
-            var rules = req.Template.Installments.ToList()
+            var rules = req.Template?.Installments.ToList()
                 ?? new List<Installment>
                 {
                     Installment.Create(100m, 0, 1).Value

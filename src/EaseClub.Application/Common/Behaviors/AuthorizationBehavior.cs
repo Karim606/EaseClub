@@ -90,13 +90,19 @@ namespace EaseClub.Application.Common.Behaviors
                     }
                 }
 
-                // 4. Validate General Resource Access (Doesn't require club ownership by user)
+                // 4. Validate General Resource Access
                 if (request is IRequireResourceValidation resourceValidationRequest)
                 {
+                    Guid? userClubId = null;
+                    if (_currentUserService.GetRoles().Contains("ClubAdmin"))
+                    {
+                        userClubId = (await _clubAdminUserRepository.GetByIdAsync(userId))?.ClubId;
+                    }
+
                     foreach (var rule in resourceValidationRequest.Rules())
                     {
-                        // For general resource validation, we pass Guid.Empty as the rule is expected to handle its own context or check current user
-                        var isValid = await rule.Check(_clubAuthorizationService, Guid.Empty);
+                        // Pass the user's clubId (if any) so the rule can check club-level access
+                        var isValid = await rule.Check(_clubAuthorizationService, userClubId ?? Guid.Empty);
 
                         if (!isValid)
                         {

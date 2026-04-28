@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.MembershipPlans;
+using EaseClub.Domain.MembershipPlans;
 using EaseClub.Domain.MembershipTypes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -21,6 +21,7 @@ namespace EaseClub.Infrastructure.Data.Configurations
             builder.Property(x => x.Name).HasMaxLength(100).IsRequired();
             builder.Property(x => x.Description).HasMaxLength(500);
             builder.Property(x => x.TotalPrice).HasPrecision(18, 2);
+            builder.Property(x => x.RenewPrice).HasPrecision(18, 2);
 
             builder.Property(x=> x.PaymentMode).HasConversion<string>().HasMaxLength(50);
             builder.Property(x => x.EnrollmentMode).HasConversion<string>().HasMaxLength(50);

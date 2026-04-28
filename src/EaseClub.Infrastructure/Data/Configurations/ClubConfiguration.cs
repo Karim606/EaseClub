@@ -1,8 +1,9 @@
-﻿using EaseClub.Domain.Branches;
+using EaseClub.Domain.Branches;
 using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Clubs.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 using System;
 using System.Collections.Generic;
@@ -63,15 +64,23 @@ namespace EaseClub.Infrastructure.Data.Configurations
             builder.Property(c => c.Amenities)
             .HasConversion(
                 v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
-                v => JsonSerializer.Deserialize<List<Amenity>>(v, (JsonSerializerOptions)null)
-            );
+                v => JsonSerializer.Deserialize<List<Amenity>>(v, (JsonSerializerOptions)null) ?? new List<Amenity>()
+            )
+            .Metadata.SetValueComparer(new ValueComparer<IReadOnlyCollection<Amenity>>(
+                (c1, c2) => c1!.SequenceEqual(c2!),
+                c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                c => c.ToList()));
 
             builder.Property(c => c.WorkSchedules)
             .HasConversion(
                 v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
-                v => JsonSerializer.Deserialize<List<WorkSchedule>>(v, (JsonSerializerOptions)null)
+                v => JsonSerializer.Deserialize<List<WorkSchedule>>(v, (JsonSerializerOptions)null) ?? new List<WorkSchedule>()
                 )
-                .HasColumnType("nvarchar(max)");
+                .HasColumnType("nvarchar(max)")
+                .Metadata.SetValueComparer(new ValueComparer<IReadOnlyCollection<WorkSchedule>>(
+                (c1, c2) => c1!.SequenceEqual(c2!),
+                c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                c => c.ToList()));
         }
     }
 }

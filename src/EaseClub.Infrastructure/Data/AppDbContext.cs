@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.ClubAdmin;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Member;
@@ -109,12 +109,8 @@ namespace EaseClub.Infrastructure.Data
         public DbSet<MembershipInstallment> MembershipInstallments { get; set; }
 
         public DbSet<ApplicationTemplateDefinition>ApplicationTemplateDefinitions { get; set; }
-        public DbSet<ApplicationStepDefinition> ApplicationStepDefinitions { get; set; }
-        public DbSet<ApplicationSectionDefinition> ApplicationSectionDefinitions { get; set; }
-        public DbSet<ApplicationFieldDefinition> ApplicationFieldDefinitions { get; set; }
 
         public DbSet<MembershipApplication> MembershipApplications { get; set; }
-        public DbSet<ApplicationAnswer> ApplicationAnswers { get; set; }
         public DbSet<ApplicationReview> ApplicationReviews { get; set; }
         public DbSet<PricingPolicy> PricingPolicies { get; set; }
         public DbSet<PricingPolicyAssignment> PricingPolicyAssignments { get; set; }

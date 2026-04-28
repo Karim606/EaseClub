@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.ApplicationTemplates;
+using EaseClub.Domain.ApplicationTemplates;
 using EaseClub.Domain.ApplicationTemplates.SystemSections;
 using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Common;
@@ -124,7 +124,7 @@ namespace EaseClub.Domain.Memberships
 
             var groupedMembers = app.Answers
                 .Where(a => familySection.Fields.Any(f => f.Id == a.FieldDefinitionId))
-                .GroupBy(a => a.InstanceIndex);
+                .GroupBy(a => a.InstanceId);
 
             foreach (var group in groupedMembers)
             {
