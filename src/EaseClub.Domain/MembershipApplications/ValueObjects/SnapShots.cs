@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.ApplicationTemplates;
+using EaseClub.Domain.ApplicationTemplates;
 using EaseClub.Domain.ApplicationTemplates.ValueObjects.ConditionExpression;
 using EaseClub.Domain.ApplicationTemplates.ValueObjects.RepeatRule;
 using EaseClub.Domain.ApplicationTemplates.ValueObjects.ValidationRulesSet;
@@ -99,12 +99,12 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
         [JsonConstructor]
         public  FieldSnapshot(
                 Guid id,
-                string key, // The 'Link' to the PricingPolicy.MultiplierSourceKey
+                string key, 
                 string label,
                 FieldType type,
                 ValidationRuleSetSnapshot validationRules,
                 ConditionExpressionSnapshot? visibilityCondition,
-                List<string>?allowedValues,
+                List<string>? allowedValues,
                 int order,
                 bool isSystemField)
         {
@@ -127,9 +127,7 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
         public bool IsSystemField { get; private set; }
         public ValidationRuleSetSnapshot ValidationRules { get; init; } = default!;
         public ConditionExpressionSnapshot? VisibilityCondition { get; init; }
-
-        public List<string>? AllowedValues = null;
-
+        public List<string>? AllowedValues { get; private set; }
         public int Order { get; private set; }
 
         public List<Error> Validate(string? value)
@@ -309,11 +307,11 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
     public record MembershipPlanSnapshot
     {
         [JsonConstructor]
-        public MembershipPlanSnapshot (Guid id,string name,int maxPaymentPeriod, decimal price,int subscriptionValidityInYears,int maxFamilyMembers)
+        public MembershipPlanSnapshot (Guid id, string name, int maxPaymentPeriodInDays, decimal price, int subscriptionValidityInYears, int maxFamilyMembers)
         {
             Id = id;
             Name = name;
-            MaxPaymentPeriodInDays = maxPaymentPeriod;
+            MaxPaymentPeriodInDays = maxPaymentPeriodInDays;
             Price = price;
             SubscriptionValidityInYears = subscriptionValidityInYears;
             MaxFamilyMembers = maxFamilyMembers;

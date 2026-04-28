@@ -33,7 +33,7 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.Complete
 
             if (stepFields == null) return MembershipApplicationErrors.StepNotFound;
 
-            var domainAnswers = new List<ApplicationAnswer>();
+            var domainAnswers = new List<EaseClub.Domain.MembershipApplications.ValueObjects.UserAnswer>();
             var mappingErrors = new List<Error>();
 
             // 2. Map & Enrich: Only use the FieldId and Value from the client
@@ -44,21 +44,13 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.Complete
                     continue;
 
                 // Set technical properties (Key, Type) from the BACKEND definition
-                var answerResult = ApplicationAnswer.Create(
-                    app.Id,
+                domainAnswers.Add(new EaseClub.Domain.MembershipApplications.ValueObjects.UserAnswer(
                     dto.FieldId,
-                    fieldDefinition.Key,   // From Snapshot
-                    fieldDefinition.Type,  // From Snapshot
-                    dto.Value,             // From Client
-                    dto.InstanceIndex);
-
-                if (answerResult.IsError)
-                {
-                    mappingErrors.AddRange(answerResult.Errors);
-                    continue;
-                }
-
-                domainAnswers.Add(answerResult.Value);
+                    fieldDefinition.Key,
+                    dto.Value,
+                    dto.InstanceId,
+                    fieldDefinition.Type
+                ));
             }
             if (mappingErrors.Any()) return mappingErrors;
 

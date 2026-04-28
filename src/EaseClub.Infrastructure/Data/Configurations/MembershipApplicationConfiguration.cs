@@ -1,9 +1,10 @@
-﻿using EaseClub.Domain.MembershipApplications;
+using EaseClub.Domain.MembershipApplications;
 using EaseClub.Domain.MembershipApplications.ValueObjects;
 using EaseClub.Domain.PricingPolices;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -78,12 +79,13 @@ namespace EaseClub.Infrastructure.Data.Configurations
             //    price.ToJson();
 
             //});
+            // 2. JSON Blobs (Steps & Progress)
             builder.Property(a => a.TemplateSnapshot)
-            .HasColumnType("nvarchar(max)")
-            .HasConversion(
-                v => JsonSerializer.Serialize(v, jsonOptions),
-                v => JsonSerializer.Deserialize<ApplicationTemplateSnapshot>(v, jsonOptions)!
-            );
+                .HasColumnType("nvarchar(max)")
+                .HasConversion(
+                    v => JsonSerializer.Serialize(v, jsonOptions),
+                    v => JsonSerializer.Deserialize<ApplicationTemplateSnapshot>(v, jsonOptions)!
+                );
 
             builder.Property(a => a.FinalPriceSummary)
                 .HasColumnType("nvarchar(max)")
@@ -92,29 +94,35 @@ namespace EaseClub.Infrastructure.Data.Configurations
                     v => JsonSerializer.Deserialize<PricingResult>(v, jsonOptions)
                 );
 
-            // Handle the private List<int> field
+            // Progress tracking (Private Field + JSON Conversion + Comparer)
             builder.Property(a => a.CompletedStepOrders)
+                .HasField("_CompletedStepOrders")
                 .HasConversion(
                     v => JsonSerializer.Serialize(v, jsonOptions),
                     v => JsonSerializer.Deserialize<List<int>>(v, jsonOptions) ?? new List<int>()
-                );
+                )
+                .Metadata.SetValueComparer(new ValueComparer<IReadOnlyList<int>>(
+                    (c1, c2) => c1!.SequenceEqual(c2!),
+                    c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                    c => c.ToList()));
 
-            // 3. Relationships (Answers Collection)
-            // Access the private backing field _Answers for encapsulation
-            builder.Navigation(x => x.Answers).HasField("_Answers")
+            // Answers collection (Private Field + JSON Conversion + Comparer)
+            builder.Property(a => a.Answers)
+                .HasField("_Answers")
+                .HasColumnType("nvarchar(max)")
+                .HasConversion(
+                    v => JsonSerializer.Serialize(v, jsonOptions),
+                    v => JsonSerializer.Deserialize<List<UserAnswer>>(v, jsonOptions) ?? new List<UserAnswer>()
+                )
+                .Metadata.SetValueComparer(new ValueComparer<IReadOnlyList<UserAnswer>>(
+                    (c1, c2) => c1!.SequenceEqual(c2!),
+                    c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                    c => c.ToList()));
+
+            // Reviews (Private Field)
+            builder.Navigation(x => x.Reviews)
+                .HasField("_Reviews")
                 .UsePropertyAccessMode(PropertyAccessMode.Field);
-
-            builder.Navigation(x => x.Reviews).HasField("_Reviews")
-                .UsePropertyAccessMode(PropertyAccessMode.Field);
-
-            builder.Property(a => a.CompletedStepOrders)
-            .HasField("_CompletedStepOrders")
-            .UsePropertyAccessMode(PropertyAccessMode.Field);
-
-            builder.HasMany(a => a.Answers)
-                .WithOne() // ApplicationAnswer can exist without a navigation back to Application
-                .HasForeignKey(ans => ans.ApplicationId)
-                .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasOne(a => a.MembershipType).WithMany().HasForeignKey(a=> a.MembershipTypeId).OnDelete(DeleteBehavior.Restrict);
             builder.HasOne(a => a.MembershipPlan).WithMany().HasForeignKey(a => a.MembershipPlanId).OnDelete(DeleteBehavior.Restrict);

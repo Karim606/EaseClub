@@ -1,4 +1,5 @@
-﻿using EaseClub.Domain.Clubs;
+using EaseClub.Domain.ApplicationTemplates;
+using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
@@ -53,8 +54,8 @@ namespace EaseClub.Domain.MembershipApplications
         private readonly List<int> _CompletedStepOrders = new();
         public IReadOnlyList<int> CompletedStepOrders => _CompletedStepOrders.AsReadOnly();
         // Navigation property to the Answer table
-        private readonly List<ApplicationAnswer> _Answers = new List<ApplicationAnswer>();
-        public IReadOnlyList<ApplicationAnswer> Answers => _Answers.AsReadOnly();
+        private readonly List<UserAnswer> _Answers = new List<UserAnswer>();
+        public IReadOnlyList<UserAnswer> Answers => _Answers.AsReadOnly();
 
         private readonly List<ApplicationReview> _Reviews = new();
         public IReadOnlyList<ApplicationReview> Reviews => _Reviews.AsReadOnly();
@@ -128,7 +129,7 @@ namespace EaseClub.Domain.MembershipApplications
 
         #region Answer Management Logic
 
-        public Result<Success> CompleteStep(int stepOrder, List<ApplicationAnswer> newAnswers)
+        public Result<Success> CompleteStep(int stepOrder, List<UserAnswer> newAnswers)
         {
             // 1. Pre-validation: Status & Template existence
             if (Status != ApplicationStatus.Draft)
@@ -159,7 +160,7 @@ namespace EaseClub.Domain.MembershipApplications
 
         #region Private Helpers
 
-        private void ValidateRepeatRules(StepSnapshot step, List<ApplicationAnswer> answers, List<Error> errors)
+        private void ValidateRepeatRules(StepSnapshot step, List<UserAnswer> answers, List<Error> errors)
         {
             foreach (var section in step.Sections)
             {
@@ -168,7 +169,7 @@ namespace EaseClub.Domain.MembershipApplications
                 var sectionFieldIds = section.Fields.Select(f => f.Id).ToHashSet();
                 var uniqueInstancesCount = answers
                     .Where(a => sectionFieldIds.Contains(a.FieldDefinitionId))
-                    .Select(a => a.InstanceIndex)
+                    .Select(a => a.InstanceId)
                     .Distinct()
                     .Count();
 
@@ -181,7 +182,7 @@ namespace EaseClub.Domain.MembershipApplications
             }
         }
 
-        private void ValidateStructuralIntegrity(StepSnapshot step, List<ApplicationAnswer> answers, List<Error> errors)
+        private void ValidateStructuralIntegrity(StepSnapshot step, List<UserAnswer> answers, List<Error> errors)
         {
             foreach (var section in step.Sections)
             {
@@ -190,24 +191,13 @@ namespace EaseClub.Domain.MembershipApplications
 
                 var instances = answers
                     .Where(a => sectionFieldIds.Contains(a.FieldDefinitionId))
-                    .GroupBy(a => a.InstanceIndex)
-                    .OrderBy(g => g.Key)
+                    .GroupBy(a => a.InstanceId)
                     .ToList();
 
-                // Start at 1 to match the 1-based InstanceIndex
-                for (int i = 1; i <= instances.Count; i++)
+                foreach (var instanceGroup in instances)
                 {
-                    // Now 'i' is exactly the index we expect (1, 2, 3...)
-                    var currentInstance = instances[i - 1]; // Access the list via 0-based offset
-
-                    if (currentInstance.Key != i)
-                    {
-                        errors.Add(Error.Validation("Application.StructuralGap",
-                            $"Sequence gap in '{section.Title}': expected instance {i} but found {currentInstance.Key}."));
-                        return;
-                    }
-
-                    var instanceAnswers = currentInstance.ToDictionary(a => a.FieldDefinitionId);
+                    var instanceId = instanceGroup.Key;
+                    var instanceAnswers = instanceGroup.ToDictionary(a => a.FieldDefinitionId);
 
                     foreach (var fieldDef in sectionFields)
                     {
@@ -217,10 +207,10 @@ namespace EaseClub.Domain.MembershipApplications
                         if (fieldDef.ValidationRules.IsRequired && !hasValue)
                         {
                             errors.Add(Error.Validation("Application.MissingRequiredField",
-                                $"'{fieldDef.Label}' is required for {section.Title} item #{i}."));
+                                $"'{fieldDef.Label}' is required in section '{section.Title}'."));
                         }
 
-                        if (provided)
+                        if (provided && hasValue)
                         {
                             var fieldErrors = fieldDef.Validate(answer!.Value);
                             errors.AddRange(fieldErrors);
@@ -230,7 +220,7 @@ namespace EaseClub.Domain.MembershipApplications
             }
         }
 
-        private void ApplyAnswersToStep(HashSet<Guid> fieldIdsInStep, List<ApplicationAnswer> filteredAnswers)
+        private void ApplyAnswersToStep(HashSet<Guid> fieldIdsInStep, List<UserAnswer> filteredAnswers)
         {
             _Answers.RemoveAll(a => fieldIdsInStep.Contains(a.FieldDefinitionId));
             _Answers.AddRange(filteredAnswers);
@@ -247,6 +237,46 @@ namespace EaseClub.Domain.MembershipApplications
 
         #endregion
 
+        #region Public Helpers (System Section Management)
+
+        /// <summary>
+        /// Retrieves a specific answer by key. For repeated sections, use instanceId.
+        /// </summary>
+        public string? GetAnswerValue(string fieldKey, string? instanceId = null)
+        {
+            return _Answers.FirstOrDefault(a => a.FieldKey == fieldKey && a.InstanceId == instanceId)?.Value;
+        }
+
+        /// <summary>
+        /// Retrieves all answers for a specific key (useful for repeating sections).
+        /// </summary>
+        public IEnumerable<string?> GetRepeatedAnswerValues(string fieldKey)
+        {
+            return _Answers.Where(a => a.FieldKey == fieldKey).Select(a => a.Value);
+        }
+
+        /// <summary>
+        /// Groups answers by their InstanceId for a specific section (by intent).
+        /// Returns a list of dictionaries where each dictionary is one "instance" of the section.
+        /// </summary>
+        public List<Dictionary<string, string?>> GetSectionDataByIntent(SectionIntent intent)
+        {
+            var sectionFields = TemplateSnapshot.Steps
+                .SelectMany(s => s.Sections)
+                .Where(sec => sec.Intent == intent)
+                .SelectMany(sec => sec.Fields)
+                .ToList();
+
+            var fieldIds = sectionFields.Select(f => f.Id).ToHashSet();
+            
+            return _Answers.Where(a => fieldIds.Contains(a.FieldDefinitionId))
+                .GroupBy(a => a.InstanceId)
+                .Select(group => group.ToDictionary(a => a.FieldKey, a => a.Value))
+                .ToList();
+        }
+
+        #endregion
+
         #endregion
 
 
@@ -257,10 +287,11 @@ namespace EaseClub.Domain.MembershipApplications
             var requiredKeys = PricingEngine.GetRequiredContextKeys(TemplateSnapshot.Policies);
 
             // Build context from drivers. 
-            // Drivers (like guest_count) always live in InstanceIndex 0.
+            // Drivers (like guest_count) live in InstanceId null (or any instance if you prefer, but usually root).
             var contextData = _Answers
-                .Where(a => a.InstanceIndex == 0 && requiredKeys.Contains(a.FieldKey))
-                .ToDictionary(a => a.FieldKey, a => a.Value);
+                .Where(a => requiredKeys.Contains(a.FieldKey))
+                .GroupBy(a => a.FieldKey)
+                .ToDictionary(g => g.Key, g => g.First().Value);
 
             var result = PricingEngine.Calculate(TemplateSnapshot.BaseFee, TemplateSnapshot.Policies, new PricingContext(contextData));
 

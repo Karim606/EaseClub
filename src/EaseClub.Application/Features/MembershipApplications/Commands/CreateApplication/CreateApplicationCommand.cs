@@ -35,7 +35,10 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.CreateAp
                 );
 
             yield return new OwnershipRule(
-                    async (auth, _) => await auth.DoesResourceBelongToClubAsync<InstallmentTemplate>(InstallmentTemplateId??Guid.Empty, ClubId),
+                    async (auth, _) =>{
+                            if (InstallmentTemplateId == null) return true;
+                             return await auth.DoesResourceBelongToClubAsync<InstallmentTemplate>(InstallmentTemplateId ?? Guid.Empty, ClubId);
+                            },
                     nameof(InstallmentTemplate),
                     InstallmentTemplateId ?? Guid.Empty
                 );
