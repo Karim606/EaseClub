@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.PricingPolicies.Commands.AssignPolicy
 {
-    public record AssignPoliciesCommand(List<PolicyAssignmentDto>Policies, Guid TargetId, PricingPolicyTargetType TargetType,int Priority) :IRequest<Result<Success>>, IRequireClubOwnershipValidation
+    public record AssignPoliciesCommand(List<PolicyAssignmentDto>Policies, Guid TargetId, PricingPolicyTargetType TargetType) :IRequest<Result<Success>>, IRequireClubOwnershipValidation
     {
         public IEnumerable<OwnershipRule> Rules()
         {

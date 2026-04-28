@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.Common.Interfaces;
+using EaseClub.Domain.Common.Interfaces;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -17,5 +17,14 @@ namespace EaseClub.Domain.PricingPolices
         public Task<List<PricingPolicyAssignment>>GetPricingPolicyAssignmentsByPolicyIdAsync(Guid policyId, CancellationToken ct=default);
 
         public Task<List<PricingPolicy>>GetPoliciesByIdAsync(List<Guid> ids, CancellationToken ct = default);
+
+        /// <summary>
+        /// Finds an assignment by TargetId + PolicyId, including orphaned rows
+        /// where ApplicationTemplateDefinitionId may be NULL.
+        /// Used by the UnAssign handler to self-heal orphaned records.
+        /// </summary>
+        public Task<PricingPolicyAssignment?> GetAssignmentAsync(Guid targetId, Guid policyId, CancellationToken ct = default);
+
+        public Task DeleteAssignmentAsync(PricingPolicyAssignment assignment, CancellationToken ct = default);
     }
 }

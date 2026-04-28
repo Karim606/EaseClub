@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.PricingPolices;
+using EaseClub.Domain.PricingPolices;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
@@ -17,6 +17,7 @@ namespace EaseClub.Infrastructure.Data.Configurations
 
             builder.HasKey(a => a.Id);
 
+            builder.Property(a => a.ClubId).IsRequired();
             builder.Property(a => a.PolicyId).IsRequired();
             builder.Property(a => a.TargetId).IsRequired();
             builder.Property(a => a.Priority).IsRequired();

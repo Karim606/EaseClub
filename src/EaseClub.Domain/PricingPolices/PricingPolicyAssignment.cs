@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.ApplicationTemplates.ValueObjects.ConditionExpression;
+using EaseClub.Domain.ApplicationTemplates.ValueObjects.ConditionExpression;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using System;
@@ -15,11 +15,13 @@ namespace EaseClub.Domain.PricingPolices
 
         private PricingPolicyAssignment(
             Guid id,
+            Guid clubId,
             Guid policyId,
             Guid targetId,
             int priority,
             PricingPolicyTargetType targetType) : base(id)
         {
+            ClubId = clubId;
             PolicyId = policyId;
             TargetId = targetId;
             TargetType = targetType;
@@ -37,6 +39,7 @@ namespace EaseClub.Domain.PricingPolices
 
 
         public static Result<PricingPolicyAssignment> Create(
+            Guid clubId,
             Guid policyId,
             Guid targetId,
             int priority,
@@ -65,6 +68,7 @@ namespace EaseClub.Domain.PricingPolices
 
             return new PricingPolicyAssignment(
                 Guid.NewGuid(),
+                clubId,
                 policyId,
                 targetId,
                 priority,

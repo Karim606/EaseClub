@@ -13,7 +13,6 @@ namespace EaseClub.Application.Features.PricingPolicies.Commands.CreatePolicy
     public record CreatePricingPolicyCommand(
     Guid ClubId,
     string Name,
-    int Priority,
     bool IsIncrease,
     decimal? FixedAmount,
     decimal? PercentageValue,

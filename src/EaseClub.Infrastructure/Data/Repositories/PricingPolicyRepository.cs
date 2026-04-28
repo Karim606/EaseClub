@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.PricingPolices;
+using EaseClub.Domain.PricingPolices;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -32,6 +32,22 @@ namespace EaseClub.Infrastructure.Data.Repositories
         public async Task<List<PricingPolicyAssignment>> GetPricingPolicyAssignmentsByTargetIdAsync(Guid targetId, CancellationToken ct = default)
         {
             return await _context.PricingPolicyAssignments.Where(p => p.TargetId == targetId).Include(p => p.Policy).ToListAsync(ct);
+        }
+
+        /// <inheritdoc />
+        public async Task<PricingPolicyAssignment?> GetAssignmentAsync(Guid targetId, Guid policyId, CancellationToken ct = default)
+        {
+            // Query directly on the DbSet — this finds orphaned rows regardless of
+            // whether the ApplicationTemplateDefinitionId shadow FK is NULL.
+            return await _context.PricingPolicyAssignments
+                .FirstOrDefaultAsync(a => a.TargetId == targetId && a.PolicyId == policyId, ct);
+        }
+
+        /// <inheritdoc />
+        public Task DeleteAssignmentAsync(PricingPolicyAssignment assignment, CancellationToken ct = default)
+        {
+            _context.PricingPolicyAssignments.Remove(assignment);
+            return Task.CompletedTask;
         }
     }
 }
