@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common;
+using EaseClub.Application.Common;
 using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.ApplicationTemplates;
 using EaseClub.Domain.ApplicationTemplates.ValueObjects.RepeatRule;
@@ -47,7 +47,7 @@ namespace EaseClub.Application.Features.MembershipApplications.Queries.GetApplic
         string Title,
         SectionIntent Intent,
         RepeatRule? RepeatRule,
-        int InstanceIndex,
+        string? InstanceId,
         List<AdminFieldDto> Fields
     );
 

@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Common.Pagination.Parameters;
 using EaseClub.Application.Common.Pagination.Results;
 using EaseClub.Domain.Common.Results;
@@ -9,11 +9,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.MembershipApplications.Queries.GetApplicationsForManagement
 {
-    public record GetApplicationsForManagementQuery([FromRoute]Guid ClubId,GetApplicationsQueryFilters filters,OffsetPaginationParameters pagination):IRequest<Result<OffsetPaginatedResult<MembershipAppAdminDto>>>,IRequireClubAdmin;
+    public record GetApplicationsForManagementQuery(GetApplicationsQueryFilters? filters,OffsetPaginationParameters pagination) : IRequest<Result<OffsetPaginatedResult<MembershipAppAdminDto>>>, IRequireClubAdmin
+    {
+        [JsonIgnore]
+        public Guid ClubId { get; init; }
+    }
 
     public class GetApplicationsQueryFilters {
         public AppStatus? Status { get; set; }
@@ -44,7 +49,9 @@ namespace EaseClub.Application.Features.MembershipApplications.Queries.GetApplic
 
         public string MembershipType { get; set; }
         public string MembershipPlanName { get; set; }
-        public DateTime SubmittedAt { get; set; }
+        public DateTime? SubmittedAt { get; set; }
+        public DateTime? ReviewedAt { get; set; }
+        public string? LatestDecision { get; set; }
 
         public ApplicationStatus Status { get; set; } //Status
 

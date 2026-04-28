@@ -46,7 +46,7 @@ namespace EaseClub.Application.Features.MembershipApplications.Queries.GetApplic
         string Title,
         SectionIntent Intent,
         RepeatRule? RepeatRule,
-        int InstanceIndex,
+        string? InstanceId,
         List<UserFieldDto> Fields
     );
 

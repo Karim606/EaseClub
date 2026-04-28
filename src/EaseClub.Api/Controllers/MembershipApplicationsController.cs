@@ -83,8 +83,9 @@ namespace EaseClub.Api.Controllers
         [ProducesResponseType(typeof(OffsetPaginatedResult<MembershipAppAdminDto>), StatusCodes.Status200OK)]
         [EndpointName("GetApplicationsForManagement")]
         [EndpointSummary("Lists applications for admins based on filters criteria.")]
-        public async Task<IActionResult> GetApplicationsForManagement([FromQuery] GetApplicationsForManagementQuery query)
+        public async Task<IActionResult> GetApplicationsForManagement(Guid clubId,[FromQuery] GetApplicationsForManagementQuery query)
         {
+            query = query with { ClubId = clubId };
             var result = await sender.Send(query);
             return result.Match(
                 (apps) => Ok(apps),

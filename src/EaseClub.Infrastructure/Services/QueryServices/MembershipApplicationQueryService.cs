@@ -31,19 +31,24 @@ namespace EaseClub.Infrastructure.Services.QueryServices
         {
             var query = Query().Where(p => p.ClubId == clubId);
 
-            if(filters.TrackingNumber!=null) query = query.Where(p => p.TrackingNumber.ToLower() == filters.TrackingNumber.ToLower());
+            if (filters != null)
+            {
+                if (!string.IsNullOrWhiteSpace(filters.TrackingNumber))
+                    query = query.Where(p => p.TrackingNumber.ToLower() == filters.TrackingNumber.ToLower());
 
-            if (filters.Status.HasValue) {
-                var status = (ApplicationStatus)filters.Status.Value;
-                query = query.Where(p => p.Status == status); 
+                if (filters.Status.HasValue)
+                {
+                    var status = (ApplicationStatus)filters.Status.Value;
+                    query = query.Where(p => p.Status == status);
+                }
+
+                var from = filters.SubmittedFrom?.ToDateTime(TimeOnly.MinValue);
+                var to = filters.SubmittedTo?.ToDateTime(TimeOnly.MaxValue);
+
+                if (from.HasValue && to.HasValue) query = query.Where(p => p.CreatedAt >= from.Value && p.CreatedAt <= to.Value);
+                else if (from.HasValue) query = query.Where(p => p.CreatedAt >= from.Value);
+                else if (to.HasValue) query = query.Where(p => p.CreatedAt <= to.Value);
             }
-
-            var from = filters.SubmittedFrom?.ToDateTime(TimeOnly.MinValue);
-            var to = filters.SubmittedTo?.ToDateTime(TimeOnly.MaxValue);
-
-            if (from.HasValue&&to.HasValue) query = query.Where(p => p.CreatedAt >= from.Value && p.CreatedAt <= to.Value);
-            else if (from.HasValue) query = query.Where(p => p.CreatedAt >= from.Value);
-            else if (to.HasValue) query = query.Where(p => p.CreatedAt <= to.Value);
 
             return await GetPaginatedAsync<MembershipAppAdminDto, DateTime,OffsetPaginatedResult<MembershipAppAdminDto>>(
                 query,
@@ -58,7 +63,9 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                     Email = p.Member.Email.Value,
                     UserName = p.Member.FirstName + " " + p.Member.LastName,
                     MembershipPlanName = p.MembershipPlan.Name,
-                    SubmittedAt = p.SubmittedAt!.Value,
+                    SubmittedAt = p.SubmittedAt,
+                    ReviewedAt = p.Reviews.OrderByDescending(r => r.Date).Select(r => (DateTime?)r.Date).FirstOrDefault(),
+                    LatestDecision = p.Reviews.OrderByDescending(r => r.Date).Select(r => r.Decision.ToString()).FirstOrDefault(),
                     Status = p.Status,
                 },
                 orderSelector: p => p.CreatedAt,

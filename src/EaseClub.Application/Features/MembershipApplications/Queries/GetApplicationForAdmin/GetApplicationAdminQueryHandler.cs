@@ -34,7 +34,7 @@ namespace EaseClub.Application.Features.MembershipApplications.Queries.GetApplic
                 return Error.NotFound("Application.NotFound", "The application was not found.");
             }
             if (app.Status == ApplicationStatus.Draft) { logger.LogError("NotFound error in GetApplicationAdminQueryHandler: {Error}", Error.NotFound( ).ToLogObject()); return Error.NotFound( ); }
-            var answers = app.Answers.ToDictionary(a => (a.FieldDefinitionId, a.InstanceIndex), a => a.Value);
+            var answers = app.Answers.ToDictionary(a => (a.FieldDefinitionId, a.InstanceId), a => a.Value);
 
             var steps = app.TemplateSnapshot.Steps
                 .Select(step => MapStep(step, answers, app.Answers))
@@ -45,32 +45,32 @@ namespace EaseClub.Application.Features.MembershipApplications.Queries.GetApplic
 
         // --- Break the complexity down into isolated, testable chunks ---
 
-        private AdminStepDto MapStep(StepSnapshot step, Dictionary<(Guid, int), string> answerDict, IEnumerable<ApplicationAnswer> allAnswers)
+        private AdminStepDto MapStep(StepSnapshot step, Dictionary<(Guid, string?), string?> answerDict, IEnumerable<EaseClub.Domain.MembershipApplications.ValueObjects.UserAnswer> allAnswers)
         {
             var sections = step.Sections.SelectMany(sec => MapSectionInstances(sec, answerDict, allAnswers)).ToList();
             return new AdminStepDto(step.Id, step.Title, step.Order, sections);
 
         }
 
-        private IEnumerable<AdminSectionDto> MapSectionInstances(SectionSnapshot sec, Dictionary<(Guid, int), string> answerDict, IEnumerable<ApplicationAnswer> allAnswers)
+        private IEnumerable<AdminSectionDto> MapSectionInstances(SectionSnapshot sec, Dictionary<(Guid, string?), string?> answerDict, IEnumerable<EaseClub.Domain.MembershipApplications.ValueObjects.UserAnswer> allAnswers)
         {
             var sectionFieldIds = sec.Fields.Select(f => f.Id).ToHashSet();
-            var instanceIndexes = allAnswers.Where(a => sectionFieldIds.Contains(a.FieldDefinitionId))
-                                            .Select(a => a.InstanceIndex)
+            var instanceIds = allAnswers.Where(a => sectionFieldIds.Contains(a.FieldDefinitionId))
+                                            .Select(a => a.InstanceId)
                                             .Distinct()
                                             .ToList();
 
-            if (!instanceIndexes.Any()) instanceIndexes.Add(0);
+            if (!instanceIds.Any()) instanceIds.Add(null);
 
-            return instanceIndexes.OrderBy(i => i).Select(index =>
-                new AdminSectionDto(sec.Id, sec.Title, sec.Intent, sec.RepeatRule, index, MapFields(sec.Fields, answerDict, index))
+            return instanceIds.Select(id =>
+                new AdminSectionDto(sec.Id, sec.Title, sec.Intent, sec.RepeatRule, id, MapFields(sec.Fields, answerDict, id))
             );
         }
 
-        private List<AdminFieldDto> MapFields(IEnumerable<FieldSnapshot> fields, Dictionary<(Guid, int), string> answerDict, int instanceIndex)
+        private List<AdminFieldDto> MapFields(IEnumerable<FieldSnapshot> fields, Dictionary<(Guid, string?), string?> answerDict, string? instanceId)
         {
             return fields.Select(f => {
-                answerDict.TryGetValue((f.Id, instanceIndex), out var value);
+                answerDict.TryGetValue((f.Id, instanceId), out var value);
                 return new AdminFieldDto(f.Id, f.Key, f.Label, f.Type, value, f.AllowedValues, f.ValidationRules);
             }).ToList();
         }
