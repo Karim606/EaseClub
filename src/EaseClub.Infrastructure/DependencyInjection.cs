@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.interfaces;
+using EaseClub.Application.Common.interfaces;
 using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Features.ApplicationTemplates.Queries;
 using EaseClub.Application.Features.Auth.Common.Interfaces;
@@ -210,10 +210,7 @@ namespace EaseClub.Application
             Services.AddScoped<IMembershipPlanRepository, MembershipPlanRepository>();
             Services.AddScoped<IInstallmentsTemplatesRepository, InstallmentsRepository>();
             Services.AddScoped<IApplicationTemplateRepository, ApplicationTemplateRepository>();
-            Services.AddScoped<IApplicationStepRepository, ApplicationStepRepository>();
-            Services.AddScoped<IApplicationSectionRepository, ApplicationSectionRepository>();
             Services.AddScoped<IMembershipApplicationRepository,MembershipApplicationsRepository>();
-            Services.AddScoped<IApplicationFieldRepository, ApplicationFieldRepository>();
             Services.AddScoped<IPricingPolicyRepository,PricingPolicyRepository>();
             Services.AddScoped<IMembershipRepository, MembershipRepository>();
             Services.AddScoped<IPendingEnrollmentRepository, PendingEnrollmentRepository>();
