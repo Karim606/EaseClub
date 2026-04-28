@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.ApplicationTemplates;
+using EaseClub.Domain.ApplicationTemplates;
 using EaseClub.Domain.ApplicationTemplates.Repositories;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -18,9 +18,9 @@ namespace EaseClub.Infrastructure.Data.Repositories
 
         public async Task<ApplicationTemplateDefinition> GetTemplateWithStepsAsync(Guid templateId,CancellationToken ct)
         {
-         return await  _context.ApplicationTemplateDefinitions.Where(at => at.Id == templateId)
-                    .Include(at => at.Steps)
-                    .FirstOrDefaultAsync();
+            // Steps are now a JSON property
+            return await _context.ApplicationTemplateDefinitions
+                .FirstOrDefaultAsync(at => at.Id == templateId, ct);
         }
 
         public async Task<ApplicationTemplateDefinition> GetFullTemplateAsync(Guid templateId, CancellationToken ct = default)
@@ -28,10 +28,6 @@ namespace EaseClub.Infrastructure.Data.Repositories
             return await _context.ApplicationTemplateDefinitions
                 .Include(t => t.ConnectedMembershipPlans)
                 .Include(t => t.PricingPolicyAssignments)
-                .Include(t => t.Steps)
-                .ThenInclude(s => s.Sections)
-                .ThenInclude(sec => sec.Fields)
-                .AsSplitQuery()
                 .FirstOrDefaultAsync(t => t.Id == templateId, ct);
         }
 

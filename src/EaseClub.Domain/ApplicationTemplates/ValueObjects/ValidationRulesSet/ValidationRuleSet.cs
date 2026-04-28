@@ -1,7 +1,8 @@
-﻿using EaseClub.Domain.ApplicationTemplates;
+using EaseClub.Domain.ApplicationTemplates;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipApplications.ValueObjects;
+using System.Text.Json.Serialization;
 
 namespace EaseClub.Domain.ApplicationTemplates.ValueObjects.ValidationRulesSet
 {
@@ -20,7 +21,8 @@ namespace EaseClub.Domain.ApplicationTemplates.ValueObjects.ValidationRulesSet
         public DateTime? MaxDate { get; init; }
 
         // Private constructor prevents direct instantiation: new ValidationRuleSet(...)
-        private ValidationRuleSet(bool isRequired, int? minLength, int? maxLength//,string? regex
+        [JsonConstructor]
+        public ValidationRuleSet(bool isRequired, int? minLength, int? maxLength//,string? regex
                                                                                    , decimal? minValue, decimal? maxValue,DateTime? minDate, DateTime? maxDate)
         {
             IsRequired = isRequired;

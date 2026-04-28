@@ -1,9 +1,10 @@
-﻿using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipApplications.ValueObjects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace EaseClub.Domain.ApplicationTemplates.ValueObjects.ConditionExpression
@@ -15,11 +16,13 @@ namespace EaseClub.Domain.ApplicationTemplates.ValueObjects.ConditionExpression
         public string ExpectedValue { get; init; }
 
         private ConditionExpression() { }
-        private ConditionExpression(string fieldKey, ComparisonOperator op, string value)
+
+        [JsonConstructor]
+        public ConditionExpression(string dependsOnFieldKey, ComparisonOperator @operator, string expectedValue)
         {
-            DependsOnFieldKey = fieldKey;
-            Operator = op;
-            ExpectedValue = value;
+            DependsOnFieldKey = dependsOnFieldKey;
+            Operator = @operator;
+            ExpectedValue = expectedValue;
         }
 
         public static Result<ConditionExpression> Create(string fieldKey, ComparisonOperator op, string value)

@@ -1,8 +1,9 @@
-﻿using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.Common.Results;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace EaseClub.Domain.ApplicationTemplates.ValueObjects.RepeatRule
@@ -13,9 +14,11 @@ namespace EaseClub.Domain.ApplicationTemplates.ValueObjects.RepeatRule
         public int NumberOfRepeats { get; init; }
 
         private RepeatRule() { }
-        private RepeatRule( int number,RepeatMode mode)
+
+        [JsonConstructor]
+        public RepeatRule(int numberOfRepeats, RepeatMode mode)
         {
-            NumberOfRepeats = number;
+            NumberOfRepeats = numberOfRepeats;
             Mode = mode;
         }
 
