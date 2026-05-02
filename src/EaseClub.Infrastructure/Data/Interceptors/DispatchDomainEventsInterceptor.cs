@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.Common;
+using EaseClub.Domain.Common;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;

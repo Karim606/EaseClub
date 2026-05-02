@@ -21,6 +21,12 @@ public class Event : AuditableEntity, IHaveClub
     public int Capacity { get; private set; }
     public Audience Audience { get; private set; }
     public EventStatus Status { get; private set; }
+    
+    // UI/Display Properties matching App requirements
+    public string Venue { get; private set; } = string.Empty;
+    public string? ImageUrl { get; private set; }
+    public string? Badge { get; private set; }
+    public bool IsFeatured { get; private set; }
 
     private readonly List<TicketType> _ticketTypes = new();
     public IReadOnlyCollection<TicketType> TicketTypes => _ticketTypes.AsReadOnly();
@@ -42,7 +48,11 @@ public class Event : AuditableEntity, IHaveClub
         DateTime startDate, 
         DateTime endDate, 
         int capacity, 
-        Audience audience)
+        Audience audience,
+        string venue = "",
+        string? imageUrl = null,
+        string? badge = null,
+        bool isFeatured = false)
     {
         if (clubId == Guid.Empty)
             return EventErrors.InvalidClub;
@@ -65,7 +75,11 @@ public class Event : AuditableEntity, IHaveClub
             EndDate = endDate,
             Capacity = capacity,
             Audience = audience,
-            Status = EventStatus.Draft
+            Status = EventStatus.Draft,
+            Venue = venue ?? string.Empty,
+            ImageUrl = imageUrl,
+            Badge = badge,
+            IsFeatured = isFeatured
         };
 
         return @event;
@@ -76,7 +90,11 @@ public class Event : AuditableEntity, IHaveClub
         string description, 
         DateTime startDate, 
         DateTime endDate, 
-        int capacity)
+        int capacity,
+        string venue = "",
+        string? imageUrl = null,
+        string? badge = null,
+        bool isFeatured = false)
     {
         if (Status != EventStatus.Draft)
             return EventErrors.NotDraft("update");
@@ -100,6 +118,10 @@ public class Event : AuditableEntity, IHaveClub
         StartDate = startDate;
         EndDate = endDate;
         Capacity = capacity;
+        Venue = venue ?? string.Empty;
+        ImageUrl = imageUrl;
+        Badge = badge;
+        IsFeatured = isFeatured;
 
         return Result.Success;
     }
@@ -295,10 +317,10 @@ public class Event : AuditableEntity, IHaveClub
             totalBasePrice += (ticketType.Price * requestedQuantity);
         }
 
-        var newRegistration = new EventRegistration(Id, registrantId, totalBasePrice);
+        var newRegistration = new EventRegistration(Id, registrantId, totalBasePrice); // TODO: Pricing Logic for DiscountAmount and AppliedPolicies
         foreach (var req in attendees)
         {
-            newRegistration.AddAttendee(new Attendee(newRegistration.Id, req.TicketTypeId, req.AttendeeId, req.AttendeeName));
+            newRegistration.AddAttendee(new Attendee(newRegistration.Id, req.TicketTypeId, req.AttendeeId, req.AttendeeName, req.Age, req.Gender));
         }
 
         _registrations.Add(newRegistration);

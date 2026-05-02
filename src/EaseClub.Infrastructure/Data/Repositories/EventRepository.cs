@@ -22,6 +22,7 @@ public class EventRepository : EfRepository<Event>, IEventRepository
     {
         return await _context.Events
             .Where(e => e.ClubId == clubId)
+            .Include(e => e.Registrations)
             .ToListAsync(cancellationToken);
     }
 

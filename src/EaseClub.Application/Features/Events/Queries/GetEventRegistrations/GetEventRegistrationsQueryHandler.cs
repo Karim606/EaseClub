@@ -26,11 +26,16 @@ public class GetEventRegistrationsQueryHandler(IEventRepository eventRepository)
             r.RegistrantId,
             r.Status,
             r.TotalBasePrice,
+            r.DiscountAmount,
+            r.FinalTotal,
+            r.AppliedPolicies,
             r.Attendees.Select(a => new AttendeeDto(
                 a.Id,
                 a.TicketTypeId,
                 a.AttendeeId,
-                a.AttendeeName
+                a.AttendeeName,
+                a.Age,
+                a.Gender
             )).ToList()
         )).ToList();
 

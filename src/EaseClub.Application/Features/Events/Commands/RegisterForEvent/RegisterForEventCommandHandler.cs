@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using static EaseClub.Domain.Memberships.MembershipStatus;
 
 namespace EaseClub.Application.Features.Events.Commands.RegisterForEvent;
 
@@ -32,10 +33,9 @@ public class RegisterForEventCommandHandler(
             return Error.NotFound("Event.NotFound", "Event not found.");
         }
 
-        // 2. Check if registrant matches membership requirements
+        // 2. Check if registrant has an Active membership in this club
         var memberships = await membershipRepository.GetByUserIdAsync(request.RegistrantId, cancellationToken);
-        bool isMember = memberships.Any(m => m.ClubId == @event.ClubId); 
-        // Note: Simple membership check for now. Might need to check status (Active).
+        bool isMember = memberships.Any(m => m.ClubId == @event.ClubId && m.Status == Active);
 
         // 3. Register in domain (handles capacity, ticket availability, age/gender restrictions inside domain)
         var registrationResult = @event.Register(

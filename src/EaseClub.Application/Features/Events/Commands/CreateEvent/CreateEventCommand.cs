@@ -12,4 +12,8 @@ public record CreateEventCommand(
     DateTime StartDate,
     DateTime EndDate,
     int Capacity,
-    Audience Audience) : IRequest<Result<Guid>>;
+    Audience Audience,
+    string Venue = "",
+    string? ImageUrl = null,
+    string? Badge = null,
+    bool IsFeatured = false) : IRequest<Result<Guid>>;

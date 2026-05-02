@@ -15,15 +15,23 @@ public class EventRegistration : AuditableEntity
     
     // Snapshot of the calculated base price across all tickets in this registration
     public decimal TotalBasePrice { get; private set; }
+    
+    // UI/Pricing Properties
+    public decimal DiscountAmount { get; private set; }
+    public decimal FinalTotal { get; private set; }
+    public string? AppliedPolicies { get; private set; }
 
     private readonly List<Attendee> _attendees = new();
     public IReadOnlyCollection<Attendee> Attendees => _attendees.AsReadOnly();
 
-    internal EventRegistration(Guid eventId, Guid registrantId, decimal totalBasePrice) : base(Guid.NewGuid())
+    internal EventRegistration(Guid eventId, Guid registrantId, decimal totalBasePrice, decimal discountAmount = 0, string? appliedPolicies = null) : base(Guid.NewGuid())
     {
         EventId = eventId;
         RegistrantId = registrantId;
         TotalBasePrice = totalBasePrice;
+        DiscountAmount = discountAmount;
+        FinalTotal = totalBasePrice - discountAmount;
+        AppliedPolicies = appliedPolicies;
         Status = RegistrationStatus.PendingPayment;
     }
 

@@ -30,6 +30,10 @@ public class GetEventByIdQueryHandler(IEventRepository eventRepository)
             @event.Capacity,
             @event.Audience,
             @event.Status,
+            @event.Venue,
+            @event.ImageUrl,
+            @event.Badge,
+            @event.IsFeatured,
             @event.TicketTypes.Select(t => new TicketTypeDto(
                 t.Id,
                 t.Name,

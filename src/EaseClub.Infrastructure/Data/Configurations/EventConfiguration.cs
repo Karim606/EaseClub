@@ -2,6 +2,8 @@ using EaseClub.Domain.Events;
 using EaseClub.Domain.Events.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using EaseClub.Infrastructure.Auth.Entities;
+using EaseClub.Domain.Clubs;
 
 namespace EaseClub.Infrastructure.Data.Configurations;
 
@@ -18,9 +20,14 @@ public class EventConfiguration : IEntityTypeConfiguration<Event>
         builder.Property(e => e.Capacity).IsRequired();
         builder.Property(e => e.Audience).HasConversion<string>().IsRequired();
         builder.Property(e => e.Status).HasConversion<string>().IsRequired();
+        
+        builder.Property(e => e.Venue).HasMaxLength(500);
+        builder.Property(e => e.ImageUrl).HasMaxLength(1000);
+        builder.Property(e => e.Badge).HasMaxLength(100);
+        builder.Property(e => e.IsFeatured).IsRequired().HasDefaultValue(false);
 
         // Foreign Key to Club
-        builder.HasOne<EaseClub.Domain.Clubs.Club>()
+        builder.HasOne<Club>()
             .WithMany()
             .HasForeignKey(e => e.ClubId)
             .OnDelete(DeleteBehavior.Restrict);
@@ -84,10 +91,13 @@ public class EventRegistrationConfiguration : IEntityTypeConfiguration<EventRegi
         builder.Property(r => r.RegistrantId).IsRequired();
         builder.Property(r => r.Status).HasConversion<string>().IsRequired();
         builder.Property(r => r.TotalBasePrice).HasColumnType("decimal(18,2)").IsRequired();
+        builder.Property(r => r.DiscountAmount).HasColumnType("decimal(18,2)").IsRequired().HasDefaultValue(0);
+        builder.Property(r => r.FinalTotal).HasColumnType("decimal(18,2)").IsRequired().HasDefaultValue(0);
+        builder.Property(r => r.AppliedPolicies).HasMaxLength(1000);
         builder.Property(r => r.InvoiceId);
 
         // Foreign Key to AuthUser (Registrant)
-        builder.HasOne<EaseClub.Infrastructure.Auth.Entities.AuthUser>()
+        builder.HasOne<AuthUser>()
             .WithMany()
             .HasForeignKey(r => r.RegistrantId)
             .OnDelete(DeleteBehavior.Restrict);
@@ -112,9 +122,11 @@ public class AttendeeConfiguration : IEntityTypeConfiguration<Attendee>
         builder.Property(a => a.TicketTypeId).IsRequired();
         builder.Property(a => a.AttendeeId);
         builder.Property(a => a.AttendeeName).HasMaxLength(200);
+        builder.Property(a => a.Age);
+        builder.Property(a => a.Gender).HasMaxLength(50);
 
         // Foreign Key to AuthUser (Attendee - nullable)
-        builder.HasOne<EaseClub.Infrastructure.Auth.Entities.AuthUser>()
+        builder.HasOne<AuthUser>()
             .WithMany()
             .HasForeignKey(a => a.AttendeeId)
             .OnDelete(DeleteBehavior.SetNull);

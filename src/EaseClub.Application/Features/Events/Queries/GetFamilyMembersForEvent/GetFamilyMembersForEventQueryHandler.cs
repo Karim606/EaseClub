@@ -3,6 +3,7 @@ using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Memberships;
 using MediatR;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -25,7 +26,7 @@ public class GetFamilyMembersForEventQueryHandler(IMembershipRepository membersh
             fm.Id,
             fm.FullName,
             fm.Relationship,
-            fm.GetAge(null)
+            fm.GetAge(DateOnly.FromDateTime(DateTime.UtcNow))
         )).ToList();
 
         return dtos;

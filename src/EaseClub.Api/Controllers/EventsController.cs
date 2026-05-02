@@ -265,10 +265,13 @@ public class EventsController(ISender sender) : ApiController
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     [EndpointName("RegisterForEvent")]
     [EndpointSummary("Register the current user (and attendees) for a published event")]
-    public async Task<IActionResult> Register(Guid id, RegisterForEventCommand command)
+    public async Task<IActionResult> Register(Guid id, RegisterForEventCommand command, [FromServices] ICurrentUserService currentUserService)
     {
         if (id != command.EventId) return BadRequest("ID mismatch.");
-        var result = await sender.Send(command);
+        // Override RegistrantId from the authenticated token — never trust the request body for identity.
+        var registrantId = Guid.Parse(currentUserService.GetId() ?? Guid.Empty.ToString());
+        var secureCommand = command with { RegistrantId = registrantId };
+        var result = await sender.Send(secureCommand);
         return result.Match(regId => Ok(regId), Problem);
     }
 

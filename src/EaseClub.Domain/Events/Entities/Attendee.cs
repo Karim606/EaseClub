@@ -11,13 +11,17 @@ public class Attendee : Entity
     // An attendee can be a registered system user/member, or an unnamed guest/public user.
     public Guid? AttendeeId { get; private set; }
     public string AttendeeName { get; private set; }
+    public int? Age { get; private set; }
+    public string? Gender { get; private set; }
 
-    internal Attendee(Guid eventRegistrationId, Guid ticketTypeId, Guid? attendeeId, string attendeeName) : base(Guid.NewGuid())
+    internal Attendee(Guid eventRegistrationId, Guid ticketTypeId, Guid? attendeeId, string attendeeName, int? age = null, string? gender = null) : base(Guid.NewGuid())
     {
         EventRegistrationId = eventRegistrationId;
         TicketTypeId = ticketTypeId;
         AttendeeId = attendeeId;
         AttendeeName = attendeeName;
+        Age = age;
+        Gender = gender;
     }
 
     private Attendee() { }

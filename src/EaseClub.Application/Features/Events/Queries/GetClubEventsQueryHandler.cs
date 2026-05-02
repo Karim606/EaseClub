@@ -22,6 +22,10 @@ public class GetClubEventsQueryHandler(IEventRepository eventRepository)
             e.StartDate,
             e.EndDate,
             e.Status,
+            e.Venue,
+            e.ImageUrl,
+            e.Badge,
+            e.IsFeatured,
             e.Registrations.Count
         )).ToList();
 

@@ -24,7 +24,11 @@ public class CreateEventCommandHandler(
             request.StartDate,
             request.EndDate,
             request.Capacity,
-            request.Audience);
+            request.Audience,
+            request.Venue,
+            request.ImageUrl,
+            request.Badge,
+            request.IsFeatured);
 
         if (eventResult.IsError)
         {

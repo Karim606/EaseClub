@@ -4,6 +4,7 @@ using EaseClub.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EaseClub.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260501104215_AddEventVisualProperties")]
+    partial class AddEventVisualProperties
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -303,9 +306,6 @@ namespace EaseClub.Infrastructure.Data.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int?>("Age")
-                        .HasColumnType("int");
-
                     b.Property<Guid?>("AttendeeId")
                         .HasColumnType("uniqueidentifier");
 
@@ -316,10 +316,6 @@ namespace EaseClub.Infrastructure.Data.Migrations
 
                     b.Property<Guid>("EventRegistrationId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Gender")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
 
                     b.Property<Guid>("TicketTypeId")
                         .HasColumnType("uniqueidentifier");
@@ -338,28 +334,14 @@ namespace EaseClub.Infrastructure.Data.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("AppliedPolicies")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<decimal>("DiscountAmount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("decimal(18,2)")
-                        .HasDefaultValue(0m);
-
                     b.Property<Guid>("EventId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("FinalTotal")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("decimal(18,2)")
-                        .HasDefaultValue(0m);
 
                     b.Property<Guid?>("InvoiceId")
                         .HasColumnType("uniqueidentifier");
