@@ -98,7 +98,7 @@ namespace EaseClub.Domain.Payment
                     t.MarkAsFailed("New payment attempt initiated");
                 }
             }
-            var transation = PaymentTransaction.Create(Guid.NewGuid(), Id, Amount, GatewayName, method);
+            var transation = PaymentTransaction.Create(Guid.NewGuid(), Id, Amount, GatewayName,method:method);
             _Transactions.Add(transation);
 
             return transation;
