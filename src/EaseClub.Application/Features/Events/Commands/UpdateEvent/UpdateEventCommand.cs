@@ -1,3 +1,4 @@
+using EaseClub.Application.Features.Events.Dtos;
 using EaseClub.Domain.Common.Results;
 using MediatR;
 using System;
@@ -10,4 +11,8 @@ public record UpdateEventCommand(
     string Description,
     DateTime StartDate,
     DateTime EndDate,
-    int Capacity) : IRequest<Result<Success>>;
+    int Capacity,
+    string Venue = "",
+    string? ImageUrl = null,
+    string? Badge = null,
+    bool IsFeatured = false) : IRequest<Result<EventActionResponseDto>>;

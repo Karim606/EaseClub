@@ -1,3 +1,4 @@
+using EaseClub.Application.Features.Events.Dtos;
 using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
@@ -6,6 +7,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace EaseClub.Application.Features.Events.Commands.UpdateEvent;
 
@@ -13,9 +15,9 @@ public class UpdateEventCommandHandler(
     IEventRepository eventRepository,
     IUnitOfWork unitOfWork,
     ILogger<UpdateEventCommandHandler> logger)
-    : IRequestHandler<UpdateEventCommand, Result<Success>>
+    : IRequestHandler<UpdateEventCommand, Result<EventActionResponseDto>>
 {
-    public async Task<Result<Success>> Handle(UpdateEventCommand request, CancellationToken cancellationToken)
+    public async Task<Result<EventActionResponseDto>> Handle(UpdateEventCommand request, CancellationToken cancellationToken)
     {
         var @event = await eventRepository.GetByIdAsync(request.Id, cancellationToken);
         if (@event == null)
@@ -28,7 +30,11 @@ public class UpdateEventCommandHandler(
             request.Description,
             request.StartDate,
             request.EndDate,
-            request.Capacity);
+            request.Capacity,
+            request.Venue,
+            request.ImageUrl,
+            request.Badge,
+            request.IsFeatured);
 
         if (result.IsError)
         {
@@ -40,6 +46,6 @@ public class UpdateEventCommandHandler(
         await eventRepository.UpdateAsync(@event, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result.Success;
+        return new EventActionResponseDto(@event.Id, @event.Name);
     }
 }

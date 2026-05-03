@@ -19,10 +19,10 @@ public class AddTicketTypeCommandValidator : AbstractValidator<AddTicketTypeComm
         RuleFor(x => x.Category)
             .IsInEnum().WithMessage("Invalid attendee category.");
 
-        RuleFor(x => x.Price)
+        RuleFor(x => x.BasePrice)
             .GreaterThanOrEqualTo(0).WithMessage("Ticket price cannot be negative.");
 
-        RuleFor(x => x.Quantity)
+        RuleFor(x => x.TotalQuantity)
             .GreaterThan(0).WithMessage("Ticket quantity must be greater than zero.");
 
         RuleFor(x => x.MaxPerMember)
@@ -30,7 +30,7 @@ public class AddTicketTypeCommandValidator : AbstractValidator<AddTicketTypeComm
             .WithMessage("Max per member must be greater than zero.");
             
         RuleFor(x => x)
-            .Must(x => !x.MaxPerMember.HasValue || x.MaxPerMember.Value <= x.Quantity)
+            .Must(x => !x.MaxPerMember.HasValue || x.MaxPerMember.Value <= x.TotalQuantity)
             .WithMessage("Max per member cannot be greater than the total ticket quantity.");
     }
 }

@@ -135,7 +135,7 @@ public class EventsController(ISender sender) : ApiController
     [HttpPost]
     [Authorize(Roles = "ClubAdmin,SuperAdmin")]
     [MapToApiVersion("1.0")]
-    [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(EventActionResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
@@ -146,14 +146,14 @@ public class EventsController(ISender sender) : ApiController
     {
         var result = await sender.Send(command);
         return result.Match(
-            id => CreatedAtAction(nameof(GetById), new { version = "1.0", id }, id),
+            response => CreatedAtAction(nameof(GetById), new { version = "1.0", id = response.Id }, response),
             Problem);
     }
 
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "ClubAdmin,SuperAdmin")]
     [MapToApiVersion("1.0")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(EventActionResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
@@ -165,13 +165,13 @@ public class EventsController(ISender sender) : ApiController
     {
         if (id != command.Id) return BadRequest("ID mismatch.");
         var result = await sender.Send(command);
-        return result.Match(_ => NoContent(), Problem);
+        return result.Match(response => Ok(response), Problem);
     }
 
     [HttpPost("{id:guid}/tickets")]
     [Authorize(Roles = "ClubAdmin,SuperAdmin")]
     [MapToApiVersion("1.0")]
-    [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(EventActionResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
@@ -183,13 +183,13 @@ public class EventsController(ISender sender) : ApiController
     {
         if (id != command.EventId) return BadRequest("ID mismatch.");
         var result = await sender.Send(command);
-        return result.Match(ticketId => Ok(ticketId), Problem);
+        return result.Match(response => Ok(response), Problem);
     }
 
     [HttpPut("{id:guid}/tickets/{ticketId:guid}")]
     [Authorize(Roles = "ClubAdmin,SuperAdmin")]
     [MapToApiVersion("1.0")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(EventActionResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
@@ -201,13 +201,13 @@ public class EventsController(ISender sender) : ApiController
     {
         if (id != command.EventId || ticketId != command.TicketTypeId) return BadRequest("ID mismatch.");
         var result = await sender.Send(command);
-        return result.Match(_ => NoContent(), Problem);
+        return result.Match(response => Ok(response), Problem);
     }
 
     [HttpDelete("{id:guid}/tickets/{ticketId:guid}")]
     [Authorize(Roles = "ClubAdmin,SuperAdmin")]
     [MapToApiVersion("1.0")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(EventActionResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -217,13 +217,13 @@ public class EventsController(ISender sender) : ApiController
     public async Task<IActionResult> RemoveTicket(Guid id, Guid ticketId)
     {
         var result = await sender.Send(new RemoveTicketTypeCommand(id, ticketId));
-        return result.Match(_ => NoContent(), Problem);
+        return result.Match(response => Ok(response), Problem);
     }
 
     [HttpPost("{id:guid}/publish")]
     [Authorize(Roles = "ClubAdmin,SuperAdmin")]
     [MapToApiVersion("1.0")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(EventActionResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
@@ -234,13 +234,13 @@ public class EventsController(ISender sender) : ApiController
     public async Task<IActionResult> Publish(Guid id)
     {
         var result = await sender.Send(new PublishEventCommand(id));
-        return result.Match(_ => NoContent(), Problem);
+        return result.Match(response => Ok(response), Problem);
     }
 
     [HttpPost("{id:guid}/cancel")]
     [Authorize(Roles = "ClubAdmin,SuperAdmin")]
     [MapToApiVersion("1.0")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(EventActionResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
@@ -251,13 +251,13 @@ public class EventsController(ISender sender) : ApiController
     public async Task<IActionResult> Cancel(Guid id)
     {
         var result = await sender.Send(new CancelEventCommand(id));
-        return result.Match(_ => NoContent(), Problem);
+        return result.Match(response => Ok(response), Problem);
     }
 
     [HttpPost("{id:guid}/register")]
     [Authorize]
     [MapToApiVersion("1.0")]
-    [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(EventActionResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -272,13 +272,13 @@ public class EventsController(ISender sender) : ApiController
         var registrantId = Guid.Parse(currentUserService.GetId() ?? Guid.Empty.ToString());
         var secureCommand = command with { RegistrantId = registrantId };
         var result = await sender.Send(secureCommand);
-        return result.Match(regId => Ok(regId), Problem);
+        return result.Match(response => Ok(response), Problem);
     }
 
     [HttpPost("{id:guid}/registrations/{regId:guid}/cancel")]
     [Authorize]
     [MapToApiVersion("1.0")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(EventActionResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -288,6 +288,6 @@ public class EventsController(ISender sender) : ApiController
     public async Task<IActionResult> CancelRegistration(Guid id, Guid regId)
     {
         var result = await sender.Send(new CancelRegistrationCommand(id, regId));
-        return result.Match(_ => NoContent(), Problem);
+        return result.Match(response => Ok(response), Problem);
     }
 }

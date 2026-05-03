@@ -1,3 +1,4 @@
+using EaseClub.Application.Features.Events.Dtos;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Events.Enums;
 using MediatR;
@@ -10,6 +11,10 @@ public record AddTicketTypeCommand(
     string Name,
     string Description,
     AttendeeCategory Category,
-    decimal Price,
-    int Quantity,
-    int? MaxPerMember = null) : IRequest<Result<Guid>>;
+    decimal BasePrice,
+    int TotalQuantity,
+    int? MaxPerMember = null,
+    bool RequiresMembership = false,
+    int? MinAge = null,
+    int? MaxAge = null,
+    string? GenderRestriction = null) : IRequest<Result<EventActionResponseDto>>;

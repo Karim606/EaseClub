@@ -18,6 +18,7 @@ public record EventDto(
     string? ImageUrl,
     string? Badge,
     bool IsFeatured,
+    List<Guid> PricingPolicyIds,
     List<TicketTypeDto> TicketTypes);
 
 public record TicketTypeDto(
@@ -25,9 +26,13 @@ public record TicketTypeDto(
     string Name,
     string Description,
     AttendeeCategory Category,
-    decimal Price,
-    int Quantity,
-    int? MaxPerMember);
+    decimal BasePrice,
+    int TotalQuantity,
+    int? MaxPerMember,
+    bool RequiresMembership,
+    int? MinAge,
+    int? MaxAge,
+    string? GenderRestriction);
 
 public record EventSummaryDto(
     Guid Id,
@@ -46,6 +51,7 @@ public record EventRegistrationDto(
     Guid EventId,
     Guid RegistrantId,
     RegistrationStatus Status,
+    Guid? InvoiceId,
     decimal TotalBasePrice,
     decimal DiscountAmount,
     decimal FinalTotal,
@@ -65,3 +71,5 @@ public record FamilyMemberDto(
     string FullName,
     EaseClub.Domain.Memberships.FamilyRelationship Relationship,
     int Age);
+
+public record EventActionResponseDto(Guid Id, string Name, Guid? InvoiceId = null);

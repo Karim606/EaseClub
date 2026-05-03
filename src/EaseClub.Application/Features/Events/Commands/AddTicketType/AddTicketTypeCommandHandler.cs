@@ -2,10 +2,12 @@ using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Events;
+using EaseClub.Application.Features.Events.Dtos;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace EaseClub.Application.Features.Events.Commands.AddTicketType;
 
@@ -13,9 +15,9 @@ public class AddTicketTypeCommandHandler(
     IEventRepository eventRepository,
     IUnitOfWork unitOfWork,
     ILogger<AddTicketTypeCommandHandler> logger)
-    : IRequestHandler<AddTicketTypeCommand, Result<Guid>>
+    : IRequestHandler<AddTicketTypeCommand, Result<EventActionResponseDto>>
 {
-    public async Task<Result<Guid>> Handle(AddTicketTypeCommand request, CancellationToken cancellationToken)
+    public async Task<Result<EventActionResponseDto>> Handle(AddTicketTypeCommand request, CancellationToken cancellationToken)
     {
         var @event = await eventRepository.GetWithDetailsAsync(request.EventId, cancellationToken);
         if (@event == null)
@@ -27,9 +29,13 @@ public class AddTicketTypeCommandHandler(
             request.Name,
             request.Description,
             request.Category,
-            request.Price,
-            request.Quantity,
-            request.MaxPerMember);
+            request.BasePrice,
+            request.TotalQuantity,
+            request.MaxPerMember,
+            request.RequiresMembership,
+            request.MinAge,
+            request.MaxAge,
+            request.GenderRestriction);
 
         if (result.IsError)
         {
@@ -41,6 +47,6 @@ public class AddTicketTypeCommandHandler(
         await eventRepository.UpdateAsync(@event, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return result.Value.Id;
+        return new EventActionResponseDto(result.Value.Id, result.Value.Name);
     }
 }

@@ -4,8 +4,10 @@ using EaseClub.Domain.Events;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using EaseClub.Application.Features.Events.Dtos;
 
 namespace EaseClub.Application.Features.Events.Commands.CreateEvent;
 
@@ -13,9 +15,9 @@ public class CreateEventCommandHandler(
     IEventRepository eventRepository,
     IUnitOfWork unitOfWork,
     ILogger<CreateEventCommandHandler> logger)
-    : IRequestHandler<CreateEventCommand, Result<Guid>>
+    : IRequestHandler<CreateEventCommand, Result<EventActionResponseDto>>
 {
-    public async Task<Result<Guid>> Handle(CreateEventCommand request, CancellationToken cancellationToken)
+    public async Task<Result<EventActionResponseDto>> Handle(CreateEventCommand request, CancellationToken cancellationToken)
     {
         var eventResult = Event.Create(
             request.ClubId,
@@ -40,6 +42,6 @@ public class CreateEventCommandHandler(
         await eventRepository.AddAsync(eventResult.Value, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return eventResult.Value.Id;
+        return new EventActionResponseDto(eventResult.Value.Id, eventResult.Value.Name);
     }
 }

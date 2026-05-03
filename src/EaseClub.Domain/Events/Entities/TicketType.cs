@@ -11,48 +11,67 @@ public class TicketType : Entity
     public string Name { get; private set; }
     public string Description { get; private set; }
     public AttendeeCategory Category { get; private set; }
-    public decimal Price { get; private set; }
+    public decimal BasePrice { get; private set; }
     
-    public int Quantity { get; private set; }
+    public int TotalQuantity { get; private set; }
     public int SoldQuantity { get; private set; }
-    public int AvailableQuantity => Quantity - SoldQuantity;
+    public int AvailableQuantity => TotalQuantity - SoldQuantity;
     
     public int? MaxPerMember { get; private set; }
+    public bool RequiresMembership { get; private set; }
+    public int? MinAge { get; private set; }
+    public int? MaxAge { get; private set; }
+    public string? GenderRestriction { get; private set; }
 
     internal TicketType(
         Guid eventId, 
         string name, 
         string description, 
         AttendeeCategory category, 
-        decimal price, 
-        int quantity, 
-        int? maxPerMember = null) : base(Guid.NewGuid())
+        decimal basePrice, 
+        int totalQuantity, 
+        int? maxPerMember = null,
+        bool requiresMembership = false,
+        int? minAge = null,
+        int? maxAge = null,
+        string? genderRestriction = null) : base(Guid.NewGuid())
     {
         EventId = eventId;
         Name = name;
         Description = description;
         Category = category;
-        Price = price;
-        Quantity = quantity;
+        BasePrice = basePrice;
+        TotalQuantity = totalQuantity;
         SoldQuantity = 0;
         MaxPerMember = maxPerMember;
+        RequiresMembership = requiresMembership;
+        MinAge = minAge;
+        MaxAge = maxAge;
+        GenderRestriction = genderRestriction;
     }
 
-    // Default constructor for EF Core
     private TicketType() { }
 
     internal void UpdateDetails(
         string name, 
         string description, 
-        decimal price, 
-        int quantity, 
-        int? maxPerMember)
+        decimal basePrice, 
+        int totalQuantity, 
+        int? maxPerMember,
+        bool requiresMembership,
+        int? minAge,
+        int? maxAge,
+        string? genderRestriction)
     {
         Name = name;
         Description = description;
-        Price = price;
-        Quantity = quantity;
+        BasePrice = basePrice;
+        TotalQuantity = totalQuantity;
         MaxPerMember = maxPerMember;
+        RequiresMembership = requiresMembership;
+        MinAge = minAge;
+        MaxAge = maxAge;
+        GenderRestriction = genderRestriction;
     }
 
     internal Result<Success> ReserveSeats(int count)

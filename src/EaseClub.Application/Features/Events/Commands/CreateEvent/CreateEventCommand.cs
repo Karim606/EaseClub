@@ -1,3 +1,4 @@
+using EaseClub.Application.Features.Events.Dtos;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Events.Enums;
 using MediatR;
@@ -16,4 +17,4 @@ public record CreateEventCommand(
     string Venue = "",
     string? ImageUrl = null,
     string? Badge = null,
-    bool IsFeatured = false) : IRequest<Result<Guid>>;
+    bool IsFeatured = false) : IRequest<Result<EventActionResponseDto>>;

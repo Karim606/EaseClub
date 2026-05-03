@@ -34,14 +34,19 @@ public class GetEventByIdQueryHandler(IEventRepository eventRepository)
             @event.ImageUrl,
             @event.Badge,
             @event.IsFeatured,
+            @event.PricingPolicyIds.ToList(),
             @event.TicketTypes.Select(t => new TicketTypeDto(
                 t.Id,
                 t.Name,
                 t.Description,
                 t.Category,
-                t.Price,
-                t.Quantity,
-                t.MaxPerMember)).ToList()
+                t.BasePrice,
+                t.TotalQuantity,
+                t.MaxPerMember,
+                t.RequiresMembership,
+                t.MinAge,
+                t.MaxAge,
+                t.GenderRestriction)).ToList()
         );
 
         return dto;

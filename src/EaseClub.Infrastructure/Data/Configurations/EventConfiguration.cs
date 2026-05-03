@@ -73,10 +73,14 @@ public class TicketTypeConfiguration : IEntityTypeConfiguration<TicketType>
         builder.Property(t => t.Name).IsRequired().HasMaxLength(200);
         builder.Property(t => t.Description).IsRequired().HasMaxLength(1000);
         builder.Property(t => t.Category).HasConversion<string>().IsRequired();
-        builder.Property(t => t.Price).HasColumnType("decimal(18,2)").IsRequired();
-        builder.Property(t => t.Quantity).IsRequired();
+        builder.Property(t => t.BasePrice).HasColumnType("decimal(18,2)").IsRequired();
+        builder.Property(t => t.TotalQuantity).IsRequired();
         builder.Property(t => t.SoldQuantity).IsRequired();
         builder.Property(t => t.MaxPerMember);
+        builder.Property(t => t.RequiresMembership).IsRequired().HasDefaultValue(false);
+        builder.Property(t => t.MinAge);
+        builder.Property(t => t.MaxAge);
+        builder.Property(t => t.GenderRestriction).HasMaxLength(50);
 
         builder.Ignore(t => t.AvailableQuantity);
     }

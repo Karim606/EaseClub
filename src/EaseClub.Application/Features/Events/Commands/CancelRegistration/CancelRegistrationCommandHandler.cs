@@ -1,3 +1,4 @@
+using EaseClub.Application.Features.Events.Dtos;
 using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
@@ -6,6 +7,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace EaseClub.Application.Features.Events.Commands.CancelRegistration;
 
@@ -13,9 +15,9 @@ public class CancelRegistrationCommandHandler(
     IEventRepository eventRepository,
     IUnitOfWork unitOfWork,
     ILogger<CancelRegistrationCommandHandler> logger)
-    : IRequestHandler<CancelRegistrationCommand, Result<Success>>
+    : IRequestHandler<CancelRegistrationCommand, Result<EventActionResponseDto>>
 {
-    public async Task<Result<Success>> Handle(CancelRegistrationCommand request, CancellationToken cancellationToken)
+    public async Task<Result<EventActionResponseDto>> Handle(CancelRegistrationCommand request, CancellationToken cancellationToken)
     {
         var @event = await eventRepository.GetWithDetailsAsync(request.EventId, cancellationToken);
         if (@event == null)
@@ -35,6 +37,6 @@ public class CancelRegistrationCommandHandler(
         await eventRepository.UpdateAsync(@event, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result.Success;
+        return new EventActionResponseDto(request.RegistrationId, @event.Name);
     }
 }

@@ -109,7 +109,7 @@ public class Event : AuditableEntity, IHaveClub
             return EventErrors.InvalidCapacity;
 
         // Check if new capacity can accommodate existing ticket types
-        var totalTicketQuantity = _ticketTypes.Sum(t => t.Quantity);
+        var totalTicketQuantity = _ticketTypes.Sum(t => t.TotalQuantity);
         if (capacity < totalTicketQuantity)
             return EventErrors.CapacityTooSmall;
 
@@ -130,34 +130,49 @@ public class Event : AuditableEntity, IHaveClub
         string name, 
         string description, 
         AttendeeCategory category, 
-        decimal price, 
-        int quantity, 
-        int? maxPerMember = null)
+        decimal basePrice, 
+        int totalQuantity, 
+        int? maxPerMember = null,
+        bool requiresMembership = false,
+        int? minAge = null,
+        int? maxAge = null,
+        string? genderRestriction = null)
     {
         if (Status != EventStatus.Draft)
             return EventErrors.NotDraft("add tickets to");
-
+ 
         // Invariants
-        if (price < 0)
+        if (basePrice < 0)
             return EventErrors.InvalidTicketPrice;
             
-        if (quantity <= 0)
+        if (totalQuantity <= 0)
             return EventErrors.InvalidTicketQuantity;
             
-        if (maxPerMember.HasValue && (maxPerMember.Value <= 0 || maxPerMember.Value > quantity))
+        if (maxPerMember.HasValue && (maxPerMember.Value <= 0 || maxPerMember.Value > totalQuantity))
             return EventErrors.InvalidMaxPerMember;
-
+ 
         // Audience rules enforcement
         var rules = AudienceRules.For(Audience);
         if (!rules.AllowedCategories.Contains(category))
             return EventErrors.InvalidTicketCategory(category.ToString(), Audience.ToString());
-
+ 
         // Capacity check
-        var currentTotalQuantity = _ticketTypes.Sum(t => t.Quantity);
-        if (currentTotalQuantity + quantity > Capacity)
+        var currentTotalQuantity = _ticketTypes.Sum(t => t.TotalQuantity);
+        if (currentTotalQuantity + totalQuantity > Capacity)
             return EventErrors.CapacityExceeded;
-
-        var ticket = new TicketType(Id, name, description, category, price, quantity, maxPerMember);
+ 
+        var ticket = new TicketType(
+            Id, 
+            name, 
+            description, 
+            category, 
+            basePrice, 
+            totalQuantity, 
+            maxPerMember,
+            requiresMembership,
+            minAge,
+            maxAge,
+            genderRestriction);
         _ticketTypes.Add(ticket);
         
         return ticket;
@@ -180,31 +195,44 @@ public class Event : AuditableEntity, IHaveClub
         Guid ticketTypeId, 
         string name, 
         string description, 
-        decimal price, 
-        int quantity, 
-        int? maxPerMember = null)
+        decimal basePrice, 
+        int totalQuantity, 
+        int? maxPerMember = null,
+        bool requiresMembership = false,
+        int? minAge = null,
+        int? maxAge = null,
+        string? genderRestriction = null)
     {
         if (Status != EventStatus.Draft)
             return EventErrors.NotDraft("update tickets in");
-
+ 
         var ticket = _ticketTypes.FirstOrDefault(t => t.Id == ticketTypeId);
         if (ticket is null)
             return EventErrors.TicketNotFound;
-
-        if (price < 0)
+ 
+        if (basePrice < 0)
             return EventErrors.InvalidTicketPrice;
             
-        if (quantity <= 0)
+        if (totalQuantity <= 0)
             return EventErrors.InvalidTicketQuantity;
             
-        if (maxPerMember.HasValue && (maxPerMember.Value <= 0 || maxPerMember.Value > quantity))
+        if (maxPerMember.HasValue && (maxPerMember.Value <= 0 || maxPerMember.Value > totalQuantity))
             return EventErrors.InvalidMaxPerMember;
-
-        var otherTicketsQuantity = _ticketTypes.Where(t => t.Id != ticketTypeId).Sum(t => t.Quantity);
-        if (otherTicketsQuantity + quantity > Capacity)
+ 
+        var otherTicketsQuantity = _ticketTypes.Where(t => t.Id != ticketTypeId).Sum(t => t.TotalQuantity);
+        if (otherTicketsQuantity + totalQuantity > Capacity)
             return EventErrors.CapacityExceeded;
-
-        ticket.UpdateDetails(name, description, price, quantity, maxPerMember);
+ 
+        ticket.UpdateDetails(
+            name, 
+            description, 
+            basePrice, 
+            totalQuantity, 
+            maxPerMember,
+            requiresMembership,
+            minAge,
+            maxAge,
+            genderRestriction);
         return Result.Success;
     }
 
@@ -314,7 +342,7 @@ public class Event : AuditableEntity, IHaveClub
                 }
             }
 
-            totalBasePrice += (ticketType.Price * requestedQuantity);
+            totalBasePrice += (ticketType.BasePrice * requestedQuantity);
         }
 
         var newRegistration = new EventRegistration(Id, registrantId, totalBasePrice); // TODO: Pricing Logic for DiscountAmount and AppliedPolicies

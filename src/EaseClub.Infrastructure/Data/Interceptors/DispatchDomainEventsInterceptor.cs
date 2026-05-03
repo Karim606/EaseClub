@@ -8,9 +8,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.DependencyInjection;
+
 namespace EaseClub.Infrastructure.Data.Interceptors
 {
-    public class DispatchDomainEventsInterceptor(IMediator mediator)
+    public class DispatchDomainEventsInterceptor(IServiceScopeFactory scopeFactory)
     : SaveChangesInterceptor
     {
         public override async ValueTask<int> SavedChangesAsync(
@@ -41,6 +43,8 @@ namespace EaseClub.Infrastructure.Data.Interceptors
 
             foreach (var domainEvent in domainEvents)
             {
+                using var scope = scopeFactory.CreateScope();
+                var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
                 await mediator.Publish(domainEvent);
             }
         }

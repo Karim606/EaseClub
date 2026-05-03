@@ -1,3 +1,4 @@
+using EaseClub.Application.Features.Events.Dtos;
 using EaseClub.Domain.Common.Results;
 using MediatR;
 using System;
@@ -9,6 +10,10 @@ public record UpdateTicketTypeCommand(
     Guid TicketTypeId,
     string Name,
     string Description,
-    decimal Price,
-    int Quantity,
-    int? MaxPerMember = null) : IRequest<Result<Success>>;
+    decimal BasePrice,
+    int TotalQuantity,
+    int? MaxPerMember = null,
+    bool RequiresMembership = false,
+    int? MinAge = null,
+    int? MaxAge = null,
+    string? GenderRestriction = null) : IRequest<Result<EventActionResponseDto>>;

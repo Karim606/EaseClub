@@ -1,3 +1,4 @@
+using EaseClub.Application.Features.Events.Dtos;
 using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
@@ -22,9 +23,9 @@ public class RegisterForEventCommandHandler(
     IPricingPolicyRepository pricingPolicyRepository,
     IUnitOfWork unitOfWork,
     ILogger<RegisterForEventCommandHandler> logger)
-    : IRequestHandler<RegisterForEventCommand, Result<Guid>>
+    : IRequestHandler<RegisterForEventCommand, Result<EventActionResponseDto>>
 {
-    public async Task<Result<Guid>> Handle(RegisterForEventCommand request, CancellationToken cancellationToken)
+    public async Task<Result<EventActionResponseDto>> Handle(RegisterForEventCommand request, CancellationToken cancellationToken)
     {
         // 1. Load Event with details
         var @event = await eventRepository.GetWithDetailsAsync(request.EventId, cancellationToken);
@@ -93,6 +94,6 @@ public class RegisterForEventCommandHandler(
         await eventRepository.UpdateAsync(@event, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return registration.Id;
+        return new EventActionResponseDto(registration.Id, @event.Name, invoiceId);
     }
 }
