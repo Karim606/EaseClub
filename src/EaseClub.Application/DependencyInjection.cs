@@ -1,6 +1,7 @@
-﻿using EaseClub.Application.Common.Behaviors;
+using EaseClub.Application.Common.Behaviors;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+using EaseClub.Application.Features.Enrollments.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,6 +23,8 @@ namespace EaseClub.Application
                 cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
                 cfg.AddOpenBehavior(typeof(AuthorizationBehavior<,>));
             });
+
+            services.AddScoped<EnrollmentManager>();
 
             return services;
         }
