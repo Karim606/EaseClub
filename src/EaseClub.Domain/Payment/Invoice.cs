@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.Clubs;
+using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
@@ -78,6 +78,20 @@ namespace EaseClub.Domain.Payment
 
             return invoice;
 
+        }
+
+        public Result<Success> CanBePaid(IBillingItem item)
+        {
+            if (Status == InvoiceStatus.Paid)
+                return InvoiceErrors.AlreadyPaid;
+
+            if (Status == InvoiceStatus.Void)
+                return InvoiceErrors.InvoiceVoided;
+
+            if (item.Id != BillingItemId)
+                return Error.Conflict("Invoice.Mismatch", "Provided billing item does not match invoice.");
+
+            return item.CanBePaid();
         }
 
         public Result<PaymentTransaction> RecordAttempt(
@@ -205,7 +219,7 @@ namespace EaseClub.Domain.Payment
         Guid newBillingItemId,
         BillingItemType newType)
         {
-            if (BillingItemType != BillingItemType.PendingEnrollmentFirstInstallment)
+            if (BillingItemType != BillingItemType.EnrollmentFirstInstallment)
                 return Error.Conflict("Invoice.CannotReconcile",
                     "Only pending enrollment invoices can be reconciled.");
 
