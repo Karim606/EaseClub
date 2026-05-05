@@ -14,13 +14,11 @@ using EaseClub.Domain.Memberships.Events;
 using EaseClub.Domain.Memberships.ValueObjects;
 using EaseClub.Domain.MembershipTypes;
 using System.Linq;
-using System.Numerics;
 
 namespace EaseClub.Domain.Memberships
 {
-    public class Membership : AuditableEntity,IBelongToMember,IHaveClub
+    public class Membership : AuditableEntity, IBelongToMember, IHaveClub
     {
-
         private Membership() { } // EF Core
 
         private Membership(
@@ -30,7 +28,7 @@ namespace EaseClub.Domain.Memberships
             Guid membershipTypeId,
             Guid membershipPlanId,
             string membershipNumber,
-            string? extraDataJson = null)  : base(id)
+            string? extraDataJson = null) : base(id)
         {
             MemberId = memberId;
             ClubId = clubId;
@@ -69,29 +67,36 @@ namespace EaseClub.Domain.Memberships
 
         #region Factory Methods
 
-        #region Factory Methods
-
-        public static Result<Membership> CreateFromPendingEnrollment(PendingEnrollment pendingEnrollment, string membershipNumber)
+        public static Result<Membership> CreateFromEnrollment(Enrollment enrollment, string membershipNumber, int maxFamilyMembers, MembershipApplication? application = null)
         {
-            if (pendingEnrollment.Status != PendingEnrollmentStatus.WaitingForFirstPayment)
-                return Error.Conflict(description: "Pending enrollment is not payable.");
+            if (enrollment.Status != EnrollmentStatus.Completed)
+                return Error.Conflict(description: "Enrollment is not completed.");
+
+            if (enrollment.Source == EnrollmentSource.Renewal)
+                return Error.Conflict(description: "Renewal enrollments should be applied to existing memberships.");
 
             var membership = new Membership(
                 Guid.NewGuid(),
-                pendingEnrollment.UserId,
-                pendingEnrollment.ClubId,
-                pendingEnrollment.MembershipTypeId,
-                pendingEnrollment.MembershipPlanId,
+                enrollment.MemberId,
+                enrollment.ClubId,
+                enrollment.MembershipTypeId,
+                enrollment.MembershipPlanId,
                 membershipNumber);
 
-            membership.MembershipApplicationId = pendingEnrollment.MembershipApplicationId;
+            membership.MembershipApplicationId = enrollment.MembershipApplicationId;
+
+            // Map family members if application is provided
+            if (application != null)
+            {
+                var mapResult = MapFamilyMembers(membership, application, maxFamilyMembers);
+                if (mapResult.IsError) return mapResult.TopError;
+            }
 
             var start = DateTime.UtcNow;
-            var end = start.AddYears(pendingEnrollment.SubscriptionValidityInYears);
+            var end = start.AddYears(enrollment.SubscriptionValidityInYears);
 
-            var rules = InstallmentDto.ToInstallments(pendingEnrollment.GetInstallments().ToList());
+            var rules = InstallmentDto.ToInstallments(enrollment.GetInstallments().ToList());
             if (rules.IsError) return rules.TopError;
-
 
             var cycleResult = MembershipCycle.Create(
                 membership.Id,
@@ -100,10 +105,9 @@ namespace EaseClub.Domain.Memberships
                 membership.MembershipPlanId,
                 start,
                 end,
-                pendingEnrollment.TotalPrice,
-                pendingEnrollment.InstallmentTemplateId,
-                rules.Value
-                );
+                enrollment.TotalPrice,
+                enrollment.InstallmentTemplateId,
+                rules.Value);
 
             if (cycleResult.IsError)
                 return cycleResult.TopError;
@@ -114,7 +118,7 @@ namespace EaseClub.Domain.Memberships
 
         #endregion
 
-        private static Result<Success> MapFamilyMembers(Membership membership, MembershipApplication app)
+        private static Result<Success> MapFamilyMembers(Membership membership, MembershipApplication app, int maxAllowed)
         {
             var familySection = app.TemplateSnapshot.Steps
                 .SelectMany(s => s.Sections)
@@ -128,6 +132,9 @@ namespace EaseClub.Domain.Memberships
 
             foreach (var group in groupedMembers)
             {
+                if (membership._FamilyMembers.Count >= maxAllowed)
+                    break; // Capacity reached
+
                 var fullName = group.FirstOrDefault(a => a.FieldKey == FamilyMemberField.FullName)?.Value;
                 var relationshipStr = group.FirstOrDefault(a => a.FieldKey == FamilyMemberField.Relationship)?.Value;
                 var dobStr = group.FirstOrDefault(a => a.FieldKey == FamilyMemberField.DateOfBirth)?.Value;
@@ -142,7 +149,6 @@ namespace EaseClub.Domain.Memberships
             }
             return Result.Success;
         }
-        #endregion
 
         #region Lifecycle Commands
 
@@ -162,8 +168,7 @@ namespace EaseClub.Domain.Memberships
             RaiseDomainEvent(new MembershipActivatedDomainEvent(
                 Id,
                 MemberId,
-                DateTime.UtcNow
-                ));
+                DateTime.UtcNow));
 
             return Result.Success;
         }
@@ -184,8 +189,7 @@ namespace EaseClub.Domain.Memberships
                 Id,
                 MemberId,
                 reason,
-                DateTime.UtcNow
-                ));
+                DateTime.UtcNow));
 
             return Result.Success;
         }
@@ -208,55 +212,70 @@ namespace EaseClub.Domain.Memberships
             return Result.Success;
         }
 
-        public Result<Success> Renew(InstallmentTemplate? installmentTemplate)
+        public Result<Success> ApplyRenewalFromEnrollment(Enrollment enrollment, int newPlanMaxFamilyMembers)
         {
+            if (enrollment.Status != EnrollmentStatus.Completed)
+                return Error.Conflict(description: "Only completed enrollments can be applied.");
+
+            if (enrollment.Source != EnrollmentSource.Renewal)
+                return Error.Conflict(description: "Only renewal enrollments can be applied to existing memberships.");
+
+            if (enrollment.ExistingMembershipId != Id)
+                return Error.Conflict(description: "Enrollment belongs to a different membership.");
+
             if (Status != MembershipStatus.Active && Status != MembershipStatus.Expired)
-                return Error.Validation("Membership.Cannot.Renew",
-                    "Only active or expired memberships can be renewed.");
+                return Error.Validation("Membership.Cannot.Renew", "Only active or expired memberships can be renewed.");
 
+            var currentCycle = GetCurrentCycle();
+            var oldEndDate = currentCycle?.Period.EndDate ?? DateTime.UtcNow;
+            var newStartDate = oldEndDate.AddSeconds(1) > DateTime.UtcNow ? oldEndDate.AddSeconds(1) : DateTime.UtcNow;
+            var newEndDate = newStartDate.AddYears(enrollment.SubscriptionValidityInYears);
 
-            var oldEndDate = GetCurrentCycle().Period.EndDate;
-            var newStartDate = oldEndDate+TimeSpan.FromSeconds(1) > DateTime.UtcNow ? oldEndDate.AddSeconds(1) : DateTime.UtcNow;
-            var newEndDate = newStartDate.AddYears(this.MembershipPlan.SubscriptionValidityInYears);
+            var rules = InstallmentDto.ToInstallments(enrollment.GetInstallments().ToList());
+            if (rules.IsError) return rules.TopError;
 
-            if(installmentTemplate != null && !MembershipPlan.InstallmentTemplates.Any(i => i.InstallmentTemplateId == installmentTemplate.Id))
-                return Error.Validation("Membership.InvalidInstallmentTemplate",
-                    "The provided installment template is not valid for the current membership plan.");
+            var cycleResult = MembershipCycle.Create(
+                Id,
+                ClubId,
+                enrollment.MembershipTypeId,
+                enrollment.MembershipPlanId,
+                newStartDate,
+                newEndDate,
+                enrollment.TotalPrice,
+                enrollment.InstallmentTemplateId,
+                rules.Value);
 
-             var installmentTemplateId = installmentTemplate?.Id;
-            var installments = installmentTemplate != null ? installmentTemplate.Installments.ToList() : new List<Installment>
-                {
-                    Installment.Create(MembershipPlan.TotalPrice, 0, 1).Value
-                };
+            if (cycleResult.IsError)
+                return cycleResult.TopError;
 
-                var cycleResult = MembershipCycle.Create(
-                    Id,
-                    ClubId,
-                    MembershipTypeId,
-                    MembershipPlanId,
-                    newStartDate,
-                    newEndDate,
-                    MembershipPlan.TotalPrice,
-                    installmentTemplateId,
-                    installments);
-
-            if (cycleResult.IsError)   return cycleResult.TopError;
+            _MembershipCycles.Add(cycleResult.Value);
 
             if (Status == MembershipStatus.Expired)
                 Status = MembershipStatus.Active;
+
+            if (MembershipPlanId != enrollment.MembershipPlanId)
+            {
+                // Validation: Check if new plan capacity fits existing family members
+                if (newPlanMaxFamilyMembers < _FamilyMembers.Count)
+                    return Error.Conflict("Membership.Renewal.CapacityExceeded", 
+                        $"Cannot renew to this plan. It only allows {newPlanMaxFamilyMembers} family members, but you have {_FamilyMembers.Count}.");
+
+                MembershipPlanId = enrollment.MembershipPlanId;
+                MembershipTypeId = enrollment.MembershipTypeId;
+            }
 
             RaiseDomainEvent(new MembershipRenewedDomainEvent(
                 Id,
                 MemberId,
                 oldEndDate,
                 newEndDate,
-                null,
+                enrollment.Id,
                 DateTime.UtcNow));
 
             return Result.Success;
         }
 
-        public Result<Success> Upgrade(Guid newMembershipTypeId, Guid newPlanId)
+        public Result<Success> Upgrade(Guid newMembershipTypeId, Guid newPlanId, int newPlanMaxFamilyMembers)
         {
             if (Status != MembershipStatus.Active)
                 return MembershipErrors.NotActive;
@@ -271,6 +290,11 @@ namespace EaseClub.Domain.Memberships
 
             if (newMembershipTypeId == MembershipTypeId)
                 return MembershipErrors.InvalidUpgrade;
+
+            // Validation: Check if new plan capacity fits existing family members
+            if (newPlanMaxFamilyMembers < _FamilyMembers.Count)
+                return Error.Conflict("Membership.Upgrade.CapacityExceeded",
+                    $"Cannot upgrade to this plan. It only allows {newPlanMaxFamilyMembers} family members, but you have {_FamilyMembers.Count}.");
 
             var oldTypeId = MembershipTypeId;
             var oldPlanId = MembershipPlanId;
@@ -289,7 +313,7 @@ namespace EaseClub.Domain.Memberships
             return Result.Success;
         }
 
-        public Result<Success> Downgrade(Guid newMembershipTypeId, Guid newPlanId)
+        public Result<Success> Downgrade(Guid newMembershipTypeId, Guid newPlanId, int newPlanMaxFamilyMembers)
         {
             if (Status != MembershipStatus.Active)
                 return MembershipErrors.NotActive;
@@ -304,6 +328,11 @@ namespace EaseClub.Domain.Memberships
 
             if (newMembershipTypeId == MembershipTypeId)
                 return MembershipErrors.InvalidDowngrade;
+
+            // Validation: Check if new plan capacity fits existing family members
+            if (newPlanMaxFamilyMembers < _FamilyMembers.Count)
+                return Error.Conflict("Membership.Downgrade.CapacityExceeded",
+                    $"Cannot downgrade to this plan. It only allows {newPlanMaxFamilyMembers} family members, but you have {_FamilyMembers.Count}.");
 
             var oldTypeId = MembershipTypeId;
             var oldPlanId = MembershipPlanId;
@@ -386,11 +415,12 @@ namespace EaseClub.Domain.Memberships
 
         #region Query Methods
 
+        public IReadOnlyList<MembershipCycle> GetMembershipCycles() => _MembershipCycles.AsReadOnly();
+
         public MembershipCycle? GetCurrentCycle()
         {
             var now = DateTime.UtcNow;
 
-            // 1. Try to find the one that is active right now
             var active = _MembershipCycles.FirstOrDefault(c => c.Period.IsActive(now));
             if (active != null) return active;
 
@@ -413,8 +443,6 @@ namespace EaseClub.Domain.Memberships
                    GetCurrentCycle()?.Period.IsActive(DateTime.UtcNow) == true;
         }
 
-
-
         public int DaysRemaining()
         {
             if (Status == MembershipStatus.Expired || Status == MembershipStatus.Cancelled)
@@ -424,6 +452,5 @@ namespace EaseClub.Domain.Memberships
         }
 
         #endregion
-
     }
 }
