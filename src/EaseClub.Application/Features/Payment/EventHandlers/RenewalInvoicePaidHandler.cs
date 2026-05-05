@@ -1,0 +1,110 @@
+using EaseClub.Application.Common;
+using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Features.Memberships;
+using EaseClub.Application.Features.Notifications;
+using EaseClub.Domain.MembershipPlans.Repositories;
+using EaseClub.Domain.Memberships;
+using EaseClub.Domain.Notifications;
+using EaseClub.Domain.Payment;
+using EaseClub.Domain.Payment.Enums;
+using EaseClub.Domain.Payment.Events;
+using EaseClub.Domain.Payment.Repositories;
+using Microsoft.Extensions.Logging;
+
+namespace EaseClub.Application.Features.Payment.EventHandlers
+{
+    /// <summary>
+    /// Handles InvoicePaidEvent for membership renewals.
+    /// </summary>
+    public class RenewalInvoicePaidHandler : DomainEventHandler<InvoicePaidEvent, RenewalInvoicePaidHandler>
+    {
+        private readonly IEnrollmentRepository _enrollmentRepository;
+        private readonly IMembershipRepository _membershipRepository;
+        private readonly IInvoiceRepository _invoiceRepository;
+        private readonly IMembershipPlanRepository _planRepository;
+
+        public RenewalInvoicePaidHandler(
+            IEnrollmentRepository enrollmentRepository,
+            IMembershipRepository membershipRepository,
+            IInvoiceRepository invoiceRepository,
+            IMembershipPlanRepository planRepository,
+            IUnitOfWork unitOfWork,
+            ILogger<RenewalInvoicePaidHandler> logger,
+            INotificationDispatcher notificationDispatcher,
+            INotificationRepository notificationRepository) : base(notificationDispatcher, notificationRepository, unitOfWork, logger)
+        {
+            _enrollmentRepository = enrollmentRepository;
+            _membershipRepository = membershipRepository;
+            _invoiceRepository = invoiceRepository;
+            _planRepository = planRepository;
+        }
+
+        protected override async Task HandleEvent(InvoicePaidEvent evt, CancellationToken ct)
+        {
+            if (evt.type != BillingItemType.EnrollmentFirstInstallment)
+                return;
+
+            var enrollment = await _enrollmentRepository.GetByIdAsync(evt.billingItemId, ct);
+            if (enrollment == null || enrollment.Source != EnrollmentSource.Renewal)
+                return; // Not our responsibility
+
+            if (enrollment.IsExpired(DateTime.UtcNow))
+            {
+                enrollment.MarkExpired();
+                await _unitOfWork.SaveChangesAsync(ct);
+                return;
+            }
+
+            if (enrollment.Status == EnrollmentStatus.Completed)
+                return;
+
+            // 1. Mark Enrollment as Completed
+            var completeResult = enrollment.MarkCompleted();
+            if (completeResult.IsError) return;
+
+            // 2. Fetch Existing Membership
+            if (!enrollment.ExistingMembershipId.HasValue) return;
+
+            var membership = await _membershipRepository.GetByIdWithDetailsAsync(enrollment.ExistingMembershipId.Value, ct);
+            if (membership == null) return;
+
+            // Fetch Plan for Capacity
+            var plan = await _planRepository.GetByIdAsync(enrollment.MembershipPlanId, ct);
+            if (plan == null) return;
+
+            // 3. Apply Renewal
+            var renewalResult = membership.ApplyRenewalFromEnrollment(enrollment, plan.MaxFamilyMembers);
+            if (renewalResult.IsError) return;
+
+            // 4. Reconcile Payment
+            await ReconcileFirstInstallmentAsync(membership, evt, ct);
+
+            // 5. Notify
+            var notification = Notification.ForUser(
+                enrollment.MemberId,
+                "Membership Renewed",
+                "Your membership has been successfully renewed.",
+                NotificationType.MembershipApplicationApproved);
+
+            await DispatchNotification(notification, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
+        }
+
+        private async Task ReconcileFirstInstallmentAsync(Membership membership, InvoicePaidEvent evt, CancellationToken ct)
+        {
+            // Note: ApplyRenewalFromEnrollment adds a NEW cycle, so we look for the last one (the newest)
+            var newestCycle = membership.MembershipCycles.OrderByDescending(x => x.Period.StartDate).FirstOrDefault();
+            var firstInstallment = newestCycle?.Installments.OrderBy(x => x.Order).FirstOrDefault();
+            
+            if (firstInstallment == null) return;
+
+            firstInstallment.MarkPaid(evt.Id);
+
+            var invoice = await _invoiceRepository.GetByIdAsync(evt.Id);
+            if (invoice != null)
+            {
+                invoice.Reconcile(firstInstallment.Id, BillingItemType.MembershipInstallment);
+            }
+        }
+    }
+}
