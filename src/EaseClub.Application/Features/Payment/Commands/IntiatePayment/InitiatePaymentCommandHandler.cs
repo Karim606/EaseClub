@@ -1,57 +1,53 @@
-using Microsoft.Extensions.Logging;
-using EaseClub.Application.Common.Interfaces;
-using EaseClub.Domain.Common;
-using EaseClub.Domain.Common.Results;
-using EaseClub.Domain.Memberships;
-using EaseClub.Domain.Payment;
-using EaseClub.Domain.Payment.Enums;
-using EaseClub.Domain.Payment.Errors;
-using EaseClub.Domain.Payment.Repositories;
-using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+//using Microsoft.Extensions.Logging;
+//using EaseClub.Application.Common.Interfaces;
+//using EaseClub.Domain.Common;
+//using EaseClub.Domain.Common.Results;
+//using EaseClub.Domain.Memberships;
+//using EaseClub.Domain.Payment.Enums;
+//using EaseClub.Domain.Payment.Repositories;
+//using MediatR;
 
-namespace EaseClub.Application.Features.Payment.Commands.IntiatePayment
-{
-    public class InitiatePaymentCommandHandler(IInvoiceRepository invoiceRepository, IPaymentGateway paymentGateway,ICurrentUserService currentUserService,
-        IPendingEnrollmentRepository pendingEnrollmentRepository,IUnitOfWork unitOfWork,
-        ILogger<InitiatePaymentCommandHandler> logger)
-        : IRequestHandler<InitiatePaymentCommand, Result<IntiatePaymentResponse>>
-    {
+//namespace EaseClub.Application.Features.Payment.Commands.IntiatePayment
+//{
+//    public class InitiatePaymentCommandHandler(
+//        IInvoiceRepository invoiceRepository, 
+//        IPaymentGateway paymentGateway,
+//        IEnrollmentRepository enrollmentRepository,
+//        IUnitOfWork unitOfWork,
+//        ILogger<InitiatePaymentCommandHandler> logger)
+//        : IRequestHandler<InitiatePaymentCommand, Result<IntiatePaymentResponse>>
+//    {
+//        public async Task<Result<IntiatePaymentResponse>> Handle(InitiatePaymentCommand request, CancellationToken cancellationToken)
+//        {
 
-        public async Task<Result<IntiatePaymentResponse>> Handle(InitiatePaymentCommand request, CancellationToken cancellationToken)
-        {
-            var userId = Guid.Parse(currentUserService.GetId());
-            var userRoles = currentUserService.GetRoles();
+//            var invoice = await invoiceRepository.GetInvoiceWithTransactions(request.InvoiceId);
+//            if (invoice is null) return Error.NotFound(description: "Invoice not found");
 
-            var invoice = await invoiceRepository.GetInvoiceWithTransactions(request.InvoiceId);
-            if (invoice is null) { logger.LogError("NotFound error in InitiatePaymentCommandHandler: {Error}", Error.NotFound(description: "Invoice not found").ToLogObject()); return Error.NotFound(description: "Invoice not found"); }
-            if (userId != invoice.MemberId && userRoles.All(r => r != "SuperAdmin"))
-            {
-                return Error.Unauthorized("You are not authorized to view these invoices.");
-            }
-            if(invoice.BillingItemType == BillingItemType.PendingEnrollmentFirstInstallment)
-            {
-               var pendingEnrollment = await  pendingEnrollmentRepository.GetByIdAsync(invoice.BillingItemId, cancellationToken);
 
-                if (DateTime.UtcNow >= pendingEnrollment.ExpiresAt) { logger.LogError("Failure error in InitiatePaymentCommandHandler: {Error}", Error.Failure(description: "current invoice cant be paid cause enrollment request has expired try to enroll again").ToLogObject()); return Error.Failure(description: "current invoice cant be paid cause enrollment request has expired try to enroll again"); }
-            }
-            // Create Transaction (Domain)
-            var transactionResult = invoice.RecordAttempt(request.Gateway, null);
-            if (transactionResult.IsError) { logger.LogError("Error in InitiatePaymentCommandHandler: {Error}", transactionResult.TopError.ToLogObject()); return transactionResult.TopError; }
-            var transaction = transactionResult.Value;
+//            if (invoice.BillingItemType == BillingItemType.EnrollmentFirstInstallment)
+//            {
+//               var enrollment = await enrollmentRepository.GetByIdAsync(invoice.BillingItemId, cancellationToken);
+//               if (enrollment == null) return Error.NotFound("Enrollment not found.");
 
-            // Call Payment Gateway to create session
-            var sessionId = await paymentGateway.CreateSessionAsync(transaction,cancellationToken);
+//               if (enrollment.IsExpired(DateTime.UtcNow)) 
+//               {
+//                   return Error.Failure(description: "This invoice cannot be paid because the enrollment has expired. Please start a new enrollment.");
+//               }
+//            }
 
-            if (sessionId.IsError) { logger.LogError("Error in InitiatePaymentCommandHandler: {Error}", sessionId.TopError.ToLogObject()); return sessionId.TopError; }
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+//            // Create Transaction (Domain)
+//            var transactionResult = invoice.RecordAttempt(request.Gateway, null);
+//            if (transactionResult.IsError) return transactionResult.TopError;
+//            var transaction = transactionResult.Value;
 
-            return new IntiatePaymentResponse(transaction.Id, sessionId.Value.sessionId);
+//            // Call Payment Gateway to create session
+//            var sessionResult = await paymentGateway.CreateSessionAsync(transaction, cancellationToken);
 
-        }
-    }
-}
+//            if (sessionResult.IsError) return sessionResult.TopError;
+            
+//            await unitOfWork.SaveChangesAsync(cancellationToken);
+
+//            return new IntiatePaymentResponse(transaction.Id, sessionResult.Value.sessionId);
+//        }
+//    }
+//}

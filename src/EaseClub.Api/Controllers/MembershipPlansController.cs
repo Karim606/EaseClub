@@ -1,23 +1,13 @@
-﻿using EaseClub.Application.Common.Pagination;
-using EaseClub.Application.Common.Pagination.Parameters;
-using EaseClub.Application.Common.Pagination.Results;
-using EaseClub.Application.Features.MembershipPlans.Command.AddTemplateToPlan;
+using EaseClub.Application.Common.Pagination;
 using EaseClub.Application.Features.MembershipPlans.Command.CreatePlan;
 using EaseClub.Application.Features.MembershipPlans.Command.DeleteMembershipPlan;
-using EaseClub.Application.Features.MembershipPlans.Command.RemoveInstallmentTemplateFromPlan;
 using EaseClub.Application.Features.MembershipPlans.Command.SyncInstallmentTemplates;
 using EaseClub.Application.Features.MembershipPlans.Command.UpdatePlan;
-using EaseClub.Application.Features.Memberships;
-using EaseClub.Application.Features.Memberships.Commands.StartDirectPayEnrollment;
 using EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPlanDetails;
 using EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPlansForMember;
 using EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPlansForAdmin;
-using EaseClub.Domain.Clubs;
-using EaseClub.Domain.Common.Results;
-using EaseClub.Infrastructure.Services;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EaseClub.Api.Controllers
@@ -150,27 +140,6 @@ This endpoint supports two modes of pagination:
                 , Problem);
         }
 
-        [Authorize(Roles = "MemberUser,SuperAdmin")]
-        [HttpPost("{planId:guid}/direct-pay")]
-        [MapToApiVersion("1.0")]
-        [ProducesResponseType(typeof(EnrollmentPaymentResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        [EndpointName("StartDirectPayEnrollment")]
-        [EndpointSummary("Creates the first installment checkout for a direct-pay plan.")]
-        public async Task<IActionResult> StartDirectPay(Guid planId, [FromBody] StartDirectPayEnrollmentRequest request, CancellationToken ct)
-        {
-            var command = new StartDirectPayEnrollmentCommand(
-                request.ClubId,
-                request.MembershipTypeId,
-                planId,
-                request.InstallmentTemplateId
-                );
-
-            var result = await sender.Send(command, ct);
-            return result.Match(Ok, Problem);
-        }
-
-
         [Authorize(Roles = "ClubAdmin,SuperAdmin")]
         [HttpPut("{planId:guid}")]
         [MapToApiVersion("1.0")]
@@ -225,29 +194,5 @@ This endpoint supports two modes of pagination:
 
             return result.Match(_ => NoContent(), Problem);
         }
-
-
-
-        //[Authorize(Roles = "ClubAdmin")]
-        //[HttpPost("{planId}/templates/{templateId}")]
-        //[MapToApiVersion("1.0")]
-        //public async Task<IActionResult> AddTemplateToPlan(Guid clubId,Guid planId, Guid templateId)
-        //{
-        //    var result = await sender.Send(new AddInstallmentTemplateToPlanCommand(clubId,planId, templateId));
-        //    return  result.Match(
-        //        (val) => NoContent(),
-        //        Problem);
-        //}
-
-        //[Authorize(Roles = "ClubAdmin")]
-        //[HttpDelete("{planId}/templates/{templateId}")]
-        //[MapToApiVersion("1.0")]
-        //public async Task<IActionResult> RemoveTemplateFromPlan(Guid clubId, Guid planId, Guid templateId)
-        //{
-        //    var result = await sender.Send(new RemoveInstallmentTemplateFromPlanCommand(clubId,planId, templateId));
-        //    return result.Match(
-        //        (val) => NoContent(),
-        //        Problem);
-        //}
     }
 }
