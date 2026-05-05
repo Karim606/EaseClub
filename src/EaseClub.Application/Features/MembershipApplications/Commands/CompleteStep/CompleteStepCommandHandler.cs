@@ -49,7 +49,7 @@ namespace EaseClub.Application.Features.MembershipApplications.Commands.Complete
                     fieldDefinition.Key,
                     dto.Value,
                     dto.InstanceId,
-                    fieldDefinition.Type
+                    fieldDefinition.FieldType
                 ));
             }
             if (mappingErrors.Any()) return mappingErrors;

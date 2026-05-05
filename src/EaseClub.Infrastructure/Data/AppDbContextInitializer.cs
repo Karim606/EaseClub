@@ -506,7 +506,7 @@ namespace EaseClub.Infrastructure.Data
             
             var answers = new List<UserAnswer>
             {
-                new UserAnswer(field.Id, field.Key, "Seed User Name", null, field.Type)
+                new UserAnswer(field.Id, field.Key, "Seed User Name", null, field.FieldType)
             };
 
             application.CompleteStep(step.Order, answers);

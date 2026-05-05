@@ -71,7 +71,7 @@ namespace EaseClub.Application.Features.MembershipApplications.Queries.GetApplic
         {
             return fields.Select(f => {
                 answerDict.TryGetValue((f.Id, instanceId), out var value);
-                return new AdminFieldDto(f.Id, f.Key, f.Label, f.Type, value, f.AllowedValues, f.ValidationRules);
+                return new AdminFieldDto(f.Id, f.Key, f.Label, f.FieldType, value, f.AllowedValues, f.ValidationRules);
             }).ToList();
         }
     }

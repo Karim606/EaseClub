@@ -101,7 +101,7 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
                 Guid id,
                 string key, 
                 string label,
-                FieldType type,
+                FieldType fieldType,
                 ValidationRuleSetSnapshot validationRules,
                 ConditionExpressionSnapshot? visibilityCondition,
                 List<string>? allowedValues,
@@ -111,7 +111,7 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
             Id = id;
             Key = key;
             Label = label;
-            Type = type;
+            FieldType = fieldType;
             ValidationRules = validationRules;
             VisibilityCondition = visibilityCondition;
             Order = order;
@@ -123,7 +123,7 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
         public Guid Id { get; private set; }
         public string Key { get; private set; }
         public string Label { get; private set; }
-        public FieldType Type { get; private set; }
+        public FieldType FieldType { get; private set; }
         public bool IsSystemField { get; private set; }
         public ValidationRuleSetSnapshot ValidationRules { get; init; } = default!;
         public ConditionExpressionSnapshot? VisibilityCondition { get; init; }
@@ -132,7 +132,7 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
 
         public List<Error> Validate(string? value)
         {
-            return ValidationRules.ToDomain().Validate(value, Type);
+            return ValidationRules.ToDomain().Validate(value, FieldType);
         }
 
         public bool Visible(string? value)

@@ -74,7 +74,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                         f.Id,
                         f.Key,
                         f.Label,
-                        f.Type,
+                        f.FieldType,
                         f.ValidationRules.ToDomain(), 
                         f.AllowedValues,
                         f.IsSystemField
@@ -108,7 +108,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                               f.Id,
                               f.Key,
                               f.Label,
-                              f.Type,
+                              f.FieldType,
                               f.ValidationRules.ToDomain(),
                               f.AllowedValues,
                               f.IsSystemField
