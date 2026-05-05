@@ -15,6 +15,7 @@ using EaseClub.Application.Features.Notifications.Queries;
 using EaseClub.Application.Features.Payment;
 using EaseClub.Application.Features.Payment.Queries;
 using EaseClub.Domain.ApplicationTemplates.Repositories;
+using EaseClub.Infrastructure.Services.BackgroundJobs;
 using EaseClub.Domain.Branches;
 using EaseClub.Domain.ClubAdmin;
 using EaseClub.Domain.Clubs;
@@ -170,6 +171,7 @@ namespace EaseClub.Application
             services.AddScoped<FileAuthorizationService>();
             services.AddSignalR();
             services.AddHostedService<FcmTokenCleanupWorker>();
+            services.AddHostedService<EnrollmentCleanupWorker>();
 
             services.AddScoped<IPaymentGateway, GeideaPaymentGateway>();
             services.AddHttpClient<IPaymentGateway, GeideaPaymentGateway>(client =>
@@ -213,7 +215,7 @@ namespace EaseClub.Application
             Services.AddScoped<IMembershipApplicationRepository,MembershipApplicationsRepository>();
             Services.AddScoped<IPricingPolicyRepository,PricingPolicyRepository>();
             Services.AddScoped<IMembershipRepository, MembershipRepository>();
-            Services.AddScoped<IPendingEnrollmentRepository, PendingEnrollmentRepository>();
+            Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
             Services.AddScoped<IFileRepository, FileRepository>();
             Services.AddScoped<IDeviceRepository, DeviceRepository>();
             Services.AddScoped<INotificationRepository, NotificationRepository>();
