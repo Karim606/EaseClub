@@ -32,7 +32,12 @@ namespace EaseClub.Application.Features.Enrollments.Commands.StartDirectPay
                 MembershipPlanId);
 
             yield return new OwnershipRule(
-                async (auth, _) => await auth.DoesResourceBelongToClubAsync<InstallmentTemplate>(InstallmentTemplateId ?? Guid.Empty, ClubId),
+                async (auth, _) => { 
+                    if (InstallmentTemplateId != null && InstallmentTemplateId != Guid.Empty)
+                        return await auth.DoesResourceBelongToClubAsync<InstallmentTemplate>(InstallmentTemplateId ?? Guid.Empty, ClubId);
+
+                    return true;
+                        },
                 nameof(InstallmentTemplate),
                 InstallmentTemplateId ?? Guid.Empty);
         }
