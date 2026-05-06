@@ -45,10 +45,10 @@ namespace EaseClub.Application.Features.Files.Commands.UploadClubFile
                 return Error.Unauthorized();
 
 
-            var res = await fileStorageService.UploadFileAsync(request.File.OpenReadStream(), request.File.Name, true, $"clubs/{request.ClubId}/", cancellationToken: ct);
+            var res = await fileStorageService.UploadFileAsync(request.File.OpenReadStream(), request.File.FileName, request.IsPrivate, $"clubs/{request.ClubId}/", cancellationToken: ct);
 
             if (res.IsError) { logger.LogError("Error in UploadClubFileCommandHandler: {Error}", res.TopError.ToLogObject()); return res.TopError; }
-            var file = FileResource.Create(Guid.NewGuid(), res.Value.FileName, res.Value.FilePath, request.File.ContentType, res.Value.Size, userId, true, request.ClubId,request.Purpose, FileOwnerType.Club);
+            var file = FileResource.Create(Guid.NewGuid(), res.Value.FileName, res.Value.FilePath, request.File.ContentType, res.Value.Size, userId, request.IsPrivate, request.ClubId,request.Purpose, FileOwnerType.Club);
 
             if (file.IsError) { logger.LogError("Error in UploadClubFileCommandHandler: {Error}", file.TopError.ToLogObject()); return file.TopError; }
             await fileRepository.AddAsync(file.Value, ct);

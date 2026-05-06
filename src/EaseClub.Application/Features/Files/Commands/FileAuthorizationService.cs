@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Files;
 using EaseClub.Domain.Files.Enums;
@@ -17,6 +17,8 @@ namespace EaseClub.Application.Features.Files.Commands
     {
         public async Task<bool> CanAccessAsync(FileResource fileResource)
         {
+            if (!fileResource.IsPrivate) return true;
+
             var parsingRes = Guid.TryParse(currentUserService.GetId(), out var userId);
             if (!parsingRes) return false;
 

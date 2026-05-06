@@ -45,7 +45,7 @@ namespace EaseClub.Application.Features.Files.Commands.UploadApplicationFile
                 return Error.Unauthorized();
 
 
-            var res = await fileStorageService.UploadFileAsync(request.File.OpenReadStream(), request.File.Name,true, $"clubs/{app.ClubId}/applications/{app.Id}/", cancellationToken: ct);
+            var res = await fileStorageService.UploadFileAsync(request.File.OpenReadStream(), request.File.FileName,true, $"clubs/{app.ClubId}/applications/{app.Id}/", cancellationToken: ct);
 
             if (res.IsError) { logger.LogError("Error in UploadApplicationFileHandler: {Error}", res.TopError.ToLogObject()); return res.TopError; }
             var file = FileResource.Create(Guid.NewGuid(),res.Value.FileName,res.Value.FilePath,request.File.ContentType,res.Value.Size,userId,true,app.Id,FilePurpose.ApplicationDocument,FileOwnerType.Application);
