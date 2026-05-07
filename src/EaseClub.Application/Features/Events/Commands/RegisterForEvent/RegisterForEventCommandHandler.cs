@@ -14,6 +14,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using static EaseClub.Domain.Memberships.MembershipStatus;
+using EaseClub.Domain.Memberships;
 
 namespace EaseClub.Application.Features.Events.Commands.RegisterForEvent;
 
@@ -36,7 +37,7 @@ public class RegisterForEventCommandHandler(
 
         // 2. Check if registrant has an Active membership in this club
         var memberships = await membershipRepository.GetByUserIdAsync(request.RegistrantId, cancellationToken);
-        var activeMemberships = memberships.Where(m => m.ClubId == @event.ClubId && m.Status == EaseClub.Domain.Memberships.MembershipStatus.Active).ToList();
+        var activeMemberships = memberships.Where(m => m.ClubId == @event.ClubId && m.Status == MembershipStatus.Active).ToList();
         bool isMember = activeMemberships.Any();
         
         var allFamilyMembers = activeMemberships.SelectMany(m => m.FamilyMembers).ToList();
