@@ -12,12 +12,10 @@ public static class EventErrors
     public static Error InvalidCapacity => Error.Validation("Event.InvalidCapacity", "Event capacity must be greater than zero.");
     public static Error NotDraft(string action) => Error.Validation("Event.NotDraft", $"Can only {action} draft events.");
     public static Error CapacityTooSmall => Error.Validation("Event.CapacityTooSmall", "New capacity cannot be less than the sum of existing ticket quantities.");
-    public static Error InvalidTicketCategory(string category, string audience) => Error.Validation("Event.InvalidTicketCategory", $"Category {category} is not allowed for audience {audience}.");
     public static Error CapacityExceeded => Error.Validation("Event.CapacityExceeded", "Adding or updating this ticket type would exceed the total event capacity.");
     public static Error DuplicateTicketCategory(string category) => Error.Validation("Event.DuplicateTicketCategory", $"A ticket with category {category} already exists for this event.");
     public static Error TicketNotFound => Error.NotFound("Event.TicketNotFound", "Ticket type not found.");
     public static Error TicketNotFoundForCategory(string category) => Error.NotFound("Event.TicketNotFoundForCategory", $"No ticket type configured for category '{category}'. Admin must add this ticket type.");
-    public static Error IncompatibleAudience(string newAudience, string ticketName, string category) => Error.Validation("Event.IncompatibleAudience", $"Cannot change audience to {newAudience} because existing ticket '{ticketName}' has category '{category}' which is not allowed.");
     
     // Registration Errors (Event Level)
     public static Error NotPublished => Error.Validation("Event.NotPublished", "Cannot register for an event that is not published.");

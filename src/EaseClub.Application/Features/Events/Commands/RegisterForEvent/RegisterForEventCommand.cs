@@ -10,4 +10,8 @@ namespace EaseClub.Application.Features.Events.Commands.RegisterForEvent;
 public record RegisterForEventCommand(
     Guid EventId,
     Guid RegistrantId,
-    List<AttendeeRequest> Attendees) : IRequest<Result<EventActionResponseDto>>;
+    bool IsRegistrantAttending,
+    string RegistrantName,
+    int? RegistrantAge = null,
+    string? RegistrantGender = null,
+    List<AttendeeRequest>? Attendees = null) : IRequest<Result<EventActionResponseDto>>;

@@ -1,9 +1,9 @@
 using EaseClub.Application.Common;
 using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Features.Notifications;
 using EaseClub.Domain.Events;
 using EaseClub.Domain.Events.DomainEvents;
 using EaseClub.Domain.Notifications;
-using EaseClub.Application.Features.Notifications;
 using Microsoft.Extensions.Logging;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,9 +33,14 @@ public class EventPublishedEventHandler : DomainEventHandler<EventPublished, Eve
             return;
         }
 
-        _logger.LogInformation("Event {@eventId} '{@eventName}' was published successfully.", @event.Id, @event.Name);
+        var notification = Notification.ForUser(
+            @event.ClubId,
+            "Event Published",
+            $"Event '{@event.Name}' has been published successfully.",
+            NotificationType.General);
 
-        // Here we could notify all club members or users that match the event's audience criteria
-        // For now, logging stringly that the event has been published.
+        await DispatchNotification(notification);
+
+        _logger.LogInformation("Event '{@event.Name}' (Id: {@event.Id}) has been published successfully.", @event.Name, @event.Id);
     }
 }

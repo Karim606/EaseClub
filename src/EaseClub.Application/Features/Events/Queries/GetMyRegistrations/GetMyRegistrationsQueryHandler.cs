@@ -20,6 +20,7 @@ public class GetMyRegistrationsQueryHandler(IEventRepository eventRepository)
             r.Id,
             r.EventId,
             r.RegistrantId,
+            r.IsRegistrantAttending,
             r.Status,
             r.InvoiceId,
             r.TotalBasePrice,

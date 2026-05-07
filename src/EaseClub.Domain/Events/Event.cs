@@ -26,7 +26,6 @@ public class Event : AuditableEntity, IHaveClub
     public string Venue { get; private set; } = string.Empty;
     public string? ImageUrl { get; private set; }
     public string? Badge { get; private set; }
-    public bool IsFeatured { get; private set; }
 
     private readonly List<TicketType> _ticketTypes = new();
     public IReadOnlyCollection<TicketType> TicketTypes => _ticketTypes.AsReadOnly();
@@ -51,8 +50,7 @@ public class Event : AuditableEntity, IHaveClub
         EventAccessType accessType,
         string venue = "",
         string? imageUrl = null,
-        string? badge = null,
-        bool isFeatured = false)
+        string? badge = null)
     {
         if (clubId == Guid.Empty)
             return EventErrors.InvalidClub;
@@ -78,8 +76,7 @@ public class Event : AuditableEntity, IHaveClub
             Status = EventStatus.Draft,
             Venue = venue ?? string.Empty,
             ImageUrl = imageUrl,
-            Badge = badge,
-            IsFeatured = isFeatured
+            Badge = badge
         };
 
         return @event;
@@ -93,8 +90,7 @@ public class Event : AuditableEntity, IHaveClub
         int capacity,
         string venue = "",
         string? imageUrl = null,
-        string? badge = null,
-        bool isFeatured = false)
+        string? badge = null)
     {
         if (Status != EventStatus.Draft)
             return EventErrors.NotDraft("update");
@@ -121,7 +117,6 @@ public class Event : AuditableEntity, IHaveClub
         Venue = venue ?? string.Empty;
         ImageUrl = imageUrl;
         Badge = badge;
-        IsFeatured = isFeatured;
 
         return Result.Success;
     }
@@ -214,7 +209,7 @@ public class Event : AuditableEntity, IHaveClub
         if (otherTicketsQuantity + totalQuantity > Capacity)
             return EventErrors.CapacityExceeded;
  
-        ticket.UpdateDetails(
+        var result = ticket.UpdateDetails(
             basePrice, 
             totalQuantity, 
             maxPerMember,
@@ -222,6 +217,10 @@ public class Event : AuditableEntity, IHaveClub
             minAge,
             maxAge,
             genderRestriction);
+
+        if (result.IsError)
+            return result.TopError;
+
         return Result.Success;
     }
 
@@ -282,7 +281,20 @@ public class Event : AuditableEntity, IHaveClub
         TicketType? registrantTicket = null;
         if (isRegistrantAttending)
         {
-            var registrantCategory = isRegistrantMember ? AttendeeCategory.Member : AttendeeCategory.Public;
+            // Determine registrant ticket category with fallback
+            AttendeeCategory registrantCategory;
+            if (isRegistrantMember)
+            {
+                // Try Member ticket first, fallback to Public if no Member ticket exists
+                registrantCategory = _ticketTypes.Any(t => t.Category == AttendeeCategory.Member) 
+                    ? AttendeeCategory.Member 
+                    : AttendeeCategory.Public;
+            }
+            else
+            {
+                registrantCategory = AttendeeCategory.Public;
+            }
+
             registrantTicket = _ticketTypes.FirstOrDefault(t => t.Category == registrantCategory);
             if (registrantTicket == null)
                 return EventErrors.TicketNotFoundForCategory(registrantCategory.ToString());
@@ -489,4 +501,23 @@ public class Event : AuditableEntity, IHaveClub
         RaiseDomainEvent(new EventCancelled(Id));
         return Result.Success;
     }
+
+    public AttendanceStats GetAttendanceStats()
+    {
+        var soldPerCategory = _ticketTypes.ToDictionary(t => t.Category, t => t.SoldQuantity);
+
+        return new AttendanceStats(
+            Capacity,
+            _ticketTypes.Sum(t => t.SoldQuantity),
+            _ticketTypes.Sum(t => t.AvailableQuantity),
+            soldPerCategory
+        );
+    }
 }
+
+public record AttendanceStats(
+    int TotalCapacity,
+    int TotalSold,
+    int TotalAvailable,
+    Dictionary<AttendeeCategory, int> Details);
+

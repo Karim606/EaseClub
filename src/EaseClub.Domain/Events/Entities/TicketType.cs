@@ -46,7 +46,7 @@ public class TicketType : Entity
 
     private TicketType() { }
 
-    internal void UpdateDetails(
+    internal Result<Success> UpdateDetails(
         decimal basePrice, 
         int totalQuantity, 
         int? maxPerMember,
@@ -55,6 +55,9 @@ public class TicketType : Entity
         int? maxAge,
         string? genderRestriction)
     {
+        if (totalQuantity < SoldQuantity)
+            return EventErrors.InvalidTicketQuantity; // Or a more specific error like "QuantityCannotBeLessThanSold"
+
         BasePrice = basePrice;
         TotalQuantity = totalQuantity;
         MaxPerMember = maxPerMember;
@@ -62,6 +65,8 @@ public class TicketType : Entity
         MinAge = minAge;
         MaxAge = maxAge;
         GenderRestriction = genderRestriction;
+        
+        return Result.Success;
     }
 
     internal Result<Success> ReserveSeats(int count)

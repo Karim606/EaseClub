@@ -1,9 +1,9 @@
 using EaseClub.Application.Common;
 using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Features.Notifications;
 using EaseClub.Domain.Events;
 using EaseClub.Domain.Events.DomainEvents;
 using EaseClub.Domain.Notifications;
-using EaseClub.Application.Features.Notifications;
 using Microsoft.Extensions.Logging;
 using System.Linq;
 using System.Threading;

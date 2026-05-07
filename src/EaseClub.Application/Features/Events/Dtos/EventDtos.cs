@@ -12,12 +12,11 @@ public record EventDto(
     DateTime StartDate,
     DateTime EndDate,
     int Capacity,
-    Audience Audience,
+    EventAccessType AccessType,
     EventStatus Status,
     string Venue,
     string? ImageUrl,
     string? Badge,
-    bool IsFeatured,
     List<Guid> PricingPolicyIds,
     List<TicketTypeDto> TicketTypes);
 
@@ -26,6 +25,7 @@ public record TicketTypeDto(
     AttendeeCategory Category,
     decimal BasePrice,
     int TotalQuantity,
+    int AvailableQuantity,
     int? MaxPerMember,
     bool RequiresMembership,
     int? MinAge,
@@ -37,17 +37,19 @@ public record EventSummaryDto(
     string Name,
     DateTime StartDate,
     DateTime EndDate,
+    EventAccessType AccessType,
     EventStatus Status,
     string Venue,
     string? ImageUrl,
     string? Badge,
-    bool IsFeatured,
+    int RemainingCapacity,
     int RegistrationsCount);
 
 public record EventRegistrationDto(
     Guid Id,
     Guid EventId,
     Guid RegistrantId,
+    bool IsRegistrantAttending,
     RegistrationStatus Status,
     Guid? InvoiceId,
     decimal TotalBasePrice,

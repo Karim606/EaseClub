@@ -21,11 +21,12 @@ public class GetUpcomingEventsQueryHandler(IEventRepository eventRepository)
             e.Name,
             e.StartDate,
             e.EndDate,
+            e.AccessType,
             e.Status,
             e.Venue,
             e.ImageUrl,
             e.Badge,
-            e.IsFeatured,
+            e.TicketTypes.Sum(t => t.AvailableQuantity),
             e.Registrations.Count
         )).ToList();
 

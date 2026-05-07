@@ -14,5 +14,4 @@ public record UpdateEventCommand(
     int Capacity,
     string Venue = "",
     string? ImageUrl = null,
-    string? Badge = null,
-    bool IsFeatured = false) : IRequest<Result<EventActionResponseDto>>;
+    string? Badge = null) : IRequest<Result<EventActionResponseDto>>;

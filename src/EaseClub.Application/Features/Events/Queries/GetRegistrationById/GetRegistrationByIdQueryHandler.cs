@@ -21,6 +21,7 @@ public class GetRegistrationByIdQueryHandler(IEventRepository eventRepository)
             r.Id,
             r.EventId,
             r.RegistrantId,
+            r.IsRegistrantAttending,
             r.Status,
             r.InvoiceId,
             r.TotalBasePrice,

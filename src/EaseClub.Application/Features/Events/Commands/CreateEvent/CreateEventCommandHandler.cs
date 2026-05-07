@@ -26,11 +26,10 @@ public class CreateEventCommandHandler(
             request.StartDate,
             request.EndDate,
             request.Capacity,
-            request.Audience,
+            request.AccessType,
             request.Venue,
             request.ImageUrl,
-            request.Badge,
-            request.IsFeatured);
+            request.Badge);
 
         if (eventResult.IsError)
         {

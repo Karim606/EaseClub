@@ -33,8 +33,7 @@ public class UpdateEventCommandHandler(
             request.Capacity,
             request.Venue,
             request.ImageUrl,
-            request.Badge,
-            request.IsFeatured);
+            request.Badge);
 
         if (result.IsError)
         {

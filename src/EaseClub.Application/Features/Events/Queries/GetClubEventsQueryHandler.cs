@@ -21,12 +21,13 @@ public class GetClubEventsQueryHandler(IEventRepository eventRepository)
             e.Name,
             e.StartDate,
             e.EndDate,
+            e.AccessType,
             e.Status,
             e.Venue,
             e.ImageUrl,
             e.Badge,
-            e.IsFeatured,
-            e.Registrations.Count
+            e.TicketTypes.Sum(t => t.AvailableQuantity),
+            e.TicketTypes.Sum(t => t.SoldQuantity)
         )).ToList();
 
         return dtos;

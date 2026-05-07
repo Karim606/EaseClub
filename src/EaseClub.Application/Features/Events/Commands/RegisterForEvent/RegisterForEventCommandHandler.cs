@@ -38,11 +38,17 @@ public class RegisterForEventCommandHandler(
         var memberships = await membershipRepository.GetByUserIdAsync(request.RegistrantId, cancellationToken);
         bool isMember = memberships.Any(m => m.ClubId == @event.ClubId && m.Status == Active);
 
+        var attendees = request.Attendees ?? new List<Domain.Events.ValueObjects.AttendeeRequest>();
+
         // 3. Register in domain (handles capacity, ticket availability, age/gender restrictions inside domain)
         var registrationResult = @event.Register(
             request.RegistrantId,
             isMember,
-            request.Attendees);
+            request.IsRegistrantAttending,
+            request.RegistrantName,
+            request.RegistrantAge,
+            request.RegistrantGender,
+            attendees);
 
         if (registrationResult.IsError)
         {
@@ -56,18 +62,18 @@ public class RegisterForEventCommandHandler(
         // 4. Pricing Logic
         if (@event.PricingPolicyIds.Any())
         {
-            var attendeeStats = request.Attendees.Select(a => {
+            var attendeeCategories = registration.Attendees.Select(a => {
                 var ticket = @event.TicketTypes.First(t => t.Id == a.TicketTypeId);
                 return ticket.Category;
             }).ToList();
 
             var pricingData = new Dictionary<string, string?>
             {
-                { "attendee_count", attendeeStats.Count.ToString() },
-                { "member_count", attendeeStats.Count(c => c == AttendeeCategory.Member).ToString() },
-                { "guest_count", attendeeStats.Count(c => c == AttendeeCategory.Guest).ToString() },
-                { "family_count", attendeeStats.Count(c => c == AttendeeCategory.FamilyMember).ToString() },
-                { "non_member_count", attendeeStats.Count(c => c != AttendeeCategory.Member).ToString() },
+                { "attendee_count", attendeeCategories.Count.ToString() },
+                { "member_count", attendeeCategories.Count(c => c == AttendeeCategory.Member).ToString() },
+                { "guest_count", attendeeCategories.Count(c => c == AttendeeCategory.Guest).ToString() },
+                { "family_count", attendeeCategories.Count(c => c == AttendeeCategory.FamilyMember).ToString() },
+                { "non_member_count", attendeeCategories.Count(c => c != AttendeeCategory.Member).ToString() },
                 { "is_member", isMember.ToString().ToLower() }
             };
 
