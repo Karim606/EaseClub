@@ -27,8 +27,6 @@ public class UpdateTicketTypeCommandHandler(
 
         var result = @event.UpdateTicketType(
             request.TicketTypeId,
-            request.Name,
-            request.Description,
             request.BasePrice,
             request.TotalQuantity,
             request.MaxPerMember,
@@ -47,6 +45,7 @@ public class UpdateTicketTypeCommandHandler(
         await eventRepository.UpdateAsync(@event, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new EventActionResponseDto(request.TicketTypeId, request.Name);
+        var ticket = @event.TicketTypes.First(t => t.Id == request.TicketTypeId);
+        return new EventActionResponseDto(request.TicketTypeId, ticket.Category.ToString());
     }
 }

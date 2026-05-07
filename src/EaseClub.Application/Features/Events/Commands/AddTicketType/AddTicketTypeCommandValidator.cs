@@ -9,13 +9,6 @@ public class AddTicketTypeCommandValidator : AbstractValidator<AddTicketTypeComm
         RuleFor(x => x.EventId)
             .NotEmpty().WithMessage("Event ID is required.");
 
-        RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("Ticket name is required.")
-            .MaximumLength(100).WithMessage("Ticket name cannot exceed 100 characters.");
-
-        RuleFor(x => x.Description)
-            .MaximumLength(500).WithMessage("Ticket description cannot exceed 500 characters.");
-
         RuleFor(x => x.Category)
             .IsInEnum().WithMessage("Invalid attendee category.");
 

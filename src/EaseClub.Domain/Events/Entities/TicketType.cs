@@ -8,8 +8,6 @@ namespace EaseClub.Domain.Events.Entities;
 public class TicketType : Entity
 {
     public Guid EventId { get; private set; }
-    public string Name { get; private set; }
-    public string Description { get; private set; }
     public AttendeeCategory Category { get; private set; }
     public decimal BasePrice { get; private set; }
     
@@ -25,8 +23,6 @@ public class TicketType : Entity
 
     internal TicketType(
         Guid eventId, 
-        string name, 
-        string description, 
         AttendeeCategory category, 
         decimal basePrice, 
         int totalQuantity, 
@@ -37,8 +33,6 @@ public class TicketType : Entity
         string? genderRestriction = null) : base(Guid.NewGuid())
     {
         EventId = eventId;
-        Name = name;
-        Description = description;
         Category = category;
         BasePrice = basePrice;
         TotalQuantity = totalQuantity;
@@ -53,8 +47,6 @@ public class TicketType : Entity
     private TicketType() { }
 
     internal void UpdateDetails(
-        string name, 
-        string description, 
         decimal basePrice, 
         int totalQuantity, 
         int? maxPerMember,
@@ -63,8 +55,6 @@ public class TicketType : Entity
         int? maxAge,
         string? genderRestriction)
     {
-        Name = name;
-        Description = description;
         BasePrice = basePrice;
         TotalQuantity = totalQuantity;
         MaxPerMember = maxPerMember;
@@ -80,7 +70,7 @@ public class TicketType : Entity
             return EventErrors.InvalidReserveCount;
             
         if (AvailableQuantity < count)
-            return EventErrors.NotEnoughSeats(Name);
+            return EventErrors.NotEnoughSeats(Category.ToString());
 
         SoldQuantity += count;
         return Result.Success;

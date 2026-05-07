@@ -81,6 +81,11 @@ public class RegisterForEventCommandHandler(
             {
                 var pricingResult = PricingEngine.Calculate(registration.TotalBasePrice, assignedPolicies, context);
                 
+                var discount = registration.TotalBasePrice - pricingResult.TotalPrice;
+                var appliedPolicies = string.Join(", ", pricingResult.AppliedPolicies.Select(p => p.Name));
+                
+                registration.ApplyPricing(discount, appliedPolicies);
+                
                 logger.LogInformation("Pricing calculated for registration {RegistrationId}: Base {Base}, Final {Final}", 
                     registration.Id, pricingResult.BasePrice, pricingResult.TotalPrice);
             }

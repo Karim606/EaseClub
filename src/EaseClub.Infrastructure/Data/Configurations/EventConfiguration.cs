@@ -70,8 +70,6 @@ public class TicketTypeConfiguration : IEntityTypeConfiguration<TicketType>
     {
         builder.HasKey(t => t.Id);
 
-        builder.Property(t => t.Name).IsRequired().HasMaxLength(200);
-        builder.Property(t => t.Description).IsRequired().HasMaxLength(1000);
         builder.Property(t => t.Category).HasConversion<string>().IsRequired();
         builder.Property(t => t.BasePrice).HasColumnType("decimal(18,2)").IsRequired();
         builder.Property(t => t.TotalQuantity).IsRequired();

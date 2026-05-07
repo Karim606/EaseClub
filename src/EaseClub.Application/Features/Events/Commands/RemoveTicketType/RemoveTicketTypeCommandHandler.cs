@@ -25,7 +25,7 @@ public class RemoveTicketTypeCommandHandler(
             return Error.NotFound("Event.NotFound", "Event not found.");
         }
 
-        var ticketName = @event.TicketTypes.FirstOrDefault(t => t.Id == request.TicketTypeId)?.Name ?? "Removed Ticket";
+        var ticketName = @event.TicketTypes.FirstOrDefault(t => t.Id == request.TicketTypeId)?.Category.ToString() ?? "Removed Ticket";
         var result = @event.RemoveTicketType(request.TicketTypeId);
 
         if (result.IsError)

@@ -37,8 +37,6 @@ public class GetEventByIdQueryHandler(IEventRepository eventRepository)
             @event.PricingPolicyIds.ToList(),
             @event.TicketTypes.Select(t => new TicketTypeDto(
                 t.Id,
-                t.Name,
-                t.Description,
                 t.Category,
                 t.BasePrice,
                 t.TotalQuantity,

@@ -11,6 +11,7 @@ public class EventRegistration : AuditableEntity
     public Guid EventId { get; private set; }
     public Guid RegistrantId { get; private set; }
     public RegistrationStatus Status { get; private set; }
+    public bool IsRegistrantAttending { get; private set; }
     public Guid? InvoiceId { get; private set; }
     
     // Snapshot of the calculated base price across all tickets in this registration
@@ -24,10 +25,11 @@ public class EventRegistration : AuditableEntity
     private readonly List<Attendee> _attendees = new();
     public IReadOnlyCollection<Attendee> Attendees => _attendees.AsReadOnly();
 
-    internal EventRegistration(Guid eventId, Guid registrantId, decimal totalBasePrice, decimal discountAmount = 0, string? appliedPolicies = null) : base(Guid.NewGuid())
+    internal EventRegistration(Guid eventId, Guid registrantId, bool isRegistrantAttending, decimal totalBasePrice, decimal discountAmount = 0, string? appliedPolicies = null) : base(Guid.NewGuid())
     {
         EventId = eventId;
         RegistrantId = registrantId;
+        IsRegistrantAttending = isRegistrantAttending;
         TotalBasePrice = totalBasePrice;
         DiscountAmount = discountAmount;
         FinalTotal = totalBasePrice - discountAmount;
@@ -42,6 +44,13 @@ public class EventRegistration : AuditableEntity
         _attendees.Add(attendee);
     }
 
+    public void ApplyPricing(decimal discountAmount, string? appliedPolicies)
+    {
+        DiscountAmount = discountAmount;
+        AppliedPolicies = appliedPolicies;
+        FinalTotal = TotalBasePrice - discountAmount;
+    }
+
     public Result<Success> SetInvoiceId(Guid invoiceId)
     {
         if (Status != RegistrationStatus.PendingPayment)
@@ -51,7 +60,7 @@ public class EventRegistration : AuditableEntity
         return Result.Success;
     }
 
-    internal Result<Success> MarkAsConfirmed()
+    public Result<Success> MarkAsConfirmed()
     {
         // Must strictly transition from PendingPayment -> Confirmed
         if (Status != RegistrationStatus.PendingPayment)
@@ -61,7 +70,7 @@ public class EventRegistration : AuditableEntity
         return Result.Success;
     }
 
-    internal Result<Success> Cancel()
+    public Result<Success> Cancel()
     {
         // Can cancel from PendingPayment or Confirmed
         if (Status == RegistrationStatus.Cancelled)

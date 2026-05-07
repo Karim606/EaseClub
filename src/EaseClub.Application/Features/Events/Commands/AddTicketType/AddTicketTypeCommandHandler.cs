@@ -26,8 +26,6 @@ public class AddTicketTypeCommandHandler(
         }
 
         var result = @event.AddTicketType(
-            request.Name,
-            request.Description,
             request.Category,
             request.BasePrice,
             request.TotalQuantity,
@@ -47,6 +45,6 @@ public class AddTicketTypeCommandHandler(
         await eventRepository.UpdateAsync(@event, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new EventActionResponseDto(result.Value.Id, result.Value.Name);
+        return new EventActionResponseDto(result.Value.Id, result.Value.Category.ToString());
     }
 }

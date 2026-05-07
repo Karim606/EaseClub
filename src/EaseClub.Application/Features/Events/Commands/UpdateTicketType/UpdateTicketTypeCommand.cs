@@ -8,8 +8,6 @@ namespace EaseClub.Application.Features.Events.Commands.UpdateTicketType;
 public record UpdateTicketTypeCommand(
     Guid EventId,
     Guid TicketTypeId,
-    string Name,
-    string Description,
     decimal BasePrice,
     int TotalQuantity,
     int? MaxPerMember = null,

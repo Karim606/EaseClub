@@ -8,8 +8,6 @@ namespace EaseClub.Application.Features.Events.Commands.AddTicketType;
 
 public record AddTicketTypeCommand(
     Guid EventId,
-    string Name,
-    string Description,
     AttendeeCategory Category,
     decimal BasePrice,
     int TotalQuantity,

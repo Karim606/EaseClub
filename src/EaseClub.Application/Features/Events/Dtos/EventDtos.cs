@@ -23,8 +23,6 @@ public record EventDto(
 
 public record TicketTypeDto(
     Guid Id,
-    string Name,
-    string Description,
     AttendeeCategory Category,
     decimal BasePrice,
     int TotalQuantity,

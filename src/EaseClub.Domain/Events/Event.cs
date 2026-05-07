@@ -19,7 +19,7 @@ public class Event : AuditableEntity, IHaveClub
     public DateTime StartDate { get; private set; }
     public DateTime EndDate { get; private set; }
     public int Capacity { get; private set; }
-    public Audience Audience { get; private set; }
+    public EventAccessType AccessType { get; private set; }
     public EventStatus Status { get; private set; }
     
     // UI/Display Properties matching App requirements
@@ -48,7 +48,7 @@ public class Event : AuditableEntity, IHaveClub
         DateTime startDate, 
         DateTime endDate, 
         int capacity, 
-        Audience audience,
+        EventAccessType accessType,
         string venue = "",
         string? imageUrl = null,
         string? badge = null,
@@ -74,7 +74,7 @@ public class Event : AuditableEntity, IHaveClub
             StartDate = startDate,
             EndDate = endDate,
             Capacity = capacity,
-            Audience = audience,
+            AccessType = accessType,
             Status = EventStatus.Draft,
             Venue = venue ?? string.Empty,
             ImageUrl = imageUrl,
@@ -127,8 +127,6 @@ public class Event : AuditableEntity, IHaveClub
     }
 
     public Result<TicketType> AddTicketType(
-        string name, 
-        string description, 
         AttendeeCategory category, 
         decimal basePrice, 
         int totalQuantity, 
@@ -140,6 +138,9 @@ public class Event : AuditableEntity, IHaveClub
     {
         if (Status != EventStatus.Draft)
             return EventErrors.NotDraft("add tickets to");
+
+        if (_ticketTypes.Any(t => t.Category == category))
+            return EventErrors.DuplicateTicketCategory(category.ToString());
  
         // Invariants
         if (basePrice < 0)
@@ -150,12 +151,6 @@ public class Event : AuditableEntity, IHaveClub
             
         if (maxPerMember.HasValue && (maxPerMember.Value <= 0 || maxPerMember.Value > totalQuantity))
             return EventErrors.InvalidMaxPerMember;
- 
-        // Audience rules enforcement
-        var rules = AudienceRules.For(Audience);
-        if (!rules.AllowedCategories.Contains(category))
-            return EventErrors.InvalidTicketCategory(category.ToString(), Audience.ToString());
- 
         // Capacity check
         var currentTotalQuantity = _ticketTypes.Sum(t => t.TotalQuantity);
         if (currentTotalQuantity + totalQuantity > Capacity)
@@ -163,8 +158,6 @@ public class Event : AuditableEntity, IHaveClub
  
         var ticket = new TicketType(
             Id, 
-            name, 
-            description, 
             category, 
             basePrice, 
             totalQuantity, 
@@ -193,8 +186,6 @@ public class Event : AuditableEntity, IHaveClub
 
     public Result<Success> UpdateTicketType(
         Guid ticketTypeId, 
-        string name, 
-        string description, 
         decimal basePrice, 
         int totalQuantity, 
         int? maxPerMember = null,
@@ -224,8 +215,6 @@ public class Event : AuditableEntity, IHaveClub
             return EventErrors.CapacityExceeded;
  
         ticket.UpdateDetails(
-            name, 
-            description, 
             basePrice, 
             totalQuantity, 
             maxPerMember,
@@ -236,22 +225,12 @@ public class Event : AuditableEntity, IHaveClub
         return Result.Success;
     }
 
-    public Result<Success> ChangeAudience(Audience newAudience)
+    public Result<Success> ChangeAccessType(EventAccessType newAccessType)
     {
         if (Status != EventStatus.Draft)
-            return EventErrors.NotDraft("change audience for");
+            return EventErrors.NotDraft("change access type for");
 
-        var newRules = AudienceRules.For(newAudience);
-        
-        foreach (var ticket in _ticketTypes)
-        {
-            if (!newRules.AllowedCategories.Contains(ticket.Category))
-            {
-                return EventErrors.IncompatibleAudience(newAudience.ToString(), ticket.Name, ticket.Category.ToString());
-            }
-        }
-
-        Audience = newAudience;
+        AccessType = newAccessType;
         return Result.Success;
     }
 
@@ -279,76 +258,153 @@ public class Event : AuditableEntity, IHaveClub
     public Result<EventRegistration> Register(
         Guid registrantId,
         bool isRegistrantMember,
+        bool isRegistrantAttending,
+        string registrantName,
+        int? registrantAge,
+        string? registrantGender,
         List<AttendeeRequest> attendees)
     {
         if (Status != EventStatus.Published)
             return EventErrors.NotPublished;
 
-        if (attendees == null || !attendees.Any())
-            return EventErrors.NoAttendees;
-
-        var rules = AudienceRules.For(Audience);
+        // Access control
+        var rules = AccessRules.For(AccessType);
         if (rules.RequiresMemberRegistrant && !isRegistrantMember)
             return EventErrors.RegistrantMustBeMember;
 
-        // Rule: Duplicate Attendee ID check - an attendee can only be registered once for the entire event
-        var groupedIds = attendees
-            .Where(a => a.AttendeeId.HasValue)
-            .GroupBy(a => a.AttendeeId!.Value);
-            
-        if (groupedIds.Any(g => g.Count() > 1))
-            return EventErrors.DuplicateAttendees;
+        // Must have at least 1 person
+        if (!isRegistrantAttending && (attendees == null || !attendees.Any()))
+            return EventErrors.NoAttendees;
 
-        foreach (var req in attendees.Where(a => a.AttendeeId.HasValue))
+        // ─── VALIDATION PHASE (no state changes) ───────────────────
+
+        // Determine registrant ticket
+        TicketType? registrantTicket = null;
+        if (isRegistrantAttending)
         {
+            var registrantCategory = isRegistrantMember ? AttendeeCategory.Member : AttendeeCategory.Public;
+            registrantTicket = _ticketTypes.FirstOrDefault(t => t.Category == registrantCategory);
+            if (registrantTicket == null)
+                return EventErrors.TicketNotFoundForCategory(registrantCategory.ToString());
+
+            // Check not already registered
             bool alreadyRegistered = _registrations
                 .Where(r => r.Status != RegistrationStatus.Cancelled)
                 .SelectMany(r => r.Attendees)
-                .Any(a => a.AttendeeId == req.AttendeeId!.Value);
-
+                .Any(a => a.AttendeeId == registrantId);
             if (alreadyRegistered)
-                return EventErrors.AlreadyRegistered(req.AttendeeName ?? req.AttendeeId.ToString() ?? "");
+                return EventErrors.AlreadyRegistered(registrantName);
+
+            // Validate age/gender restrictions
+            if (registrantTicket.MinAge.HasValue && (!registrantAge.HasValue || registrantAge < registrantTicket.MinAge.Value))
+                return EventErrors.AgeRestriction(registrantTicket.Category.ToString(), registrantTicket.MinAge.Value, registrantTicket.MaxAge ?? 99);
+            if (registrantTicket.MaxAge.HasValue && (!registrantAge.HasValue || registrantAge > registrantTicket.MaxAge.Value))
+                return EventErrors.AgeRestriction(registrantTicket.Category.ToString(), registrantTicket.MinAge ?? 0, registrantTicket.MaxAge.Value);
+            if (!string.IsNullOrEmpty(registrantTicket.GenderRestriction) && !string.Equals(registrantGender, registrantTicket.GenderRestriction, StringComparison.OrdinalIgnoreCase))
+                return EventErrors.GenderRestriction(registrantTicket.Category.ToString(), registrantTicket.GenderRestriction);
+
+            // Check availability
+            if (registrantTicket.AvailableQuantity < 1)
+                return EventErrors.NotEnoughSeats(registrantTicket.Category.ToString());
         }
 
-        var ticketRequests = attendees.GroupBy(a => a.TicketTypeId).ToDictionary(g => g.Key, g => g.Count());
-        decimal totalBasePrice = 0;
-
-        foreach (var ticketGroup in ticketRequests)
+        // Validate other attendees
+        if (attendees != null && attendees.Any())
         {
-            var ticketTypeId = ticketGroup.Key;
-            var requestedQuantity = ticketGroup.Value;
-            var ticketType = _ticketTypes.FirstOrDefault(t => t.Id == ticketTypeId);
-            
-            if (ticketType == null)
-                return EventErrors.TicketNotFound;
+            // Duplicate attendee ID check
+            var groupedIds = attendees
+                .Where(a => a.AttendeeId.HasValue)
+                .GroupBy(a => a.AttendeeId!.Value);
+            if (groupedIds.Any(g => g.Count() > 1))
+                return EventErrors.DuplicateAttendees;
 
-            // Consume capacity natively
-            var reserveResult = ticketType.ReserveSeats(requestedQuantity);
-            if (reserveResult.IsError)
-                return reserveResult.TopError;
-
-            // Check Max Per Member correctly (Registrant restrictions)
-            if (ticketType.MaxPerMember.HasValue)
+            // Check each attendee not already registered
+            foreach (var req in attendees.Where(a => a.AttendeeId.HasValue))
             {
-                var previousRegistrantTicketsForType = _registrations
-                    .Where(r => r.RegistrantId == registrantId && r.Status != RegistrationStatus.Cancelled)
+                bool alreadyRegistered = _registrations
+                    .Where(r => r.Status != RegistrationStatus.Cancelled)
                     .SelectMany(r => r.Attendees)
-                    .Count(a => a.TicketTypeId == ticketTypeId);
-
-                if (previousRegistrantTicketsForType + requestedQuantity > ticketType.MaxPerMember.Value)
-                {
-                    ticketType.ReleaseSeats(requestedQuantity);
-                    return EventErrors.MaxPerMemberExceeded(ticketType.Name, ticketType.MaxPerMember.Value);
-                }
+                    .Any(a => a.AttendeeId == req.AttendeeId!.Value);
+                if (alreadyRegistered)
+                    return EventErrors.AlreadyRegistered(req.AttendeeName ?? "");
             }
 
-            totalBasePrice += (ticketType.BasePrice * requestedQuantity);
+            // Validate age/gender restrictions
+            foreach (var req in attendees)
+            {
+                var ticketType = _ticketTypes.FirstOrDefault(t => t.Id == req.TicketTypeId);
+                if (ticketType == null) return EventErrors.TicketNotFound;
+
+                if (ticketType.MinAge.HasValue && (!req.Age.HasValue || req.Age < ticketType.MinAge.Value))
+                    return EventErrors.AgeRestriction(ticketType.Category.ToString(), ticketType.MinAge.Value, ticketType.MaxAge ?? 99);
+                if (ticketType.MaxAge.HasValue && (!req.Age.HasValue || req.Age > ticketType.MaxAge.Value))
+                    return EventErrors.AgeRestriction(ticketType.Category.ToString(), ticketType.MinAge ?? 0, ticketType.MaxAge.Value);
+                if (!string.IsNullOrEmpty(ticketType.GenderRestriction) && !string.Equals(req.Gender, ticketType.GenderRestriction, StringComparison.OrdinalIgnoreCase))
+                    return EventErrors.GenderRestriction(ticketType.Category.ToString(), ticketType.GenderRestriction);
+            }
+
+            // Check availability per ticket type
+            var ticketRequests = attendees.GroupBy(a => a.TicketTypeId).ToDictionary(g => g.Key, g => g.Count());
+            foreach (var ticketGroup in ticketRequests)
+            {
+                var ticketType = _ticketTypes.FirstOrDefault(t => t.Id == ticketGroup.Key);
+                if (ticketType == null) return EventErrors.TicketNotFound;
+                if (ticketType.AvailableQuantity < ticketGroup.Value)
+                    return EventErrors.NotEnoughSeats(ticketType.Category.ToString());
+
+                // MaxPerMember check
+                if (ticketType.MaxPerMember.HasValue)
+                {
+                    var previousCount = _registrations
+                        .Where(r => r.RegistrantId == registrantId && r.Status != RegistrationStatus.Cancelled)
+                        .SelectMany(r => r.Attendees)
+                        .Count(a => a.TicketTypeId == ticketGroup.Key);
+                    if (previousCount + ticketGroup.Value > ticketType.MaxPerMember.Value)
+                        return EventErrors.MaxPerMemberExceeded(ticketType.Category.ToString(), ticketType.MaxPerMember.Value);
+                }
+            }
         }
 
-        var newRegistration = new EventRegistration(Id, registrantId, totalBasePrice); // TODO: Pricing Logic for DiscountAmount and AppliedPolicies
-        foreach (var req in attendees)
+        // ─── RESERVATION PHASE (state changes) ─────────────────────
+        decimal totalBasePrice = 0;
+
+        // Reserve registrant seat
+        if (isRegistrantAttending && registrantTicket != null)
         {
-            newRegistration.AddAttendee(new Attendee(newRegistration.Id, req.TicketTypeId, req.AttendeeId, req.AttendeeName, req.Age, req.Gender));
+            registrantTicket.ReserveSeats(1);
+            totalBasePrice += registrantTicket.BasePrice;
+        }
+
+        // Reserve attendee seats
+        if (attendees != null && attendees.Any())
+        {
+            var ticketRequests = attendees.GroupBy(a => a.TicketTypeId).ToDictionary(g => g.Key, g => g.Count());
+            foreach (var ticketGroup in ticketRequests)
+            {
+                var ticketType = _ticketTypes.First(t => t.Id == ticketGroup.Key);
+                ticketType.ReserveSeats(ticketGroup.Value);
+                totalBasePrice += (ticketType.BasePrice * ticketGroup.Value);
+            }
+        }
+
+        // ─── CREATE REGISTRATION ────────────────────────────────────
+        var newRegistration = new EventRegistration(Id, registrantId, isRegistrantAttending, totalBasePrice);
+
+        // Add registrant as attendee if attending
+        if (isRegistrantAttending && registrantTicket != null)
+        {
+            newRegistration.AddAttendee(new Attendee(
+                newRegistration.Id, registrantTicket.Id, registrantId, registrantName, registrantAge, registrantGender));
+        }
+
+        // Add other attendees
+        if (attendees != null)
+        {
+            foreach (var req in attendees)
+            {
+                newRegistration.AddAttendee(new Attendee(
+                    newRegistration.Id, req.TicketTypeId, req.AttendeeId, req.AttendeeName, req.Age, req.Gender));
+            }
         }
 
         _registrations.Add(newRegistration);
