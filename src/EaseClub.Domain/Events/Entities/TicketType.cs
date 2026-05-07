@@ -55,8 +55,17 @@ public class TicketType : Entity
         int? maxAge,
         string? genderRestriction)
     {
+        if (basePrice < 0)
+            return EventErrors.InvalidTicketPrice;
+
         if (totalQuantity < SoldQuantity)
-            return EventErrors.InvalidTicketQuantity; // Or a more specific error like "QuantityCannotBeLessThanSold"
+            return EventErrors.InvalidTicketQuantity;
+
+        if (requiresMembership && (Category == AttendeeCategory.Public || Category == AttendeeCategory.Guest))
+            return EventErrors.PublicTicketCannotRequireMembership;
+        
+        if (!requiresMembership && (Category == AttendeeCategory.Member || Category == AttendeeCategory.FamilyMember))
+            return EventErrors.MemberTicketMustRequireMembership;
 
         BasePrice = basePrice;
         TotalQuantity = totalQuantity;

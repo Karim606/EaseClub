@@ -36,7 +36,9 @@ public class RegisterForEventCommandHandler(
 
         // 2. Check if registrant has an Active membership in this club
         var memberships = await membershipRepository.GetByUserIdAsync(request.RegistrantId, cancellationToken);
-        bool isMember = memberships.Any(m => m.ClubId == @event.ClubId && m.Status == Active);
+        var activeMembership = memberships.FirstOrDefault(m => m.ClubId == @event.ClubId && m.Status == Active);
+        bool isMember = activeMembership != null;
+        var familyMemberIds = activeMembership?.FamilyMembers.Select(f => f.Id).ToList() ?? new List<Guid>();
 
         var attendees = request.Attendees ?? new List<Domain.Events.ValueObjects.AttendeeRequest>();
 
@@ -48,7 +50,8 @@ public class RegisterForEventCommandHandler(
             request.RegistrantName,
             request.RegistrantAge,
             request.RegistrantGender,
-            attendees);
+            attendees,
+            familyMemberIds);
 
         if (registrationResult.IsError)
         {

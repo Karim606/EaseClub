@@ -17,7 +17,6 @@ public class EventRegistration : AuditableEntity
     // Snapshot of the calculated base price across all tickets in this registration
     public decimal TotalBasePrice { get; private set; }
     
-    // UI/Pricing Properties
     public decimal DiscountAmount { get; private set; }
     public decimal FinalTotal { get; private set; }
     public string? AppliedPolicies { get; private set; }

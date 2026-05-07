@@ -21,8 +21,7 @@ public class Event : AuditableEntity, IHaveClub
     public int Capacity { get; private set; }
     public EventAccessType AccessType { get; private set; }
     public EventStatus Status { get; private set; }
-    
-    // UI/Display Properties matching App requirements
+
     public string Venue { get; private set; } = string.Empty;
     public string? ImageUrl { get; private set; }
     public string? Badge { get; private set; }
@@ -140,6 +139,13 @@ public class Event : AuditableEntity, IHaveClub
         // Invariants
         if (basePrice < 0)
             return EventErrors.InvalidTicketPrice;
+
+        // Consistency check: Category vs RequiresMembership
+        if (requiresMembership && (category == AttendeeCategory.Public || category == AttendeeCategory.Guest))
+            return EventErrors.PublicTicketCannotRequireMembership;
+        
+        if (!requiresMembership && (category == AttendeeCategory.Member || category == AttendeeCategory.FamilyMember))
+            return EventErrors.MemberTicketMustRequireMembership;
             
         if (totalQuantity <= 0)
             return EventErrors.InvalidTicketQuantity;
@@ -261,10 +267,14 @@ public class Event : AuditableEntity, IHaveClub
         string registrantName,
         int? registrantAge,
         string? registrantGender,
-        List<AttendeeRequest> attendees)
+        IEnumerable<AttendeeRequest> attendees,
+        IEnumerable<Guid>? familyMemberIds = null)
     {
         if (Status != EventStatus.Published)
             return EventErrors.NotPublished;
+
+        if (StartDate <= DateTime.UtcNow)
+            return EventErrors.EventAlreadyStarted;
 
         // Access control
         var rules = AccessRules.For(AccessType);
@@ -323,6 +333,14 @@ public class Event : AuditableEntity, IHaveClub
         // Validate other attendees
         if (attendees != null && attendees.Any())
         {
+            // If registrant is attending, we should not have him in the attendees list as well
+            if (isRegistrantAttending)
+            {
+                attendees = attendees.Where(a => a.AttendeeId != registrantId).ToList();
+            }
+
+            if (!attendees.Any() && !isRegistrantAttending)
+                return EventErrors.NoAttendees;
             // Duplicate attendee ID check
             var groupedIds = attendees
                 .Where(a => a.AttendeeId.HasValue)
@@ -347,7 +365,26 @@ public class Event : AuditableEntity, IHaveClub
                 var ticketType = _ticketTypes.FirstOrDefault(t => t.Id == req.TicketTypeId);
                 if (ticketType == null) return EventErrors.TicketNotFound;
 
-                if (ticketType.MinAge.HasValue && (!req.Age.HasValue || req.Age < ticketType.MinAge.Value))
+                // 1. Membership Check
+                if (ticketType.RequiresMembership)
+                {
+                    // Basic Rule: Only members can purchase tickets that require membership
+                    if (!isRegistrantMember)
+                        return EventErrors.MemberTicketRequired;
+
+                    // Specific Rule: A 'Member' category ticket is ONLY for the registrant themselves
+                    if (ticketType.Category == AttendeeCategory.Member && req.AttendeeId != registrantId)
+                        return EventErrors.MemberTicketRequired;
+                    
+                    // For FamilyMember category: must be in the registrant's family member list
+                    if (ticketType.Category == AttendeeCategory.FamilyMember)
+                    {
+                        if (familyMemberIds == null || !familyMemberIds.Contains(req.AttendeeId!.Value))
+                            return EventErrors.NotAFamilyMember(req.AttendeeName ?? "Attendee");
+                    }
+                }
+
+                // 2. Age restriction check
                     return EventErrors.AgeRestriction(ticketType.Category.ToString(), ticketType.MinAge.Value, ticketType.MaxAge ?? 99);
                 if (ticketType.MaxAge.HasValue && (!req.Age.HasValue || req.Age > ticketType.MaxAge.Value))
                     return EventErrors.AgeRestriction(ticketType.Category.ToString(), ticketType.MinAge ?? 0, ticketType.MaxAge.Value);

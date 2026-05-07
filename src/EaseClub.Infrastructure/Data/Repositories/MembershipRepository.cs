@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.Memberships;
+using EaseClub.Domain.Memberships;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -21,7 +21,11 @@ namespace EaseClub.Infrastructure.Data.Repositories
 
         public async Task<List<Membership>> GetByUserIdAsync(Guid userId, CancellationToken ct = default)
         {
-            return await _context.Memberships.Where(x => x.UserId == userId).Include(m => m.Club).ToListAsync(ct);
+            return await _context.Memberships
+                .Where(x => x.UserId == userId)
+                .Include(m => m.Club)
+                .Include(m => m.FamilyMembers)
+                .ToListAsync(ct);
         }
     }
 }
