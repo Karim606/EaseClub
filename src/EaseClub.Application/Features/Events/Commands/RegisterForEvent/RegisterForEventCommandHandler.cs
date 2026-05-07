@@ -36,11 +36,27 @@ public class RegisterForEventCommandHandler(
 
         // 2. Check if registrant has an Active membership in this club
         var memberships = await membershipRepository.GetByUserIdAsync(request.RegistrantId, cancellationToken);
-        var activeMembership = memberships.FirstOrDefault(m => m.ClubId == @event.ClubId && m.Status == Active);
-        bool isMember = activeMembership != null;
-        var familyMemberIds = activeMembership?.FamilyMembers.Select(f => f.Id).ToList() ?? new List<Guid>();
+        var activeMemberships = memberships.Where(m => m.ClubId == @event.ClubId && m.Status == EaseClub.Domain.Memberships.MembershipStatus.Active).ToList();
+        bool isMember = activeMemberships.Any();
+        
+        var allFamilyMembers = activeMemberships.SelectMany(m => m.FamilyMembers).ToList();
+        var familyMemberIds = allFamilyMembers.Select(f => f.Id).ToList();
 
-        var attendees = request.Attendees ?? new List<Domain.Events.ValueObjects.AttendeeRequest>();
+        var attendees = request.Attendees?.ToList() ?? new List<Domain.Events.ValueObjects.AttendeeRequest>();
+
+        // Override age for family members to prevent spoofing
+        for (int i = 0; i < attendees.Count; i++)
+        {
+            var req = attendees[i];
+            if (req.AttendeeId.HasValue)
+            {
+                var fm = allFamilyMembers.FirstOrDefault(f => f.Id == req.AttendeeId.Value);
+                if (fm != null)
+                {
+                    attendees[i] = req with { Age = fm.GetAge() };
+                }
+            }
+        }
 
         // 3. Register in domain (handles capacity, ticket availability, age/gender restrictions inside domain)
         var registrationResult = @event.Register(

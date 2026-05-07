@@ -379,7 +379,10 @@ public class Event : AuditableEntity, IHaveClub
                     // For FamilyMember category: must be in the registrant's family member list
                     if (ticketType.Category == AttendeeCategory.FamilyMember)
                     {
-                        if (familyMemberIds == null || !familyMemberIds.Contains(req.AttendeeId!.Value))
+                        if (!req.AttendeeId.HasValue)
+                            return EventErrors.AttendeeIdRequired;
+
+                        if (familyMemberIds == null || !familyMemberIds.Contains(req.AttendeeId.Value))
                             return EventErrors.NotAFamilyMember(req.AttendeeName ?? "Attendee");
                     }
                 }

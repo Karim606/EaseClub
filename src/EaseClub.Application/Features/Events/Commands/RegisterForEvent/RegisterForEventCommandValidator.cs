@@ -13,7 +13,9 @@ public class RegisterForEventCommandValidator : AbstractValidator<RegisterForEve
             .NotEmpty().WithMessage("Registrant ID is required.");
 
         RuleFor(x => x.Attendees)
-            .NotEmpty().WithMessage("At least one attendee is required.");
+            .NotEmpty()
+            .When(x => !x.IsRegistrantAttending)
+            .WithMessage("At least one attendee is required if the registrant is not attending.");
 
         RuleForEach(x => x.Attendees).ChildRules(attendee =>
         {

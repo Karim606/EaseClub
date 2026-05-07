@@ -27,6 +27,7 @@ public static class EventErrors
     public static Error NoAttendees => Error.Validation("Event.NoAttendees", "At least one attendee is required to register.");
     public static Error RegistrantMustBeMember => Error.Validation("Event.RegistrantMustBeMember", "This event requires the registrant to be a club member.");
     public static Error MemberTicketRequired => Error.Validation("Event.MemberTicketRequired", "One or more selected tickets require an active membership.");
+    public static Error AttendeeIdRequired => Error.Validation("Event.AttendeeIdRequired", "Attendee ID is required for family member tickets.");
     public static Error NotAFamilyMember(string name) => Error.Validation("Event.NotAFamilyMember", $"{name} is not recognized as a registered family member for your membership.");
     public static Error PublicUserCannotInviteOthers => Error.Validation("Event.PublicUserCannotInviteOthers", "Non-members can only register for themselves and cannot add other attendees.");
     public static Error DuplicateAttendees => Error.Validation("Event.DuplicateAttendees", "Duplicate attendee IDs found in the registration request.");
