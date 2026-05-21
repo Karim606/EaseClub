@@ -20,7 +20,7 @@ namespace EaseClub.Domain.Common.Results
 
         public bool IsError => !IsSuccess;
 
-        public Error? TopError => IsError ? _Errors!.First() : null;
+        public Error TopError => IsError ? _Errors!.First() : default;
 
         public  T Value => IsSuccess ? _Value! : throw new InvalidOperationException("Cannot access Value on an error result.");
 
@@ -70,4 +70,19 @@ namespace EaseClub.Domain.Common.Results
                 return onError(_Errors!);
         }
     }
+
+    public static class Result
+    {
+        public static Success Success => default;
+        public static Created Created => default;
+        public static Updated Updated => default;
+        public static Deleted Deleted => default;
+
+    }
+
+    public readonly record struct Success;
+    public readonly record struct Created;
+    public readonly record struct Updated;
+    public readonly record struct Deleted;
+
 }

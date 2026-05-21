@@ -1,0 +1,72 @@
+using Azure.Core;
+using EaseClub.Application.Common.Interfaces;
+using EaseClub.Domain.ApplicationTemplates;
+using EaseClub.Domain.Common;
+using EaseClub.Domain.Common.Interfaces;
+using EaseClub.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.AccessControl;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace EaseClub.Infrastructure.Services
+{
+
+
+    public class ClubAuthorizationService : IClubAuthorizationService
+    {
+        private readonly AppDbContext _context;
+        private readonly ICurrentUserService _currentUserService;
+        public ClubAuthorizationService(AppDbContext context,ICurrentUserService currentUserService)
+        {
+            _context = context;
+            _currentUserService = currentUserService;
+        }
+
+        public async Task<bool> IsUserAdminOfClubAsync(Guid userId, Guid clubId)
+        {
+            return await _context.ClubAdminUsers
+                .AnyAsync(x => x.Id == userId && x.ClubId == clubId);
+        }
+
+        public async Task<bool> DoesResourceBelongToClubAsync<TEntity>(
+            Guid entityId,
+            Guid clubId) where TEntity : Entity,IHaveClub
+        {
+            return await _context.Set<TEntity>()
+                .AnyAsync(x => x.ClubId == clubId && x.Id == entityId);
+        }
+
+        public async Task<bool> DoesResourceBelongToUserAsync<TEntity>(
+            Guid entityId,
+            Guid userId) where TEntity : Entity, IBelongToMember
+        {
+            return await _context.Set<TEntity>()
+                .AnyAsync(x => x.MemberId == userId && x.Id == entityId);
+        }
+
+        public async Task<bool> DoesResourceBelongToCurrentUserAsync<TEntity>(
+            Guid entityId) where TEntity : Entity, IBelongToMember
+        {
+            var memberId = Guid.Parse(_currentUserService.GetId());
+
+            return await _context.Set<TEntity>()
+                .AnyAsync(x => x.MemberId == memberId && x.Id == entityId);
+        }
+
+        public Task<bool> IsUserMemberOfClubAsync(Guid userId, Guid clubId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool IsUserMatch(Guid id)
+        {
+            var currentUserId = Guid.Parse(_currentUserService.GetId());
+            return currentUserId == id;
+        }
+    }
+
+}

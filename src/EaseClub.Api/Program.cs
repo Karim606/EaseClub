@@ -1,38 +1,51 @@
+using BetterStack.Logs.Serilog;
 using DotNetEnv;
 using EaseClub.Application;
-using Serilog;
-using BetterStack.Logs.Serilog;
+using EaseClub.Infrastructure.Data;
+using EaseClub.Infrastructure.Notifications.RealTime;
 using Microsoft.OpenApi;
+using Serilog;
 using Serilog.Core;
-using System.Text.Json;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using System.Text.Json;
 namespace EaseClub.Api
 {
     public class Program
     {
         
-        public  static void Main(string[] args)
+        public async static Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            var EnvName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "production";
-            Env.Load("../../.env." + EnvName.ToLower());
-            // Add services to the container.
+            var envName = builder.Environment.EnvironmentName.ToLower();
+
+            JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+
+            // This finds the folder where the .sln usually sits
+
+            var projectRoot = Directory.GetParent(AppContext.BaseDirectory)?.Parent?.Parent?.Parent?.Parent?.Parent?.FullName;
+            var envPath = Path.Combine(projectRoot ?? "", ".env." + envName.ToLower());
+
+            if (File.Exists(envPath))
+            {
+                Env.Load(envPath);
+            }
 
             builder.Configuration.AddEnvironmentVariables();
 
 
             builder.Services.AddPresentation(builder.Configuration)
                             .AddApplication()
-                            .AddInfrastructure(builder.Configuration);
+                            .AddInfrastructure(builder.Configuration,builder.Environment);
 
             builder.Host.UseSerilog((context, loggerConfig) => {
                 loggerConfig.ReadFrom.Configuration(context.Configuration);
 
                 var sourceToken = builder.Configuration["BETTERSTACK_SOURCE_TOKEN"];
                 var ingestHost = builder.Configuration["BETTERSTACK_INGEST_URL"];
-                loggerConfig.WriteTo.BetterStack(sourceToken: sourceToken, betterStackEndpoint: ingestHost)
-                .MinimumLevel.Information();
+                loggerConfig.WriteTo.BetterStack(sourceToken: sourceToken, betterStackEndpoint: ingestHost);
+                
                 
             });
 
@@ -52,10 +65,13 @@ namespace EaseClub.Api
                     c.EnableFilter();
                 });
             }
-            
-
+          
+            if(!app.Environment.IsEnvironment("testing"))
+            await app.Init();
 
             app.UseCoreMiddlewares(builder.Configuration);
+
+            app.MapHub<NotificationHub>("/hubs/notification");
 
             app.MapControllers();
 

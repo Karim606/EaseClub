@@ -1,4 +1,7 @@
-﻿using EaseClub.Api.Infrastructure;
+﻿using EaseClub.Api.Common;
+using EaseClub.Api.Common.Filters;
+using EaseClub.Api.Infrastructure;
+using EaseClub.Application.Common.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.Mvc.Versioning;
@@ -25,12 +28,14 @@ namespace EaseClub.Application
         public static IServiceCollection AddPresentation(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddControllersWithJsonConfiguration()
+                    .AddIdentityInfrastructure()
                     .AddCustomProblemDetails()
+                    .AddCors(configuration)
                     .AddExceptionHandlers()
                     .AddApiVersioning()
                     .ConfigureSwagger()
                     .AddRateLimiting();
-
+            
             return services;
         }
 
@@ -49,6 +54,14 @@ namespace EaseClub.Application
                 context.ProblemDetails.Instance = $"{context.HttpContext.Request.Method} {context.HttpContext.Request.Path}";
 
             });
+            return services;
+        }
+
+        public static IServiceCollection AddIdentityInfrastructure(this IServiceCollection services)
+        {
+            services.AddHttpContextAccessor();
+            services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddScoped<ICurrentRequestContext, CurrentRequestContext>();
             return services;
         }
 
@@ -78,7 +91,9 @@ namespace EaseClub.Application
             {
                 var provider = services.BuildServiceProvider()
                                    .GetRequiredService<IApiVersionDescriptionProvider>();
-
+                
+                options.OperationFilter<ClientTypeHeaderFilter>();
+                
                 foreach (var description in provider.ApiVersionDescriptions)
                 {
                     options.SwaggerDoc(description.GroupName, new Microsoft.OpenApi.Models.OpenApiInfo
@@ -103,12 +118,13 @@ namespace EaseClub.Application
                 .AddJsonOptions(options =>
                 {
                     options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+                    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                 });
 
-            services.ConfigureHttpJsonOptions(options =>
-            {
-                options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
-            });
+            //services.ConfigureHttpJsonOptions(options =>
+            //{
+            //    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            //});
 
             return services;
         }
@@ -129,11 +145,36 @@ namespace EaseClub.Application
             });
             return services;
         }
+        private static IServiceCollection AddCors (this IServiceCollection services, IConfiguration configuration)
+        {
+            var corsOrigins = configuration["CORS_ORIGINS"]?.Split(",", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            
+            services.AddCors (options =>
+            {
+                options.AddPolicy("DefaultCors", policy =>
+                {
+                    policy.WithOrigins(corsOrigins ?? Array.Empty<string>())
+                          .AllowAnyHeader()
+                          .AllowAnyMethod()
+                          .AllowCredentials();
+                });
+
+                options.AddPolicy("DevCors", policy =>
+                {
+                    policy.SetIsOriginAllowed(origin => true)
+                          .AllowAnyHeader()
+                          .AllowAnyMethod()
+                          .AllowCredentials();
+                });
+            });
+            return services;
+        }
 
         public static IApplicationBuilder UseCoreMiddlewares(this IApplicationBuilder app, IConfiguration configuration)
         {
             app.UseExceptionHandler()
                .UseStatusCodePages()
+               .UseCors("DevCors")
                .UseHttpsRedirection()
                .UseMiddleware<RequestLogContextMiddleware>()
                .UseSerilogRequestLogging()

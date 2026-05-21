@@ -25,13 +25,21 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
 
-      # 4️⃣ Build project
-      - name: Build
-        run: dotnet build --configuration Release --no-restore
+      # # 4️⃣ Build project
+      # - name: Build
+      #   run: dotnet build --configuration Release --no-restore
 
-      # 5️⃣ Publish project to ./publish
-      - name: Publish
-        run: dotnet publish -c Release -o publish --no-build
+      # # 5️⃣ Publish project to ./publish
+      # - name: Publish
+      #   run: dotnet publish -c Release -o publish --no-build
+
+      # 4️⃣ Build only API project (skip tests)
+      - name: Build API
+        run: dotnet build ./src/EaseClub.Api/EaseClub.Api.csproj --configuration Release --no-restore
+
+      # 5️⃣ Publish only API project
+      - name: Publish API
+        run: dotnet publish ./src/EaseClub.Api/EaseClub.Api.csproj -c Release -o publish --no-build
 
       # 6️⃣ Deploy to deploy branch using peaceiris/actions-gh-pages
       - name: Deploy to deploy branch

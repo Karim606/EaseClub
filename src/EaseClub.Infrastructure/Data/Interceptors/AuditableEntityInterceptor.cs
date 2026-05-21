@@ -10,7 +10,7 @@ using EaseClub.Domain.Common;
 
 namespace EaseClub.Infrastructure.Data.Interceptors
 {
-    public class AuditableEntityInterceptor(Timer timer) : SaveChangesInterceptor
+    public class AuditableEntityInterceptor() : SaveChangesInterceptor
     {
         public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
         {

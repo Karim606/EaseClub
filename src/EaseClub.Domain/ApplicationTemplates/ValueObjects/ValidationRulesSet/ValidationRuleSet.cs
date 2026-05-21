@@ -1,0 +1,73 @@
+using EaseClub.Domain.ApplicationTemplates;
+using EaseClub.Domain.Common;
+using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.MembershipApplications.ValueObjects;
+using System.Text.Json.Serialization;
+
+namespace EaseClub.Domain.ApplicationTemplates.ValueObjects.ValidationRulesSet
+{
+    public record ValidationRuleSet
+    {
+        // Properties are init-only to maintain immutability
+        public bool IsRequired { get; init; }
+        public int? MinLength { get; init; }
+        public int? MaxLength { get; init; }
+       // public string? Regex { get; init; }
+        public decimal? MinValue { get; init; }
+        public decimal? MaxValue { get; init; }
+
+        // New date properties
+        public DateTime? MinDate { get; init; }
+        public DateTime? MaxDate { get; init; }
+
+        // Private constructor prevents direct instantiation: new ValidationRuleSet(...)
+        [JsonConstructor]
+        public ValidationRuleSet(bool isRequired, int? minLength, int? maxLength//,string? regex
+                                                                                   , decimal? minValue, decimal? maxValue,DateTime? minDate, DateTime? maxDate)
+        {
+            IsRequired = isRequired;
+            MinLength = minLength;
+            MaxLength = maxLength;
+            //Regex = regex;
+            MinValue = minValue;
+            MaxValue = maxValue;
+            MinDate = minDate;
+            MaxDate = maxDate;
+        }
+
+        public static Result<ValidationRuleSet> Create(
+            bool isRequired = true,
+            int? minLength = null,
+            int? maxLength = null,
+            //string? regex = null,
+            decimal? minValue = null,
+            decimal? maxValue = null,
+            DateTime? minDate = null,
+            DateTime? maxDate = null)
+        {
+            // 1. Domain Validation Logic
+            if (minLength.HasValue && maxLength.HasValue && minLength > maxLength)
+                return Error.Validation("Validation.Setup.Length", "Min length cannot be greater than Max length.");
+
+            if (minValue.HasValue && maxValue.HasValue && minValue > maxValue)
+                return Error.Validation("Validation.Setup.Range", "Min value cannot be greater than Max value.");
+
+            if (minDate.HasValue && maxDate.HasValue && minDate > maxDate)
+                return Error.Validation("Validation.Setup.DateRange", "Min date cannot be later than Max date.");
+            // 2. Return valid instance
+            return new ValidationRuleSet(isRequired, minLength, maxLength//, regex
+                                                                         , minValue, maxValue, minDate, maxDate);
+        }
+
+        public List<Error> Validate(string? value, FieldType type)
+        {
+            return ValidationStrategyRegistry.ApplyAll(value, this, type);
+        }
+
+        //ToSnapshot
+        public ValidationRuleSetSnapshot ToSnapshot()
+        {
+            return ValidationRuleSetSnapshot.FromDomain(this);
+        }
+    }
+}
