@@ -13,8 +13,8 @@ namespace EaseClub.Domain.Tests.Entities.MembershipPlan
         {
             var installments = new List<Installment>
         {
-            Installment.Create(50m, 0, 0).Value,
-            Installment.Create(50m, 30, 1).Value
+            Installment.Create(50m, 0, 1).Value,
+            Installment.Create(50m, 30, 2).Value
         };
 
             return InstallmentTemplate.Create(

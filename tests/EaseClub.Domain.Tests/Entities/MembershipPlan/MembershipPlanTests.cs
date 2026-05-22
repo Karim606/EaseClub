@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using EaseClub.Domain.MembershipPlans;
+using EaseClub.Domain.MembershipTypes;
 using FluentAssertions;
 namespace EaseClub.Domain.Tests.Entities.MembershipPlan
 {
@@ -19,11 +20,16 @@ namespace EaseClub.Domain.Tests.Entities.MembershipPlan
                 Guid.NewGuid(),       // id
                 Guid.NewGuid(),       // clubId
                 Guid.NewGuid(),       // membershipTypeId
-                validityInYears,      // subscriptionValidityInYears
-                maxFamily,            // maxFamilyMembers
-                "Gold Plan",          // name
-                totalPrice,           // totalPrice
-                durationInDays        // maxPaymentPeriod
+                mode: EnrollmentMode.DirectPay,
+                templateId: null,
+                subscriptionValidityInYears: validityInYears,
+                maxFamilyMembers: maxFamily,
+                name: "Gold Plan",
+                totalPrice: totalPrice,
+                maxPaymentPeriod: durationInDays,
+                renewPrice: totalPrice,
+                installmentsAllowedInRenewal: true,
+                paymentMode: PaymentMode.Installments
             ).Value;
         }
 
@@ -85,8 +91,8 @@ namespace EaseClub.Domain.Tests.Entities.MembershipPlan
                 null,
                 new List<Installment>
                 {
-            Installment.Create(50m, 0, 0).Value,
-            Installment.Create(50m, 60, 1).Value
+            Installment.Create(50m, 0, 1).Value,
+            Installment.Create(50m, 60, 2).Value
                 }
             ).Value;
 

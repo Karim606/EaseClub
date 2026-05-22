@@ -18,7 +18,7 @@ namespace EaseClub.Domain.Tests.Entities
             var clubId = Guid.NewGuid();
 
             // Act
-            var result = Branch.Create(id, clubId, " ");
+            var result = Branch.Create(id, clubId, " ", address: "N/A");
 
             // Assert
             result.IsError.Should().BeTrue();
@@ -37,7 +37,7 @@ namespace EaseClub.Domain.Tests.Entities
             var clubId = Guid.NewGuid();
 
             // Act
-            var result = Branch.Create(id, clubId, name);
+            var result = Branch.Create(id, clubId, name, address: "N/A");
 
             // Assert
             result.IsError.Should().BeTrue();
@@ -53,7 +53,7 @@ namespace EaseClub.Domain.Tests.Entities
             var name = "Main Branch";
 
             // Act
-            var result = Branch.Create(id, clubId, name);
+            var result = Branch.Create(id, clubId, name, address: "Cairo");
 
             // Assert
             result.IsSuccess.Should().BeTrue();
@@ -72,7 +72,8 @@ namespace EaseClub.Domain.Tests.Entities
             var branch = Branch.Create(
                 Guid.NewGuid(),
                 Guid.NewGuid(),
-                "Downtown Branch"
+                "Downtown Branch",
+                address: "Cairo"
             ).Value;
 
             // Act
@@ -89,7 +90,8 @@ namespace EaseClub.Domain.Tests.Entities
             var branch = Branch.Create(
                 Guid.NewGuid(),
                 Guid.NewGuid(),
-                "Downtown Branch"
+                "Downtown Branch",
+                address: "Cairo"
             ).Value;
 
             branch.Deactivate();
