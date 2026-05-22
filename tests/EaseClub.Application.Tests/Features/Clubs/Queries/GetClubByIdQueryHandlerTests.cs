@@ -1,6 +1,10 @@
-﻿using EaseClub.Application.Features.Clubs.Queries.GetClubById;
+using EaseClub.Application.Features.Clubs.Queries.GetClubById;
 using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Common;
+using EaseClub.Domain.Files;
+using EaseClub.Application.Common.Interfaces;
+using EaseClub.Domain.Clubs.ValueObjects;
+using EaseClub.Domain.Common.ValueObjects;
 
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -18,9 +22,11 @@ namespace EaseClub.Application.Tests.Features.Clubs.Queries
     {
         private readonly Mock<IClubRepository> _clubRepository = new();
         private readonly Mock<ILogger<GetClubByIdQueryHandler>> _logger = new();
+        private readonly Mock<IFileRepository> _fileRepository = new();
+        private readonly Mock<IFileStorageService> _fileStorageService = new();
 
         private GetClubByIdQueryHandler CreateHandler()
-            => new(_clubRepository.Object, _logger.Object);
+            => new(_clubRepository.Object, _logger.Object, _fileRepository.Object, _fileStorageService.Object);
 
         [Fact]
         public async Task Handle_Should_Return_NotFound_When_Club_Does_Not_Exist()
@@ -48,7 +54,20 @@ namespace EaseClub.Application.Tests.Features.Clubs.Queries
         {
             // Arrange
             var clubId = Guid.NewGuid();
-            var club = Club.Create(clubId, "Ease Club").Value;
+            var phone = PhoneNumber.Create("01012345678").Value;
+            var email = Email.Create("test@easeclub.com").Value;
+            var contactInfo = new ContactInfo(phone, email);
+            var workSchedules = new List<WorkSchedule> { WorkSchedule.Create("Monday - Friday", "06:00 AM - 10:00 PM").Value };
+            var amenities = new List<Amenity> { new Amenity("Gym") };
+            var club = Club.Create(
+                clubId,
+                "Ease Club",
+                "Ease Club Description",
+                contactInfo,
+                workSchedules,
+                amenities,
+                "EC123"
+            ).Value;
 
             _clubRepository.Setup(x => x.GetByIdAsync(clubId, CancellationToken.None))
                            .ReturnsAsync(club);

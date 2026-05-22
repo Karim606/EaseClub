@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Features.MembershipPlans.Command.CreatePlan;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.MembershipPlans;
@@ -9,8 +9,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
@@ -19,6 +18,7 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
     {
         private readonly Mock<IMembershipPlanRepository> _planRepo = new();
         private readonly Mock<IMembershipTypeRepository> _membershipTypeRepo = new();
+        private readonly Mock<IInstallmentsTemplatesRepository> _installmentsTemplatesRepo = new();
         private readonly Mock<IUnitOfWork> _unitOfWork = new();
         private readonly Mock<ILogger<CreateMembershipPlanHandler>> _logger = new();
 
@@ -30,6 +30,7 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
                 _planRepo.Object,
                 _unitOfWork.Object,
                 _membershipTypeRepo.Object,
+                _installmentsTemplatesRepo.Object,
                 _logger.Object);
         }
 
@@ -37,11 +38,18 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
         public async Task Handle_Should_Return_NotFound_When_MembershipType_Does_Not_Exist()
         {
             var command = new CreateMembershipPlanCommand(
-                Guid.NewGuid(),
-                Guid.NewGuid(),
-                "Gold",
-                2000,
-                60,1,2);
+                Guid.NewGuid(), // ClubId
+                Guid.NewGuid(), // MembershipTypeId
+                EnrollmentMode.DirectPay, // EnrollmentMode
+                "Gold", // Name
+                2000, // Price
+                60, // DurationInDays
+                1, // subscriptionValidityInYears
+                2, // maxFamilyMembers
+                PaymentMode.Cash, // paymentMode
+                new List<Guid>(), // InstallmentTemplateIds
+                RenewPrice: 1500
+            );
 
             _membershipTypeRepo
                 .Setup(x => x.GetByIdAsync(command.MembershipTypeId, CancellationToken.None))
@@ -56,14 +64,21 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
         [Fact]
         public async Task Handle_Should_Return_Error_When_Name_Already_Exists_In_Club()
         {
-            var membershipType = MembershipType.Create(Guid.NewGuid(),Guid.NewGuid(), "Type").Value;
+            var membershipType = MembershipType.Create(Guid.NewGuid(), Guid.NewGuid(), "Type").Value;
 
             var command = new CreateMembershipPlanCommand(
                 membershipType.ClubId,
                 membershipType.Id,
+                EnrollmentMode.DirectPay,
                 "Gold",
                 2000,
-                60,1,2);
+                60,
+                1,
+                2,
+                PaymentMode.Cash,
+                new List<Guid>(),
+                RenewPrice: 1500
+            );
 
             _membershipTypeRepo
                 .Setup(x => x.GetByIdAsync(command.MembershipTypeId, CancellationToken.None))
@@ -82,14 +97,21 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
         [Fact]
         public async Task Handle_Should_Save_And_Return_Id_When_Creation_Is_Successful()
         {
-            var membershipType = MembershipType.Create(Guid.NewGuid(),Guid.NewGuid(), "Type").Value;
+            var membershipType = MembershipType.Create(Guid.NewGuid(), Guid.NewGuid(), "Type").Value;
 
             var command = new CreateMembershipPlanCommand(
                 membershipType.ClubId,
                 membershipType.Id,
+                EnrollmentMode.DirectPay,
                 "Gold",
                 2000,
-                60,1,2);
+                60,
+                1,
+                2,
+                PaymentMode.Cash,
+                new List<Guid>(),
+                RenewPrice: 1500
+            );
 
             _membershipTypeRepo
                 .Setup(x => x.GetByIdAsync(command.MembershipTypeId, CancellationToken.None))

@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Features.Branches.Queries.GetBranchesByClub;
+using EaseClub.Application.Features.Branches.Queries.GetBranchesByClub;
 using EaseClub.Application.Tests.Common.Behaviors;
 using EaseClub.Domain.Branches;
 using EaseClub.Domain.Common;
@@ -25,11 +25,11 @@ namespace EaseClub.Application.Tests.Features.Branches.Queries
             => new(_branchRepository.Object, _logger.Object);
 
         [Fact]
-        public async Task Handle_Should_Return_NotFound_When_No_Branches()
+        public async Task Handle_Should_Return_EmptyList_When_No_Branches()
         {
             // Arrange
             var clubId = Guid.NewGuid();
-            _branchRepository.Setup(x => x.GetBranchesByClubIdAsync(clubId))
+            _branchRepository.Setup(x => x.GetBranchesByClubIdAsync(clubId, It.IsAny<bool?>(), It.IsAny<CancellationToken>()))
                              .ReturnsAsync(new List<Branch>());
 
             var handler = CreateHandler();
@@ -39,8 +39,8 @@ namespace EaseClub.Application.Tests.Features.Branches.Queries
             var result = await handler.Handle(query, CancellationToken.None);
 
             // Assert
-            result.IsError.Should().BeTrue();
-            result.TopError.Type.Should().Be(ErrorKind.NotFound);
+            result.IsSuccess.Should().BeTrue();
+            result.Value.Should().BeEmpty();
 
         }
 
@@ -51,11 +51,11 @@ namespace EaseClub.Application.Tests.Features.Branches.Queries
             var clubId = Guid.NewGuid();
             var branches = new List<Branch>
             {
-                Branch.Create(Guid.NewGuid(), clubId, "Branch 1").Value,
-                Branch.Create(Guid.NewGuid(), clubId, "Branch 2").Value
+                Branch.Create(Guid.NewGuid(), clubId, "Branch 1", "Address 1").Value,
+                Branch.Create(Guid.NewGuid(), clubId, "Branch 2", "Address 2").Value
             };
 
-            _branchRepository.Setup(x => x.GetBranchesByClubIdAsync(clubId))
+            _branchRepository.Setup(x => x.GetBranchesByClubIdAsync(clubId, It.IsAny<bool?>(), It.IsAny<CancellationToken>()))
                              .ReturnsAsync(branches);
 
             var handler = CreateHandler();

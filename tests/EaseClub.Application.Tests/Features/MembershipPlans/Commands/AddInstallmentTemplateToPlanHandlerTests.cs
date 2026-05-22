@@ -1,15 +1,15 @@
-﻿using EaseClub.Application.Common.Interfaces;
-using EaseClub.Application.Features.MembershipPlans.Command.AddInstallmentTemplateToPlan;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Features.MembershipPlans.Command.AddTemplateToPlan;
+using EaseClub.Application.Features.MembershipPlans.Command.AddInstallmentTemplateToPlan;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipPlans;
 using EaseClub.Domain.MembershipPlans.Repositories;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
@@ -19,6 +19,7 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
         private readonly Mock<IMembershipPlanRepository> _planRepo = new();
         private readonly Mock<IInstallmentsTemplatesRepository> _templateRepo = new();
         private readonly Mock<IUnitOfWork> _unitOfWork = new();
+        private readonly Mock<ILogger<AddInstallmentTemplateToPlanHandler>> _loggerMock = new();
 
         private readonly AddInstallmentTemplateToPlanHandler _handler;
 
@@ -27,15 +28,16 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
             _handler = new AddInstallmentTemplateToPlanHandler(
                 _planRepo.Object,
                 _templateRepo.Object,
-                _unitOfWork.Object);
+                _unitOfWork.Object,
+                _loggerMock.Object);
         }
 
         [Fact]
         public async Task Handle_Should_Return_NotFound_When_Plan_Does_Not_Exist()
         {
-            var command = new AddInstallmentTemplateToPlanCommand(Guid.NewGuid(), Guid.NewGuid(),Guid.NewGuid());
+            var command = new AddInstallmentTemplateToPlanCommand(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
 
-            _planRepo.Setup(x => x.GetByIdAsync(command.PlanId,CancellationToken.None))
+            _planRepo.Setup(x => x.GetByIdAsync(command.PlanId, CancellationToken.None))
                      .ReturnsAsync((MembershipPlan?)null);
 
             var result = await _handler.Handle(command, default);
@@ -47,15 +49,29 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
         [Fact]
         public async Task Handle_Should_Return_Error_When_Template_Does_Not_Exist()
         {
-            var plan = MembershipPlan.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),1,2, "abc", 2000, 60).Value;
+            var plan = MembershipPlan.Create(
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                EnrollmentMode.DirectPay,
+                null,
+                1,
+                2,
+                "abc",
+                2000,
+                60,
+                1500,
+                true,
+                PaymentMode.Installments
+            ).Value;
 
-            var command = new AddInstallmentTemplateToPlanCommand(plan.ClubId,plan.Id, Guid.NewGuid());
+            var command = new AddInstallmentTemplateToPlanCommand(plan.ClubId, plan.Id, Guid.NewGuid());
 
             _planRepo.Setup(x => x.GetByIdAsync(command.PlanId, CancellationToken.None))
                      .ReturnsAsync(plan);
 
-            _templateRepo.Setup(x => x.GetByIdAsync(command.TemplateId,CancellationToken.None))
-                         .ReturnsAsync((InstallmentTemplate?)null);
+            _templateRepo.Setup(x => x.GetByIdAsync(command.TemplateId, CancellationToken.None))
+                          .ReturnsAsync((InstallmentTemplate?)null);
 
             var result = await _handler.Handle(command, default);
 
@@ -66,10 +82,23 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
         [Fact]
         public async Task Handle_Should_Save_When_Addition_Is_Successful()
         {
-            var plan = MembershipPlan.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),1,2, "abc", 2000, 60).Value;
-            var template = InstallmentTemplate.Create(Guid.NewGuid(), plan.ClubId,"def", 3, 60,null).Value;
+            var plan = MembershipPlan.Create(
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                EnrollmentMode.DirectPay,
+                null,
+                1,
+                2,
+                "abc",
+                2000,
+                60,
+                1500,
+                true,
+                PaymentMode.Installments
+            ).Value;
 
-            
+            var template = InstallmentTemplate.Create(Guid.NewGuid(), plan.ClubId, "def", 3, 60, null).Value;
 
             var command = new AddInstallmentTemplateToPlanCommand(plan.ClubId, plan.Id, template.Id);
 
@@ -77,7 +106,7 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
                      .ReturnsAsync(plan);
 
             _templateRepo.Setup(x => x.GetByIdAsync(command.TemplateId, CancellationToken.None))
-                         .ReturnsAsync(template);
+                          .ReturnsAsync(template);
 
             var result = await _handler.Handle(command, default);
 
@@ -85,4 +114,4 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
             _unitOfWork.Verify(x => x.SaveChangesAsync(default), Times.Once);
         }
     }
-   }
+}
