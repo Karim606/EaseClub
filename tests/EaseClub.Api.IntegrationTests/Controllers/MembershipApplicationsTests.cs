@@ -1,8 +1,8 @@
-﻿using EaseClub.Api.IntegrationTests.Common;
+using EaseClub.Api.IntegrationTests.Common;
+using EaseClub.Application.Features.MembershipApplications;
 using EaseClub.Application.Features.MembershipApplications.Commands.CompleteStep;
 using EaseClub.Application.Features.MembershipApplications.Commands.CreateApplication;
-using EaseClub.Application.Features.MembershipApplications.Commands.UpdateAnswer;
-using EaseClub.Application.Features.MembershipApplications.Queries;
+using EaseClub.Application.Features.MembershipApplications.Queries.GetApplication;
 using EaseClub.Domain.ApplicationTemplates;
 using EaseClub.Domain.ApplicationTemplates.ValueObjects.ValidationRulesSet;
 using Microsoft.EntityFrameworkCore;
@@ -17,8 +17,8 @@ namespace EaseClub.Api.IntegrationTests.Controllers
     public class MembershipApplicationsTests : BaseIntegrationTest
     {
         private readonly Guid _testClubId = Guid.Parse("9f3a8b6e-2a7d-4b5c-9d9c-1e8c4c2f7a31");
-        private readonly Guid SeedMembershipTypeId = Guid.Parse("a1e8b6f2-4f6c-4c4a-9d0f-2a8b7e3c1d94");
-        private readonly Guid SeedMembershipPlanId = Guid.Parse("7c2d4a8e-1b9f-4e2a-8f3c-5b6d9a1e0c47");
+        private readonly Guid SeedMembershipTypeId = Guid.Parse("b2e8b6f2-4f6c-4c4a-9d0f-2a8b7e3c1d96");
+        private readonly Guid SeedMembershipPlanId = Guid.Parse("c3e8b6f2-4f6c-4c4a-9d0f-2a8b7e3c1d97");
 
         public MembershipApplicationsTests(ApiWebApplicationFactory<Program> factory) : base(factory) { }
 
@@ -27,9 +27,8 @@ namespace EaseClub.Api.IntegrationTests.Controllers
         {
             await LoginAsMemberAsync();
 
-            // Arrange: Use refactored helper
-            var (templateId, _, _, _) = await _helpers.CreateFullTemplateHierarchyAsync(_testClubId);
-            var command = new CreateApplicationCommand(_testClubId, templateId, SeedMembershipTypeId, SeedMembershipPlanId);
+            // Create command with correct parameter order
+            var command = new CreateApplicationCommand(_testClubId, SeedMembershipTypeId, SeedMembershipPlanId, null);
 
             // Act
             var response = await Client.PostAsJsonAsync("/api/v1/membership-applications", command);
@@ -53,10 +52,10 @@ namespace EaseClub.Api.IntegrationTests.Controllers
             response.EnsureSuccessStatusCode();
 
 
-            var result = await response.Content.ReadFromJsonAsync<ApplicationResponse>(JsonOptions);
+            var result = await response.Content.ReadFromJsonAsync<ApplicationUserResponse>(JsonOptions);
             Assert.NotNull(result);
             Assert.Equal(applicationId, result!.Id);
-            Assert.NotNull(result.Template);
+            Assert.NotEmpty(result.Steps);
         }
 
         [Fact]
@@ -66,9 +65,9 @@ namespace EaseClub.Api.IntegrationTests.Controllers
             var (appId, fieldId) = await SetupApplicationWithTemplateAsync();
 
             // Prepare answers for the step
-            var answers = new List<AnswerDto>
+            var answers = new List<AnswerRequestDto>
             {
-                new(fieldId, "full_name", "John Wick", 0)
+                new(fieldId, "John Wick", null)
             };
 
             var command = new CompleteStepCommand(appId, 1, answers);
@@ -82,7 +81,11 @@ namespace EaseClub.Api.IntegrationTests.Controllers
 
             // Verify answers were persisted
             var app = await GetApplicationAsync(appId);
-            Assert.Contains(app.Answers, a => a.Value == "John Wick");
+            var fieldValue = app.Steps
+                .SelectMany(s => s.Sections)
+                .SelectMany(sec => sec.Fields)
+                .FirstOrDefault(f => f.Id == fieldId)?.Value;
+            Assert.Equal("John Wick", fieldValue);
         }
 
         [Fact]
@@ -107,74 +110,15 @@ namespace EaseClub.Api.IntegrationTests.Controllers
         }
 
 
-        //[Fact]
-        //public async Task SetNewAnswer_SetsSuccessfully()
-        //{
-        //    await LoginAsMemberAsync();
-        //    var (applicationId, fieldId) = await SetupApplicationWithTemplateAsync();
-
-        //    var setAnswerCommand = new SetAnswerCommand(applicationId, fieldId, "John Doe", 0);
-
-        //    // Act
-        //    var response = await Client.PatchAsJsonAsync($"/api/v1/membership-applications/{applicationId}/answers", setAnswerCommand);
-
-        //    // Assert
-        //    Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-        //}
-
-        //[Fact]
-        //public async Task UpdateAnswer_WhenAnswerExists_UpdatesValue()
-        //{
-        //    await LoginAsMemberAsync();
-        //    var (applicationId, fieldId) = await SetupApplicationWithTemplateAsync();
-
-        //    // 1. Insert initial answer
-        //    await Client.PatchAsJsonAsync($"/api/v1/membership-applications/{applicationId}/answers",
-        //        new SetAnswerCommand(applicationId, fieldId, "Old Value", 0));
-
-        //    // 2. Update existing answer
-        //    var updateResponse = await Client.PatchAsJsonAsync($"/api/v1/membership-applications/{applicationId}/answers",
-        //        new SetAnswerCommand(applicationId, fieldId, "Updated Value", 0));
-
-        //    Assert.Equal(HttpStatusCode.NoContent, updateResponse.StatusCode);
-
-        //    // 3. Verify
-        //    var getResponse = await Client.GetAsync($"/api/v1/membership-applications/{applicationId}");
-        //    var result = await getResponse.Content.ReadFromJsonAsync<ApplicationResponse>();
-
-        //    Assert.Single(result!.Answers);
-        //    Assert.Equal("Updated Value", result.Answers.First().Value);
-        //}
-
-        //[Fact]
-        //public async Task RemoveAnswer_RemovesSuccessfully()
-        //{
-        //    await LoginAsMemberAsync();
-        //    var (applicationId, fieldId) = await SetupApplicationWithTemplateAsync();
-
-        //    // Arrange: Seed an answer to delete
-        //    await Client.PatchAsJsonAsync($"/api/v1/membership-applications/{applicationId}/answers",
-        //        new SetAnswerCommand(applicationId, fieldId, "Delete Me", 0));
-
-        //    // Act
-        //    var response = await Client.DeleteAsync($"/api/v1/membership-applications/{applicationId}/answers/{fieldId}?index=0");
-
-        //    // Assert
-        //    Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-        //}
-
         #region Private Test Orchestrators
 
-        /// <summary>
-        /// Combines Helper Template creation and API Application creation to provide a ready-to-test state.
-        /// </summary>
         private async Task<(Guid applicationId, Guid fieldId)> SetupApplicationWithTemplateAsync()
         {
-            // We need to be Admin to seed the Template, then switch back to Member if necessary
-            // However, since we write directly to DbContext in Helpers, we don't actually need to LoginAsAdmin here.
-            var (templateId, _, _, fieldId) = await _helpers.CreateFullTemplateHierarchyAsync(_testClubId);
+            var plan = await DbContext.MembershipPlans.FirstAsync(p => p.Id == SeedMembershipPlanId);
+            var template = await DbContext.ApplicationTemplateDefinitions.FirstAsync(t => t.Id == plan.ApplicationTemplateId!.Value);
+            var fieldId = template.Steps.First().Sections.First().Fields.First().Id;
 
-            var command = new CreateApplicationCommand(_testClubId, templateId, SeedMembershipTypeId, SeedMembershipPlanId);
+            var command = new CreateApplicationCommand(_testClubId, SeedMembershipTypeId, SeedMembershipPlanId, null);
             var response = await Client.PostAsJsonAsync("/api/v1/membership-applications", command);
 
             var applicationId = await response.Content.ReadFromJsonAsync<Guid>();
@@ -183,7 +127,7 @@ namespace EaseClub.Api.IntegrationTests.Controllers
 
         private async Task CompleteStepAsync(Guid appId, Guid fieldId, string value)
         {
-            var answers = new List<AnswerDto> { new(fieldId, "full_name", value, 0) };
+            var answers = new List<AnswerRequestDto> { new(fieldId, value, null) };
             var command = new CompleteStepCommand(appId, 1, answers);
 
             var response = await Client.PostAsJsonAsync($"/api/v1/membership-applications/{appId}/steps/{command.StepOrder}/" +
@@ -191,9 +135,9 @@ namespace EaseClub.Api.IntegrationTests.Controllers
             
         }
 
-        private async Task<ApplicationResponse> GetApplicationAsync(Guid appId)
+        private async Task<ApplicationUserResponse> GetApplicationAsync(Guid appId)
         {
-            return (await Client.GetFromJsonAsync<ApplicationResponse>($"/api/v1/membership-applications/{appId}",JsonOptions))!;
+            return (await Client.GetFromJsonAsync<ApplicationUserResponse>($"/api/v1/membership-applications/{appId}",JsonOptions))!;
         }
         #endregion
     }
