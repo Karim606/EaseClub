@@ -1,9 +1,10 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Features.MembershipTypes.Commands.ToggleMembershipTypeActivation;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipTypes;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace EaseClub.Application.Tests.Features.MembershipTypes.Commands
@@ -12,9 +13,10 @@ namespace EaseClub.Application.Tests.Features.MembershipTypes.Commands
     {
         private readonly Mock<IMembershipTypeRepository> _membershipRepo = new();
         private readonly Mock<IUnitOfWork> _uow = new();
+        private readonly Mock<ILogger<ToggleTypeActivationHandler>> _logger = new();
 
         private ToggleTypeActivationHandler CreateHandler()
-            => new(_membershipRepo.Object, _uow.Object);
+            => new(_membershipRepo.Object, _uow.Object, _logger.Object);
 
         [Fact]
         public async Task Handle_Should_Return_NotFound_When_MembershipType_Not_Found()

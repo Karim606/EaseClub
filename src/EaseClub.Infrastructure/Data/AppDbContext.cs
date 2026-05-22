@@ -117,7 +117,7 @@ namespace EaseClub.Infrastructure.Data
 
         public DbSet<Membership>Memberships { get; set; }
         public DbSet<MembershipCycle> MembershipCycles { get; set; }
-        public DbSet<PendingEnrollment> PendingEnrollments { get; set; }
+        public DbSet<Enrollment> Enrollments { get; set; }
         public DbSet<FamilyMember> FamilyMembers { get; set; }
         public DbSet<FileResource> FileResources { get; set; }
        

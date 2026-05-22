@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Features.InstallmentTemplates.Commands.CreateInstallmentTemplate;
 using EaseClub.Application.Features.InstallmentTemplates.Queries.GetTemplateById;
 using EaseClub.Domain.MembershipPlans;
@@ -34,6 +34,7 @@ namespace EaseClub.Application.Tests.Features.InstallmentTemplates.Commands
         public async Task Handle_Should_Return_Error_When_Domain_Creation_Fails()
         {
             var command = new CreateInstallmentTemplateCommand(
+                Guid.NewGuid(),
                 "",                     // invalid name → domain error
                 0,                      // invalid installments count
                 0,
@@ -51,6 +52,7 @@ namespace EaseClub.Application.Tests.Features.InstallmentTemplates.Commands
         public async Task Handle_Should_Save_And_Return_Id_When_Creation_Is_Successful()
         {
             var command = new CreateInstallmentTemplateCommand(
+                Guid.NewGuid(),
                 "Standard Plan",
                 3,
                 60,

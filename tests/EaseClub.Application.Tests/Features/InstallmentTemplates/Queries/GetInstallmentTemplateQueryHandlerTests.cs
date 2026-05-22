@@ -1,8 +1,9 @@
-﻿using EaseClub.Application.Features.InstallmentTemplates.Queries.GetTemplateById;
+using EaseClub.Application.Features.InstallmentTemplates.Queries.GetTemplateById;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.MembershipPlans;
 using EaseClub.Domain.MembershipPlans.Repositories;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -15,11 +16,12 @@ namespace EaseClub.Application.Tests.Features.InstallmentTemplates.Queries
     public class GetInstallmentTemplateQueryHandlerTests
     {
         private readonly Mock<IInstallmentsTemplatesRepository> _repo = new();
+        private readonly Mock<ILogger<GetInstallmentTemplateQueryHandler>> _logger = new();
         private readonly GetInstallmentTemplateQueryHandler _handler;
 
         public GetInstallmentTemplateQueryHandlerTests()
         {
-            _handler = new GetInstallmentTemplateQueryHandler(_repo.Object);
+            _handler = new GetInstallmentTemplateQueryHandler(_repo.Object, _logger.Object);
         }
 
         [Fact]

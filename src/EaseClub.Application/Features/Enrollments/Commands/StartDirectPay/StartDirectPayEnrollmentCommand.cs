@@ -5,9 +5,10 @@ using EaseClub.Domain.MembershipPlans;
 using EaseClub.Domain.MembershipTypes;
 using MediatR;
 
-namespace EaseClub.Application.Features.Memberships.Commands.StartDirectPayEnrollment
+namespace EaseClub.Application.Features.Enrollments.Commands.StartDirectPay
 {
     public record StartDirectPayEnrollmentCommand(
+        Guid MemberId,
         Guid ClubId,
         Guid MembershipTypeId,
         Guid MembershipPlanId,
@@ -16,6 +17,10 @@ namespace EaseClub.Application.Features.Memberships.Commands.StartDirectPayEnrol
     {
         public IEnumerable<OwnershipRule> Rules()
         {
+            yield return new OwnershipRule(
+                async (auth, _) => await Task.FromResult(auth.IsUserMatch(MemberId)),
+                nameof(MemberId),
+                MemberId);
             yield return new OwnershipRule(
                 async (auth, _) => await auth.DoesResourceBelongToClubAsync<MembershipType>(MembershipTypeId, ClubId),
                 nameof(MembershipType),
@@ -27,15 +32,20 @@ namespace EaseClub.Application.Features.Memberships.Commands.StartDirectPayEnrol
                 MembershipPlanId);
 
             yield return new OwnershipRule(
-                async (auth, _) => await auth.DoesResourceBelongToClubAsync<InstallmentTemplate>(InstallmentTemplateId ?? Guid.Empty, ClubId),
+                async (auth, _) => { 
+                    if (InstallmentTemplateId != null && InstallmentTemplateId != Guid.Empty)
+                        return await auth.DoesResourceBelongToClubAsync<InstallmentTemplate>(InstallmentTemplateId ?? Guid.Empty, ClubId);
+
+                    return true;
+                        },
                 nameof(InstallmentTemplate),
                 InstallmentTemplateId ?? Guid.Empty);
         }
     }
 
     public record StartDirectPayEnrollmentRequest(
-    Guid ClubId,
-    Guid MembershipTypeId,
-    Guid? InstallmentTemplateId
+        Guid ClubId,
+        Guid MembershipTypeId,
+        Guid? InstallmentTemplateId
     );
 }

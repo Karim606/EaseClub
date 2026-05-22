@@ -5,6 +5,7 @@ namespace EaseClub.Application.Features.Payment
         string? RedirectUrl = null,
         string? TransactionId = null,
         string? OrderId = null,
+        string? ThreeDSecureId = null,
         string? Message = null
     );
 }

@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Features.MembershipPlans.Command.RemoveInstallmentTemplateFromPlan;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.MembershipPlans;
@@ -77,7 +77,21 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
         [Fact]
         public async Task Handle_Should_Save_When_Removal_Is_Successful()
         {
-            var plan = MembershipPlan.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),1,2, "Plan", 2000, 60).Value;
+            var plan = MembershipPlan.Create(
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                EnrollmentMode.DirectPay,
+                null,
+                1,
+                2,
+                "Plan",
+                2000,
+                60,
+                1500,
+                true,
+                PaymentMode.Cash
+            ).Value;
             var template = InstallmentTemplate.Create(Guid.NewGuid(), plan.ClubId, "Temp", 3, 60, null).Value;
 
             plan.AddInstallmentTemplate(template);

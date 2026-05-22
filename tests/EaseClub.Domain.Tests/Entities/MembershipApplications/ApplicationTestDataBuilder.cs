@@ -41,6 +41,6 @@ namespace EaseClub.Domain.Tests.Entities.MembershipApplications
             => new(Guid.NewGuid(), title, order, rule, SectionIntent.General, fields);
 
         public static FieldSnapshot CreateField(Guid id, string key, FieldType type)
-            => new(id, key, "Label", type, ValidationRuleSet.Create(false).Value.ToSnapshot(), null, 0, false);
+            => new(id, key, "Label", type, ValidationRuleSet.Create(false).Value.ToSnapshot(), null, null, 0, false);
     }
 }

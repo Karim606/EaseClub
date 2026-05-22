@@ -15,7 +15,7 @@ namespace EaseClub.Application.Features.Payment
 
         Task<Result<DirectPaymentResult>> ProcessPaymentAsync(PaymentTransaction transaction, CardDetailsDto cardDetails, CancellationToken ct);
 
-        Task<Result<DirectPaymentResult>> FinalizePaymentAsync(PaymentTransaction transaction, string threeDSecureId, CancellationToken ct);
+        Task<Result<DirectPaymentResult>> FinalizePaymentAsync(PaymentTransaction transaction, CardDetailsDto cardDetails, string threeDSecureId, CancellationToken ct);
 
         Result<CallBackResultDto> ValidateCallbackSignature(object payload);
     }

@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Features.Branches.Commands.CreateBranch;
 using EaseClub.Domain.Branches;
 using EaseClub.Domain.Clubs;
@@ -35,7 +35,7 @@ namespace EaseClub.Application.Tests.Features.Branches.Commands
         public async Task Handle_Should_Return_NotFound_When_Club_Does_Not_Exist()
         {
             // Arrange
-            var command = new CreateBranchCommand(Guid.NewGuid(), "Main Branch");
+            var command = new CreateBranchCommand(Guid.NewGuid(), "Main Branch", "Address 1");
 
             _clubRepository
                 .Setup(x => x.IsExistAsync(command.ClubId, CancellationToken.None))
@@ -65,7 +65,7 @@ namespace EaseClub.Application.Tests.Features.Branches.Commands
         public async Task Handle_Should_Return_Error_When_Branch_Creation_Fails()
         {
             // Arrange
-            var command = new CreateBranchCommand(Guid.NewGuid(), " "); // invalid name
+            var command = new CreateBranchCommand(Guid.NewGuid(), " ", "Address 1"); // invalid name
 
             _clubRepository
                 .Setup(x => x.IsExistAsync(command.ClubId, CancellationToken.None))
@@ -95,7 +95,7 @@ namespace EaseClub.Application.Tests.Features.Branches.Commands
         public async Task Handle_Should_Create_Branch_And_Save_When_Request_Is_Valid()
         {
             // Arrange
-            var command = new CreateBranchCommand(Guid.NewGuid(), "Main Branch");
+            var command = new CreateBranchCommand(Guid.NewGuid(), "Main Branch", "Address 1");
 
             _clubRepository
                 .Setup(x => x.IsExistAsync(command.ClubId, CancellationToken.None))
@@ -129,7 +129,7 @@ namespace EaseClub.Application.Tests.Features.Branches.Commands
         public async Task Handle_Should_Return_Conflict_When_Branch_Name_Already_Exists()
         {
             // Arrange
-            var command = new CreateBranchCommand(Guid.NewGuid(), "Main Branch");
+            var command = new CreateBranchCommand(Guid.NewGuid(), "Main Branch", "Address 1");
 
             _clubRepository
                 .Setup(x => x.IsExistAsync(command.ClubId, CancellationToken.None))

@@ -11,16 +11,9 @@ using EaseClub.Domain.Memberships;
 using EaseClub.Infrastructure.Common.QueryServices;
 using EaseClub.Infrastructure.Data;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EaseClub.Infrastructure.Services.QueryServices
 {
-
-
     public class MembershipApplicationQueryService : BaseQueryService<MembershipApplication>, IMembershipApplicationQueryService
     {
         public MembershipApplicationQueryService(AppDbContext context, ILogger<MembershipApplicationQueryService> logger) : base(context, logger)
@@ -50,7 +43,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                 else if (to.HasValue) query = query.Where(p => p.CreatedAt <= to.Value);
             }
 
-            return await GetPaginatedAsync<MembershipAppAdminDto, DateTime,OffsetPaginatedResult<MembershipAppAdminDto>>(
+            return await GetPaginatedAsync<MembershipAppAdminDto, DateTime, OffsetPaginatedResult<MembershipAppAdminDto>>(
                 query,
                 parameters,
                 selector: p => new MembershipAppAdminDto()
@@ -69,21 +62,18 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                     Status = p.Status,
                 },
                 orderSelector: p => p.CreatedAt,
-                ct
-                );
-
-
+                ct);
         }
 
         public async Task<Result<UnifiedPaginatedResponse<MembershipAppDto>>> GetMembershipApplicationSummaryAsync(Guid? clubId,
-            Guid? userId,ApplicationStatus? status, PaginationRequest parameters, CancellationToken ct = default)
+            Guid? userId, ApplicationStatus? status, PaginationRequest parameters, CancellationToken ct = default)
         {
             var query = Query();
             if (clubId != null)
             {
                 query = query.Where(p => p.ClubId == clubId && p.MemberId == userId);
             }
-             if (userId != null)
+            if (userId != null)
             {
                 query = query.Where(p => p.MemberId == userId);
             }
@@ -105,16 +95,13 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                     MembershipPlanName = p.MembershipPlan.Name,
                     SubmittedAt = p.SubmittedAt,
                     Status = p.Status,
-                    EnrollmentInvoiceId = _context.PendingEnrollments
-                        .Where(pe => pe.MembershipApplicationId == p.Id && pe.Status == PendingEnrollmentStatus.WaitingForFirstPayment)
+                    EnrollmentInvoiceId = _context.Enrollments
+                        .Where(pe => pe.MembershipApplicationId == p.Id && pe.Status == EnrollmentStatus.WaitingForFirstPayment)
                         .Select(pe => pe.FirstInvoiceId)
                         .FirstOrDefault()
                 },
                 orderSelector: p => p.CreatedAt,
-                ct
-                );
+                ct);
         }
     }
-
-
 }

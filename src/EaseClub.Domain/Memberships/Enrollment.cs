@@ -1,29 +1,28 @@
+using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Common;
+using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipApplications;
 using EaseClub.Domain.MembershipApplications.Enums;
 using EaseClub.Domain.MembershipApplications.ValueObjects;
 using EaseClub.Domain.MembershipPlans;
+using EaseClub.Domain.MembershipTypes;
 using EaseClub.Domain.Payment;
 using EaseClub.Domain.Payment.Enums;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EaseClub.Domain.Memberships
 {
-    public enum PendingEnrollmentSource
+    public enum EnrollmentSource
     {
         DirectPay = 1,
         ApplicationApproval = 2,
         Renewal = 3
     }
 
-    public enum PendingEnrollmentStatus
+    public enum EnrollmentStatus
     {
         WaitingForFirstPayment = 1,
         Completed = 2,
@@ -31,16 +30,15 @@ namespace EaseClub.Domain.Memberships
         Cancelled = 4
     }
 
-
-    public class PendingEnrollment :AuditableEntity,IBillingItem
+    public class Enrollment : AuditableEntity, IBillingItem, IBelongToMember
     {
         private const int DefaultExpiryHours = 48;
 
-        private PendingEnrollment() { }
+        private Enrollment() { }
 
-        private PendingEnrollment(
+        private Enrollment(
             Guid id,
-            Guid userId,
+            Guid memberId,
             Guid clubId,
             Guid membershipTypeId,
             Guid membershipPlanId,
@@ -51,10 +49,10 @@ namespace EaseClub.Domain.Memberships
             int subscriptionValidityInYears,
             decimal firstInstallmentAmount,
             DateTime expiresAt,
-            PendingEnrollmentSource source,
+            EnrollmentSource source,
             Guid? existingMembershipId) : base(id)
         {
-            UserId = userId;
+            MemberId = memberId;
             ClubId = clubId;
             MembershipTypeId = membershipTypeId;
             MembershipPlanId = membershipPlanId;
@@ -66,12 +64,12 @@ namespace EaseClub.Domain.Memberships
             Amount = firstInstallmentAmount;
             ExpiresAt = expiresAt;
             Source = source;
-            Status = PendingEnrollmentStatus.WaitingForFirstPayment;
-            ReadableId = $"PEN-{DateTime.UtcNow:yyyyMMdd}-{id.ToString()[..8].ToUpper()}";
+            Status = EnrollmentStatus.WaitingForFirstPayment;
+            ReadableId = $"ENR-{DateTime.UtcNow:yyyyMMdd}-{id.ToString()[..8].ToUpper()}";
             ExistingMembershipId = existingMembershipId;
         }
 
-        public Guid UserId { get; private set; }
+        public Guid MemberId { get; private set; }
         public Guid ClubId { get; private set; }
         public Guid MembershipTypeId { get; private set; }
         public Guid MembershipPlanId { get; private set; }
@@ -83,16 +81,33 @@ namespace EaseClub.Domain.Memberships
         public string ReadableId { get; private set; } = string.Empty;
         public Guid? ExistingMembershipId { get; private set; }
         public Guid? FirstInvoiceId { get; private set; }
-        //public DateTime FirstInvoiceDueDate { get; private set; }
         public DateTime ExpiresAt { get; private set; }
         public string InstallmentsJson { get; private set; } = "[]";
-        public PendingEnrollmentSource Source { get; private set; }
-        public PendingEnrollmentStatus Status { get; private set; }
+        public EnrollmentSource Source { get; private set; }
+        public EnrollmentStatus Status { get; private set; }
 
+        public Club Club { get; private set; }
+        public MembershipPlan MembershipPlan { get; private set; }
+        public MembershipType MembershipType { get; private set; }
+        
         public BillingItemType GetBillingType()
-            => BillingItemType.PendingEnrollmentFirstInstallment;
+            => BillingItemType.EnrollmentFirstInstallment;
 
-        public static Result<PendingEnrollment> CreateForDirectPay(
+        public Result<Success> CanBePaid()
+        {
+            if (Status == EnrollmentStatus.Completed)
+                return Error.Conflict(description: "Enrollment already completed.");
+
+            if (Status == EnrollmentStatus.Cancelled)
+                return Error.Conflict(description: "Enrollment has been cancelled.");
+
+            if (IsExpired(DateTime.UtcNow))
+                return Error.Failure(description: "Enrollment has expired.");
+
+            return Result.Success;
+        }
+
+        public static Result<Enrollment> CreateForDirectPay(
             Guid userId,
             Guid clubId,
             MembershipPlan plan,
@@ -107,15 +122,14 @@ namespace EaseClub.Domain.Memberships
                 installmentTemplate,
                 null,
                 null,
-                PendingEnrollmentSource.ApplicationApproval,
+                EnrollmentSource.DirectPay,
                 plan.SubscriptionValidityInYears,
                 plan.TotalPrice);
-
 
             return Create(req);
         }
 
-        public static Result<PendingEnrollment> CreateFromApprovedApplication(
+        public static Result<Enrollment> CreateFromApprovedApplication(
             MembershipApplication app,
             MembershipPlan plan)
         {
@@ -129,12 +143,12 @@ namespace EaseClub.Domain.Memberships
                 return Error.Conflict(description: "current plan isnt same plan exists in application");
 
             InstallmentTemplate? template = null;
-            if( app.InstallmentTemplateId != null)
+            if (app.InstallmentTemplateId != null)
             {
                 var instRules = InstallmentRuleSnapshot.ListToDomain(app.TemplateSnapshot.InstallmentRules);
                 if (instRules.IsError) return instRules.TopError;
 
-                var res = InstallmentTemplate.Create(app.InstallmentTemplateId.Value, app.ClubId, "temp",null,null,instRules.Value);
+                var res = InstallmentTemplate.Create(app.InstallmentTemplateId.Value, app.ClubId, "temp", null, null, instRules.Value);
                 if (res.IsError) return res.TopError;
 
                 template = res.Value;
@@ -146,43 +160,39 @@ namespace EaseClub.Domain.Memberships
                 template,
                 app.Id,
                 null,
-                PendingEnrollmentSource.ApplicationApproval,
+                EnrollmentSource.ApplicationApproval,
                 plan.SubscriptionValidityInYears,
                 app.FinalPriceSummary.TotalPrice);
-            
 
             return Create(req);
         }
 
-        public static Result<PendingEnrollment> CreateForRenewal(
-    Membership membership,
-    MembershipPlan plan,
-    InstallmentTemplate? installmentTemplate)
+        public static Result<Enrollment> CreateForRenewal(
+            Membership membership,
+            MembershipPlan plan,
+            InstallmentTemplate? installmentTemplate)
         {
-            // Validate membership can be renewed
-            if (membership.Status != MembershipStatus.Active
-                && membership.Status != MembershipStatus.Expired)
-                return Error.Conflict("Renewal.InvalidStatus",
-                    "Only active or expired memberships can be renewed.");
-            if(installmentTemplate != null && plan.InstallmentsAllowdInRenewal == false)
-                return Error.Conflict("Renewal.InstallmentsNotAllowed",
-                    "This plan does not allow installments in renewal.");
+            if (membership.Status != MembershipStatus.Active && membership.Status != MembershipStatus.Expired)
+                return Error.Conflict("Renewal.InvalidStatus", "Only active or expired memberships can be renewed.");
+
+            if (installmentTemplate != null && plan.InstallmentsAllowdInRenewal == false)
+                return Error.Conflict("Renewal.InstallmentsNotAllowed", "This plan does not allow installments in renewal.");
 
             var req = new EnrollmentRequest(
-            membership.MemberId,
-            membership.ClubId,
-            plan,
-            installmentTemplate,
-            null,
-            membership.Id,
-            PendingEnrollmentSource.Renewal,
-            plan.SubscriptionValidityInYears,
-            plan.TotalPrice);
+                membership.MemberId,
+                membership.ClubId,
+                plan,
+                installmentTemplate,
+                null,
+                membership.Id,
+                EnrollmentSource.Renewal,
+                plan.SubscriptionValidityInYears,
+                plan.TotalPrice);
 
             return Create(req);
         }
 
-        private static Result<PendingEnrollment> Create(EnrollmentRequest req)
+        private static Result<Enrollment> Create(EnrollmentRequest req)
         {
             if (req.UserId == Guid.Empty || req.ClubId == Guid.Empty)
                 return Error.Validation("InvalidReferences");
@@ -191,39 +201,38 @@ namespace EaseClub.Domain.Memberships
                 return Error.Conflict("InvalidTemplate");
 
             if (req.ApplicationId != null && req.ExistingMembershipId != null)
-                return Error.Conflict(description: "Linking existing membership and application is not allowed, linking application for creation of membership , linking membershipId for renewal only.");
+                return Error.Conflict(description: "Linking existing membership and application is not allowed.");
 
             var rules = req.Template?.Installments.ToList()
                 ?? new List<Installment>
                 {
                     Installment.Create(100m, 0, 1).Value
                 };
+
             var generatedInstallments = InstallmentEngine.GenerateMembershipInstallments(rules, req.TotalPrice);
             if (generatedInstallments.IsError)
                 return generatedInstallments.TopError;
 
-
             var firstAmount = generatedInstallments.Value.First().Amount;
             var dueDate = DateTime.UtcNow;
 
-            return new PendingEnrollment(
-            Guid.NewGuid(),
-            req.UserId,
-            req.ClubId,
-            req.Plan.MembershipTypeId,
-            req.Plan.Id,
-            req.ApplicationId,
-            req.Template?.Id,
-            System.Text.Json.JsonSerializer.Serialize(generatedInstallments),
-            req.TotalPrice,
-            req.ValidityYears,
-            firstAmount,
-            dueDate.AddHours(DefaultExpiryHours),
-            req.Source,
-            req.ExistingMembershipId
-    );
+            return new Enrollment(
+                Guid.NewGuid(),
+                req.UserId,
+                req.ClubId,
+                req.Plan.MembershipTypeId,
+                req.Plan.Id,
+                req.ApplicationId,
+                req.Template?.Id,
+                System.Text.Json.JsonSerializer.Serialize(generatedInstallments.Value),
+                req.TotalPrice,
+                req.ValidityYears,
+                firstAmount,
+                dueDate.AddHours(DefaultExpiryHours),
+                req.Source,
+                req.ExistingMembershipId
+            );
         }
-
 
         public IReadOnlyList<InstallmentDto> GetInstallments()
         {
@@ -234,68 +243,70 @@ namespace EaseClub.Domain.Memberships
         public Result<Success> AttachFirstInvoice(Guid invoiceId)
         {
             if (invoiceId == Guid.Empty)
-                return Error.Validation(description: "PendingEnrollment.FirstInvoiceIdRequired");
+                return Error.Validation(description: "Enrollment.FirstInvoiceIdRequired");
 
             if (FirstInvoiceId == invoiceId)
                 return Result.Success;
 
             if (FirstInvoiceId.HasValue && FirstInvoiceId.Value != invoiceId)
-                return Error.Conflict(description: "PendingEnrollment.FirstInvoiceAlreadyAttached");
+                return Error.Conflict(description: "Enrollment.FirstInvoiceAlreadyAttached");
 
             FirstInvoiceId = invoiceId;
             return Result.Success;
         }
 
-        public bool IsExpired(DateTime nowUtc) => Status == PendingEnrollmentStatus.Expired || nowUtc > ExpiresAt;
+        public bool IsExpired(DateTime nowUtc) => Status == EnrollmentStatus.Expired || nowUtc > ExpiresAt;
 
         public Result<Success> MarkCompleted()
         {
-            if (Status == PendingEnrollmentStatus.Completed)
+            if (Status == EnrollmentStatus.Completed)
                 return Result.Success;
 
             if (IsExpired(DateTime.UtcNow))
-                return Error.Conflict(description: "PendingEnrollment.Expired");
+                return Error.Conflict(description: "Enrollment.Expired");
 
-            Status = PendingEnrollmentStatus.Completed;
+            Status = EnrollmentStatus.Completed;
             return Result.Success;
         }
 
         public void MarkExpired()
         {
-            Status = PendingEnrollmentStatus.Expired;
+            Status = EnrollmentStatus.Expired;
+        }
+
+        public Result<Success> MarkCancelled()
+        {
+            if (Status != EnrollmentStatus.WaitingForFirstPayment)
+                return Error.Conflict(description: "Enrollment is not in a cancellable state.");
+
+            Status = EnrollmentStatus.Cancelled;
+            return Result.Success;
         }
 
         private sealed record EnrollmentRequest(
-        Guid UserId,
-        Guid ClubId,
-        MembershipPlan Plan,
-        InstallmentTemplate? Template,
-        Guid? ApplicationId,
-        Guid? ExistingMembershipId,
-        PendingEnrollmentSource Source,
-        int ValidityYears,
-        decimal TotalPrice);
-
+            Guid UserId,
+            Guid ClubId,
+            MembershipPlan Plan,
+            InstallmentTemplate? Template,
+            Guid? ApplicationId,
+            Guid? ExistingMembershipId,
+            EnrollmentSource Source,
+            int ValidityYears,
+            decimal TotalPrice);
     }
 
-    public sealed record InstallmentDto(decimal PercentageOfAmount, int DueAfterDays, int OrderIndex)
+    public sealed record InstallmentDto(decimal Amount, int AfterDueInDays, int Order, decimal Percentage)
     {
         public static Result<List<Installment>> ToInstallments(List<InstallmentDto> list)
         {
             var installments = new List<Installment>();
-
             foreach (var item in list)
             {
-                var result = Installment.Create(item.PercentageOfAmount, item.DueAfterDays, item.OrderIndex);
-
-                if (result.IsError)
-                    return result.TopError; // Return the specific domain error encountered
-
+                var result = Installment.Create(item.Percentage, item.AfterDueInDays, item.Order);
+                if (result.IsError) return result.TopError;
                 installments.Add(result.Value);
             }
-
             return installments;
         }
     }
 }
-

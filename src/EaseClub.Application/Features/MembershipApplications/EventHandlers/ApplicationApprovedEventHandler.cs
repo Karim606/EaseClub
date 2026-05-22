@@ -1,101 +1,82 @@
 using EaseClub.Application.Common;
 using EaseClub.Application.Common.Interfaces;
-using EaseClub.Application.Features.Memberships;
+using EaseClub.Application.Features.Enrollments.Services;
 using EaseClub.Application.Features.Notifications;
-using EaseClub.Application.Features.Payment;
-using EaseClub.Domain.Common;
+using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.MembershipApplications;
 using EaseClub.Domain.MembershipApplications.Repositories;
-using EaseClub.Domain.MembershipPlans;
 using EaseClub.Domain.MembershipPlans.Repositories;
-using EaseClub.Domain.Memberships;
 using EaseClub.Domain.Notifications;
-using EaseClub.Domain.Payment;
-using EaseClub.Domain.Payment.Repositories;
-using MediatR;
 using Microsoft.Extensions.Logging;
 
 namespace EaseClub.Application.Features.MembershipApplications.EventHandlers
 {
-    public class ApplicationApprovedEventHandler : DomainEventHandler<ApplicationApprovedEvent,ApplicationApprovedEventHandler>
+    public class ApplicationApprovedEventHandler : DomainEventHandler<ApplicationApprovedEvent, ApplicationApprovedEventHandler>
     {
-        private readonly IMembershipApplicationRepository _appRepo;
-        private readonly IPendingEnrollmentRepository _pendingEnrollmentRepo;
-        private readonly IInvoiceRepository _invoiceRepo;
-        private readonly IMembershipPlanRepository _planRepo;
+        private readonly EnrollmentManager _enrollmentManager;
+        private readonly IMembershipPlanRepository _planRepository;
+        private readonly IMembershipApplicationRepository _applicationRepository;
+
         public ApplicationApprovedEventHandler(
-            IMembershipApplicationRepository appRepo,
-            IInvoiceRepository invoiceRepo,
-            IMembershipPlanRepository planRepo,
-            IPendingEnrollmentRepository pendingEnrollmentRepo,
+            EnrollmentManager enrollmentManager,
+            IMembershipPlanRepository planRepository,
+            IMembershipApplicationRepository applicationRepository,
             IUnitOfWork unitOfWork,
             ILogger<ApplicationApprovedEventHandler> logger,
             INotificationDispatcher notificationDispatcher,
-            INotificationRepository notificationRepo):base(notificationDispatcher,notificationRepo,unitOfWork,logger)
+            INotificationRepository notificationRepository) : base(notificationDispatcher, notificationRepository, unitOfWork, logger)
         {
-            _appRepo = appRepo;
-            _pendingEnrollmentRepo = pendingEnrollmentRepo;
-            _invoiceRepo = invoiceRepo;
-            _planRepo = planRepo;
+            _enrollmentManager = enrollmentManager;
+            _planRepository = planRepository;
+            _applicationRepository = applicationRepository;
         }
 
         protected override async Task HandleEvent(ApplicationApprovedEvent evt, CancellationToken ct)
         {
-
-            var app = await _appRepo.GetByIdAsync(evt.ApplicationId, ct);
+            // 1. Fetch the application
+            var app = await _applicationRepository.GetByIdAsync(evt.ApplicationId, ct);
             if (app == null)
             {
-                _logger.LogError("Application {ApplicationId} not found", evt.ApplicationId);
+                _logger.LogError("Application {AppId} not found in ApprovedEventHandler", evt.ApplicationId);
                 return;
             }
-            var existingPending = await _pendingEnrollmentRepo.GetActiveByApplicationIdAsync(app.Id, ct);
-            if (existingPending != null) {
-                _logger.LogError("Active pending enrollment already exists for application {ApplicationId}", app.Id);
-                return;
-                    }
-            var plan = await _planRepo.GetByIdAsync(app.MembershipPlanId,ct);
+
+            // 2. Get the plan to ensure it exists
+            var plan = await _planRepository.GetByIdAsync(app.MembershipPlanId, ct);
             if (plan == null)
             {
-                _logger.LogError("plan with id:{planId} not found", app.MembershipPlanId);
+                _logger.LogError("Plan {PlanId} not found for approved application {AppId}", app.MembershipPlanId, app.Id);
                 return;
             }
-            var pendingEnrollmentResult = PendingEnrollment.CreateFromApprovedApplication(app,plan);
-            if (pendingEnrollmentResult.IsError) {
-                _logger.LogError("Failed to create pending enrollment for application {ApplicationId}: {Errors}", app.Id, pendingEnrollmentResult.Errors);
-                return;
-                    }
-            var pendingEnrollment = pendingEnrollmentResult.Value;
 
-            var invoiceResult = Invoice.Create(
-                pendingEnrollment,
-                pendingEnrollment.ClubId,
-                pendingEnrollment.UserId,
-                pendingEnrollment.Amount);
+            // 3. Use EnrollmentManager to create the payable enrollment and invoice
+            var result = await _enrollmentManager.CreatePayableEnrollmentAsync(
+                app.MemberId,
+                app.ClubId,
+                plan,
+                null, // Template is extracted inside manager from app snapshot if needed
+                app,
+                null,
+                ct);
 
-            if (invoiceResult.IsError)
+            if (result.IsError)
             {
-                _logger.LogError("Failed to create invoice for pending enrollment {PendingEnrollmentId}: {Errors}", pendingEnrollment.Id, invoiceResult.Errors);
+                _logger.LogError("Failed to initialize enrollment for approved application {AppId}: {Error}", 
+                    app.Id, result.TopError.Description);
                 return;
             }
-            var invoice = invoiceResult.Value;
-            var attachResult = pendingEnrollment.AttachFirstInvoice(invoice.Id);
-            if (attachResult.IsError)
-            {
-                _logger.LogError("Failed to attach invoice {InvoiceId} to pending enrollment {PendingEnrollmentId}: {Errors}", invoice.Id, pendingEnrollment.Id, attachResult.Errors);
-                return;
-            }
-            await _invoiceRepo.AddAsync(invoice, ct);
 
-            await _unitOfWork.SaveChangesAsync(ct);
-
-
+            // 4. Notify the user that they can now pay
             var notification = Notification.ForUser(
-                evt.ApplicationOwnerId,
-                "Membership Approved",
-                $"Application {app.TrackingNumber} was approved. Complete the first installment payment to create and activate your membership.",
+                app.MemberId,
+                "Application Approved",
+                $"Your application for {plan.Name} has been approved. You can now proceed to payment.",
                 NotificationType.MembershipApplicationApproved);
 
             await DispatchNotification(notification, ct);
+            
+            _logger.LogInformation("Successfully initialized enrollment {EnrollmentId} for approved application {AppId}", 
+                result.Value.EnrollmentId, app.Id);
         }
     }
 }

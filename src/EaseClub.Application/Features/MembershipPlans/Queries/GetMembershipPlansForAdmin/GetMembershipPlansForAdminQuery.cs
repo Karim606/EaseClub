@@ -1,6 +1,7 @@
 ﻿using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Common.Pagination;
 using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.MembershipPlans;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -30,6 +31,10 @@ namespace EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPla
         public int SubscriptionValidityInYears { get; set; }
         public int MaxFamilyMembers { get; set; }
 
+        public bool InstallmentsAllowdInRenewal { get; set; }
+        public decimal RenewPrice { get; set; } 
+        public PaymentMode PaymentMode { get; set; }
+        public EnrollmentMode EnrollmentMode { get; set; }
         // Status & Metadata
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }

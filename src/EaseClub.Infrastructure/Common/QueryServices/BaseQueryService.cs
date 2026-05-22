@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Pagination;
+using EaseClub.Application.Common.Pagination;
 using EaseClub.Application.Common.Pagination.Parameters;
 using EaseClub.Application.Common.Pagination.Results;
 using EaseClub.Domain.Common;
@@ -68,26 +68,37 @@ public abstract class BaseQueryService<TEntity> where TEntity : class
         CancellationToken cancellationToken)
         where TKey : IComparable<TKey>
     {
-        var pagedQuery = query.ApplyCursorPaging(parameters, orderSelector);
-        var entities = await pagedQuery.ToListAsync(cancellationToken);
+        // 1. Combine selector and orderSelector for projection in DB
+        var parameter = Expression.Parameter(typeof(TEntity), "e");
+        var selectorBody = new ParameterReplacer(selector.Parameters[0], parameter).Visit(selector.Body);
+        var orderBody = new ParameterReplacer(orderSelector.Parameters[0], parameter).Visit(orderSelector.Body);
+
+        var memberInit = Expression.MemberInit(
+            Expression.New(typeof(ProjectedItem<TDto, TKey>)),
+            Expression.Bind(typeof(ProjectedItem<TDto, TKey>).GetProperty(nameof(ProjectedItem<TDto, TKey>.Dto))!, selectorBody),
+            Expression.Bind(typeof(ProjectedItem<TDto, TKey>).GetProperty(nameof(ProjectedItem<TDto, TKey>.Key))!, orderBody)
+        );
+
+        var combinedSelector = Expression.Lambda<Func<TEntity, ProjectedItem<TDto, TKey>>>(memberInit, parameter);
+
+        // 2. Execute query with projection using existing cursor extension
+        var results = await query.ApplyCursorPaging(parameters, orderSelector)
+            .Select(combinedSelector)
+            .ToListAsync(cancellationToken);
 
         string? nextCursor = null;
-        bool hasMore = entities.Count > parameters.Limit;
+        bool hasMore = results.Count > parameters.Limit;
 
         if (hasMore)
         {
-            var lastEntity = entities[parameters.Limit];
-            entities.RemoveAt(parameters.Limit);
-
-            // Using Compile() here for a single object is safe
-            //we use it to turn  expression into delegate in memory then use its key k=> k.CreatedAt
-            var cursorValue = orderSelector.Compile()(lastEntity);
-            nextCursor = CursorHelper.Encode(cursorValue);
+            var lastItem = results[parameters.Limit];
+            results.RemoveAt(parameters.Limit);
+            nextCursor = CursorHelper.Encode(lastItem.Key);
         }
 
         return new CursorPaginatedResult<TDto>
         {
-            Items = entities.AsQueryable().Select(selector).ToList(),
+            Items = results.Select(r => r.Dto).ToList(),
             NextCursor = nextCursor,
             HasMore = hasMore
         };
@@ -177,5 +188,18 @@ public abstract class BaseQueryService<TEntity> where TEntity : class
 
             _ => new UnifiedPaginatedResponse<TDto>(result.Items, result.HasMore)
         };
+    }
+
+    // Helper classes for database-side projection
+    private class ProjectedItem<TDto, TKey>
+    {
+        public TDto Dto { get; set; } = default!;
+        public TKey Key { get; set; } = default!;
+    }
+
+    private class ParameterReplacer(ParameterExpression oldParameter, ParameterExpression newParameter) : ExpressionVisitor
+    {
+        protected override Expression VisitParameter(ParameterExpression node)
+            => node == oldParameter ? newParameter : base.VisitParameter(node);
     }
 }

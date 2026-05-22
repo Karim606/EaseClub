@@ -24,16 +24,19 @@ namespace EaseClub.Application.Features.Memberships.Queries.GetMembershipDetails
                 membership.MembershipNumber,
                 membership.MembershipType.Name,
                 membership.MembershipPlan.Name,
+                membership.MembershipPlanId,
+                membership.MembershipPlan.InstallmentsAllowdInRenewal,
+                membership.MembershipPlan.RenewPrice,
                 membership.CreatedAt,
                 membership.GetCurrentCycle().Period,
                 membership.Status,
                 membership.FamilyMembers.Select(fm => new FamilyMemberDto
-                (
-                    fm.Id,
-                    fm.FullName,
-                    fm.Relationship,
-                    fm.DateOfBirth
-                )).ToList()
+                 (
+                     fm.Id,
+                     fm.FullName,
+                     fm.Relationship,
+                     fm.DateOfBirth
+                 )).ToList()
             );
             return membershipDetailDto;
         }

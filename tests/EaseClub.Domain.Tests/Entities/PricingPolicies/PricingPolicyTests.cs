@@ -15,8 +15,13 @@ namespace EaseClub.Domain.Tests.Entities.PricingPolicies
         {
             // Act
             var result = PricingPolicy.Create(
-                Guid.NewGuid(), Guid.NewGuid(), "Invalid", 1, true,
-                fixedAmount: 10m, percentageValue: 0.1m, multiplierKey: null);
+                id: Guid.NewGuid(),
+                clubId: Guid.NewGuid(),
+                name: "Invalid",
+                isIncrease: true,
+                fixedAmount: 10m,
+                percentageValue: 0.1m,
+                multiplierKey: null);
 
             // Assert
             result.IsError.Should().BeTrue();
@@ -28,11 +33,16 @@ namespace EaseClub.Domain.Tests.Entities.PricingPolicies
         {
             // Arrange
             var policy = PricingPolicy.Create(
-                Guid.NewGuid(), Guid.NewGuid(), "VAT", 100, true,
-                fixedAmount: null, percentageValue: 0.15m, multiplierKey: null).Value;
+                id: Guid.NewGuid(),
+                clubId: Guid.NewGuid(),
+                name: "VAT",
+                isIncrease: true,
+                fixedAmount: null,
+                percentageValue: 0.15m,
+                multiplierKey: null).Value;
 
             // Act
-            var snapshot = policy.ToSnapshot();
+            var snapshot = policy.ToSnapshot(priority: 100);
 
             // Assert
             snapshot.Name.Should().Be("VAT");

@@ -1,5 +1,5 @@
 using EaseClub.Application.Features.Payment.Commands.AttachOrderToTransaction;
-using EaseClub.Application.Features.Payment.Commands.IntiatePayment;
+//using EaseClub.Application.Features.Payment.Commands.IntiatePayment;
 using EaseClub.Application.Features.Payment.Commands.ProcessPaymentGatewayWebhookCommand;
 using EaseClub.Application.Features.Payment.Commands.ProcessDirectPayment;
 using EaseClub.Application.Features.Payment.Commands.FinalizeDirectPayment;

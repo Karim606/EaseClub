@@ -45,7 +45,7 @@ public class MembershipInstallmentTests
     public void Create_ShouldFail_WhenDueDateIsInThePast()
     {
         // Arrange
-        var pastDate = DateTime.UtcNow.AddMinutes(-1);
+        var pastDate = DateTime.UtcNow.Date.AddDays(-1);
 
         // Act
         var result = CreateValidInstallment(_validAmount, pastDate);

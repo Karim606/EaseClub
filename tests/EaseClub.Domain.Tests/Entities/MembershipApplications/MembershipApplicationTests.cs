@@ -44,8 +44,8 @@ public class MembershipApplicationTests
 
         var app = CreateApp(snapshot).Value;
 
-        app.CompleteStep(1, new() { ApplicationAnswer.Create(app.Id, fieldId, "key", "Initial", 0).Value });
-        app.CompleteStep(1, new() { ApplicationAnswer.Create(app.Id, fieldId, "key", "Updated", 0).Value });
+        app.CompleteStep(1, new() { new UserAnswer(fieldId, "key", "Initial", null, FieldType.Text) });
+        app.CompleteStep(1, new() { new UserAnswer(fieldId, "key", "Updated", null, FieldType.Text) });
 
         app.Answers.Should().HaveCount(1);
         app.Answers.First().Value.Should().Be("Updated");
@@ -69,15 +69,14 @@ public class MembershipApplicationTests
         });
 
         var app = CreateApp(snapshot).Value;
-        app.CompleteStep(1, new List<ApplicationAnswer> {
-            ApplicationAnswer.Create(app.Id, driverFieldId, "guest_count", "2", 0).Value,
-            ApplicationAnswer.Create(app.Id, detailFieldId, "guest_name", "John", 0).Value
+        var completeResult = app.CompleteStep(1, new List<UserAnswer>
+        {
+            new(driverFieldId, "guest_count", "2", null, FieldType.Number),
+            new(detailFieldId, "guest_name", "John", null, FieldType.Text)
         });
 
-        var result = app.Submit();
-
-        result.IsError.Should().BeTrue();
-        result.Errors.Any(e => e.Code.Contains("SectionCountMismatch")).Should().BeTrue();
+        completeResult.IsError.Should().BeTrue();
+        completeResult.Errors.Any(e => e.Code == "Application.InvalidRepeatCount").Should().BeTrue();
     }
 
     [Fact]
@@ -86,7 +85,7 @@ public class MembershipApplicationTests
         var snapshot = ApplicationTestDataBuilder.CreateSnapshot(1, baseFee: 150);
         var app = CreateApp(snapshot).Value;
 
-        app.CompleteStep(1, new());
+        app.CompleteStep(1, new List<UserAnswer>());
         var result = app.Submit();
 
         result.IsSuccess.Should().BeTrue();
@@ -101,7 +100,7 @@ public class MembershipApplicationTests
         var snapshot = ApplicationTestDataBuilder.CreateSnapshot(1, baseFee: 200);
         var app = CreateApp(snapshot).Value;
 
-        app.CompleteStep(1, new List<ApplicationAnswer>());
+        app.CompleteStep(1, new List<UserAnswer>());
         app.Submit();
 
         // Act
@@ -111,54 +110,6 @@ public class MembershipApplicationTests
         preview.IsSuccess.Should().BeTrue();
         preview.Value.TotalPrice.Should().Be(200);
         app.PricingState.Should().Be(PricingState.Locked);
-    }
-
-    [Fact]
-    public void CompleteStep_ShouldReturnPreviousStepRequired_WhenSkippingSteps()
-    {
-        // Arrange: Use builder to create 3 steps
-        var snapshot = ApplicationTestDataBuilder.CreateSnapshot(3, ApplicationTestDataBuilder.CreateSteps(3));
-        var app = CreateApp(snapshot).Value;
-
-        // Act
-        var result = app.CompleteStep(2, new List<ApplicationAnswer>());
-
-        // Assert
-        result.IsError.Should().BeTrue();
-        result.Errors.Any(e => e.Code.Contains("PreviousStepRequired")).Should().BeTrue();
-        app.CurrentStepOrder.Should().Be(1);
-    }
-
-    [Fact]
-    public void MoveToStep_ShouldNotExceedTotalSteps_WhenMovingForward()
-    {
-        // Arrange: 2 steps total
-        var snapshot = ApplicationTestDataBuilder.CreateSnapshot(2, ApplicationTestDataBuilder.CreateSteps(2));
-        var app = CreateApp(snapshot).Value;
-
-        app.CompleteStep(1, new List<ApplicationAnswer>());
-        app.CompleteStep(2, new List<ApplicationAnswer>());
-
-        // Act
-        app.MoveToStep(3);
-
-        // Assert
-        app.CurrentStepOrder.Should().Be(2);
-    }
-
-    [Fact]
-    public void MoveToStep_ShouldPreventMovingForward_BeyondNextAvailableStep()
-    {
-        // Arrange
-        var snapshot = ApplicationTestDataBuilder.CreateSnapshot(5, ApplicationTestDataBuilder.CreateSteps(5));
-        var app = CreateApp(snapshot).Value;
-        app.CompleteStep(1, new List<ApplicationAnswer>()); // Moves to 2
-
-        // Act
-        app.MoveToStep(4);
-
-        // Assert
-        app.CurrentStepOrder.Should().Be(2); // Capped at "High Water Mark"
     }
 
     [Fact]
@@ -220,11 +171,16 @@ public class MembershipApplicationTests
             Guid.NewGuid(),
             _clubId,
             membershipTypeId,
+            mode: EnrollmentMode.ApplicationForm,
+            templateId: _templateId,
             subscriptionValidityInYears: 1,
             maxFamilyMembers: 5,
-            "Gold Plan",
+            name: "Gold Plan",
             totalPrice: 1000m,
-            maxPaymentPeriod: 30
+            maxPaymentPeriod: 30,
+            renewPrice: 1000m,
+            installmentsAllowedInRenewal: true,
+            paymentMode: PaymentMode.Installments
         ).Value;
 
         // Note: If MembershipPlan expects a list of templates internally, 

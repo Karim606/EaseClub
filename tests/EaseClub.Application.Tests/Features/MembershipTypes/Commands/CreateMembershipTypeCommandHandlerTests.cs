@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Features.MembershipTypes.Commands.CreateMembershipType;
 using EaseClub.Domain.Branches;
 using EaseClub.Domain.MembershipTypes;
@@ -28,14 +28,12 @@ namespace EaseClub.Application.Tests.Features.MembershipTypes.Commands
         {
             var command = new CreateMembershipTypeCommand
             (
-                Name :"Gold",
-                Description : "Gold Membership",
-                FamilyAllowed : false,
-                MaxFamilyMembers : null,
-                AllBranchesPermitted : true,
-                BranchIds : []
-            )
-            { ClubId = Guid.NewGuid() };
+                ClubId: Guid.NewGuid(),
+                Name: "Gold",
+                Description: "Gold Membership",
+                AllBranchesPermitted: true,
+                BranchIds: new List<Guid>()
+            );
 
             _membershipRepo
                 .Setup(r => r.GetByClubIdAndNameAsync(command.ClubId, command.Name))
@@ -56,13 +54,12 @@ namespace EaseClub.Application.Tests.Features.MembershipTypes.Commands
 
             var command = new CreateMembershipTypeCommand
             (
-                Name : "Gold",
-                Description : "Gold Membership",
-                FamilyAllowed : false,
-                MaxFamilyMembers : null,
-                AllBranchesPermitted : false,
+                ClubId: Guid.NewGuid(),
+                Name: "Gold",
+                Description: "Gold Membership",
+                AllBranchesPermitted: false,
                 BranchIds: new List<Guid> { branchId }
-            ){ ClubId = Guid.NewGuid() };
+            );
             
 
             _membershipRepo
@@ -88,14 +85,12 @@ namespace EaseClub.Application.Tests.Features.MembershipTypes.Commands
 
             var command = new CreateMembershipTypeCommand
             (
-            Name: "Gold",
-            Description: "Premium membership",
-            FamilyAllowed: false,
-            MaxFamilyMembers: null,
-            AllBranchesPermitted: true,
-            BranchIds: new List<Guid>()
-             )
-            { ClubId = Guid.NewGuid() };
+                ClubId: Guid.NewGuid(),
+                Name: "Gold",
+                Description: "Premium membership",
+                AllBranchesPermitted: true,
+                BranchIds: new List<Guid>()
+            );
 
             _membershipRepo
                 .Setup(r => r.GetByClubIdAndNameAsync(It.IsAny<Guid>(), It.IsAny<string>()))

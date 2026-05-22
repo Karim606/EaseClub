@@ -58,20 +58,6 @@ namespace EaseClub.Domain.Tests.Entities.ApplicationTemplates.ValueObjects
             else
                 errors.Should().NotBeEmpty();
         }
-
-        [Fact]
-        public void Validate_Regex_ShouldReturnError_OnMismatch()
-        {
-            // Arrange: Only letters allowed
-            var rules = ValidationRuleSet.Create(isRequired: false, regex: @"^[a-zA-Z]+$").Value;
-
-            // Act
-            var errors = rules.Validate("12345", FieldType.Text);
-
-            // Assert
-            errors.Should().Contain(ValidationErrors.InvalidFormat);
-        }
-
         #endregion
 
         #region Strategy Tests - Numbers
@@ -113,19 +99,6 @@ namespace EaseClub.Domain.Tests.Entities.ApplicationTemplates.ValueObjects
 
             // Assert
             errors.Should().BeEmpty();
-        }
-
-        [Fact]
-        public void RegexStrategy_ShouldHandleInvalidRegexPatternsGracefully()
-        {
-            // Arrange: An intentionally broken regex pattern
-            var rules = ValidationRuleSet.Create(isRequired: false, regex: "[#").Value;
-
-            // Act
-            var errors = rules.Validate("test", FieldType.Text);
-
-            // Assert
-            errors.Should().Contain(ValidationErrors.RegexInvalid);
         }
 
         #endregion

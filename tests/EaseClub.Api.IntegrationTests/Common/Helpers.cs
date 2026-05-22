@@ -1,6 +1,8 @@
-﻿using EaseClub.Domain.ApplicationTemplates;
+using EaseClub.Domain.ApplicationTemplates;
 using EaseClub.Domain.ApplicationTemplates.ValueObjects.ValidationRulesSet;
 using EaseClub.Domain.MembershipTypes;
+using EaseClub.Domain.MembershipApplications.ValueObjects;
+using EaseClub.Domain.MembershipPlans;
 using EaseClub.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -24,83 +26,56 @@ namespace EaseClub.Api.IntegrationTests.Common
         {
             // 1. Create Template
             var template = ApplicationTemplateDefinition.Create(Guid.NewGuid(), clubId, "Full Template").Value;
+
+            // 2. Build steps/sections/fields snapshots
+            var fieldId = Guid.NewGuid();
+            var sectionId = Guid.NewGuid();
+            var stepId = Guid.NewGuid();
+
+            var rules = new ValidationRuleSetSnapshot(
+                isRequired: true,
+                minLength: null,
+                maxLength: null,
+                minValue: null,
+                maxValue: null,
+                minDate: null,
+                maxDate: null
+            );
+
+            var field = new FieldSnapshot(
+                id: fieldId,
+                key: "full_name",
+                label: "Full Name",
+                fieldType: FieldType.Text,
+                validationRules: rules,
+                visibilityCondition: null,
+                allowedValues: null,
+                order: 1,
+                isSystemField: false
+            );
+
+            var section = new SectionSnapshot(
+                id: sectionId,
+                title: "Details",
+                order: 1,
+                repeatRule: null,
+                intent: SectionIntent.General,
+                fields: new List<FieldSnapshot> { field }
+            );
+
+            var step = new StepSnapshot(
+                id: stepId,
+                title: "Step 1",
+                order: 1,
+                sections: new List<SectionSnapshot> { section }
+            );
+
+            template.UpdateSteps(new List<StepSnapshot> { step });
+
             await _context.ApplicationTemplateDefinitions.AddAsync(template);
-
-            // 2. Add Step
-            var step = template.AddNewStep("General", "Step 1", 0).Value;
-            await _context.ApplicationStepDefinitions.AddAsync(step);
-
-            // 3. Add Section
-            var section = step.AddNewSection("Details", 0).Value;
-            await _context.ApplicationSectionDefinitions.AddAsync(section);
-
-            // 4. Add Field
-            var rules = ValidationRuleSet.Create(true).Value;
-            var field = template.AddFieldToSection(Guid.NewGuid(), section.Id, "full_name", "Full Name",
-                FieldType.Text, rules, null, false).Value;
-            await _context.ApplicationFieldDefinitions.AddAsync(field);
-
             await _context.SaveChangesAsync();
 
-            return (template.Id, step.Id, section.Id, field.Id);
-        }
-
-        public async Task<Guid> AddStepAsync(Guid templateId, string title, int order)
-        {
-            var template = await _context.ApplicationTemplateDefinitions
-                .Include(t => t.Steps)
-                .FirstOrDefaultAsync(t => t.Id == templateId);
-
-            if (template == null) throw new Exception("Template not found");
-
-            var step = template.AddNewStep("General", title, order).Value;
-            await _context.ApplicationStepDefinitions.AddAsync(step);
-            await _context.SaveChangesAsync();
-
-            return step.Id;
-        }
-
-        public async Task<Guid> AddSectionAsync(Guid stepId, string title, int order)
-        {
-            var step = await _context.ApplicationStepDefinitions
-                .Include(s => s.Sections)
-                .FirstOrDefaultAsync(s => s.Id == stepId);
-
-            if (step == null) throw new Exception("Step not found");
-
-            var section = step.AddNewSection(title, order).Value;
-            await _context.ApplicationSectionDefinitions.AddAsync(section);
-            await _context.SaveChangesAsync();
-
-            return section.Id;
-        }
-
-        public async Task<Guid> AddFieldAsync(Guid templateId, Guid sectionId, string key, string label)
-        {
-            var template = await _context.ApplicationTemplateDefinitions
-                .Include(t => t.Steps)
-                    .ThenInclude(s => s.Sections)
-                        .ThenInclude(sec => sec.Fields)
-                .FirstOrDefaultAsync(t => t.Id == templateId);
-
-            if (template == null) throw new Exception("Template not found");
-
-            var rules = ValidationRuleSet.Create(false).Value; // Non-required for simple tests
-
-            var field = template.AddFieldToSection(
-                Guid.NewGuid(),
-                sectionId,
-                key,
-                label,
-                FieldType.Text,
-                rules,
-                null,
-                false).Value;
-
-            await _context.ApplicationFieldDefinitions.AddAsync(field);
-            await _context.SaveChangesAsync();
-
-            return field.Id;
+            return (template.Id, stepId, sectionId, fieldId);
         }
 
         public async Task<MembershipType> CreateMembershipTypeAsync(Guid clubId, string name = "Test Membership")
@@ -116,6 +91,30 @@ namespace EaseClub.Api.IntegrationTests.Common
             await _context.SaveChangesAsync();
 
             return membershipType;
+        }
+
+        public async Task<MembershipPlan> CreateMembershipPlanAsync(Guid clubId, Guid membershipTypeId, string name = "Test Plan", EnrollmentMode enrollmentMode = EnrollmentMode.ApplicationForm, Guid? templateId = null)
+        {
+            var membershipPlan = MembershipPlan.Create(
+                Guid.NewGuid(),
+                clubId,
+                membershipTypeId,
+                enrollmentMode,
+                templateId,
+                1, // subscriptionValidityInYears
+                0, // maxFamilyMembers
+                name,
+                100, // totalPrice
+                365, // maxPaymentPeriod
+                80, // renewPrice
+                false, // installmentsAllowedInRenewal
+                PaymentMode.Cash
+            ).Value;
+
+            await _context.MembershipPlans.AddAsync(membershipPlan);
+            await _context.SaveChangesAsync();
+
+            return membershipPlan;
         }
     }
 }

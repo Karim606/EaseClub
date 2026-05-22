@@ -2,22 +2,18 @@ using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Memberships;
-using EaseClub.Domain.Payment;
 using EaseClub.Domain.MembershipPlans;
+using EaseClub.Domain.Payment;
 using EaseClub.Domain.Payment.Enums;
 using EaseClub.Domain.Payment.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.Payment.Commands.IssueInvoice
 {
     public class IssueInvoiceCommandHandler(
         IInvoiceRepository invoiceRepository,
-        IPendingEnrollmentRepository pendingEnrollmentRepository,
+        IEnrollmentRepository enrollmentRepository,
         IMembershipRepository membershipRepository,
         IUnitOfWork unitOfWork,
         ILogger<IssueInvoiceCommandHandler> logger)
@@ -31,20 +27,20 @@ namespace EaseClub.Application.Features.Payment.Commands.IssueInvoice
 
             switch (request.Type)
             {
-                case BillingItemType.PendingEnrollmentFirstInstallment:
-                    var pending = await pendingEnrollmentRepository.GetByIdAsync(request.BillingItemId, ct);
-                    if (pending == null)
+                case BillingItemType.EnrollmentFirstInstallment:
+                    var enrollment = await enrollmentRepository.GetByIdAsync(request.BillingItemId, ct);
+                    if (enrollment == null)
                     {
-                        logger.LogError("Pending enrollment {Id} not found", request.BillingItemId);
-                        return Error.NotFound("Pending enrollment not found");
+                        logger.LogError("Enrollment {Id} not found", request.BillingItemId);
+                        return Error.NotFound("Enrollment not found");
                     }
 
-                    if (pending.FirstInvoiceId.HasValue)
-                        return pending.FirstInvoiceId.Value;
+                    if (enrollment.FirstInvoiceId.HasValue)
+                        return enrollment.FirstInvoiceId.Value;
 
-                    billingItem = pending;
-                    memberId = pending.UserId;
-                    clubId = pending.ClubId;
+                    billingItem = enrollment;
+                    memberId = enrollment.MemberId;
+                    clubId = enrollment.ClubId;
                     break;
 
                 case BillingItemType.MembershipInstallment:
@@ -87,9 +83,9 @@ namespace EaseClub.Application.Features.Payment.Commands.IssueInvoice
             var invoice = invoiceResult.Value;
 
             // Link back to source
-            if (request.Type == BillingItemType.PendingEnrollmentFirstInstallment)
+            if (request.Type == BillingItemType.EnrollmentFirstInstallment)
             {
-                var attachResult = ((PendingEnrollment)billingItem).AttachFirstInvoice(invoice.Id);
+                var attachResult = ((Enrollment)billingItem).AttachFirstInvoice(invoice.Id);
                 if (attachResult.IsError) return attachResult.TopError;
             }
             else if (request.Type == BillingItemType.MembershipInstallment)

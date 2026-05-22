@@ -16,8 +16,8 @@ public class InstallmentTemplateTests
         // Arrange
         var installments = new List<Installment>
         {
-            Installment.Create(40m, 0, 0).Value,
-            Installment.Create(60m, 30, 1).Value
+            Installment.Create(40m, 0, 1).Value,
+            Installment.Create(60m, 30, 2).Value
         };
 
         // Act
@@ -35,8 +35,8 @@ public class InstallmentTemplateTests
         // Arrange
         var installments = new List<Installment>
         {
-            Installment.Create(50m, 0, 0).Value,
-            Installment.Create(40m, 30, 1).Value // Total 90%
+            Installment.Create(50m, 0, 1).Value,
+            Installment.Create(40m, 30, 2).Value // Total 90%
         };
 
         // Act
@@ -78,7 +78,7 @@ public class InstallmentTemplateTests
         int duration = 30;
 
         // Act
-        var result = InstallmentTemplate.Create(_validId, Guid.NewGuid(), "", count, duration, null);
+        var result = InstallmentTemplate.Create(_validId, Guid.NewGuid(), "abc", count, duration, null);
 
         // Assert
         var list = result.Value.Installments;

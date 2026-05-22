@@ -22,6 +22,18 @@ namespace EaseClub.Domain.MembershipPlans
         public Guid MembershipId { get; private set; } 
         public Guid? InstallmentTemplateId { get; private set; }
         public BillingItemType GetBillingType() => BillingItemType.MembershipInstallment;
+
+        public Result<Success> CanBePaid()
+        {
+            if (Status == InstallmentStatus.Paid)
+                return Error.Conflict(description: "Installment already paid.");
+
+            if (Status == InstallmentStatus.Cancelled)
+                return Error.Conflict(description: "Installment has been cancelled.");
+
+            return Result.Success;
+        }
+
         public MembershipCycle MembershipCycle { get; private set; }
         public Club Club { get; private set; }
         public int Order { get; private set; }
@@ -102,19 +114,14 @@ namespace EaseClub.Domain.MembershipPlans
                 return MembershipInstallmentErrors.InstallmentDueDateMustBeInTheFuture;
 
             var membershipInstallment = new MembershipInstallment(membershipCycleId, clubId, membershipTypeId, planId, installmentTemplateId, order, amount, dueDate);
-             membershipInstallment.ReadableId = membershipInstallment.GetReadableInstallmentId();
+             membershipInstallment.ReadableId = BillingITemIdGenerator.Generate(
+                BillingItemType.MembershipInstallment,
+                membershipCycleId,
+                clubId,
+                membershipInstallment.Id,  // installment guid
+                dueDate);
 
             return membershipInstallment;
-        }
-
-        public string GetReadableInstallmentId()
-        {
-            return BillingITemIdGenerator.Generate(
-                BillingItemType.MembershipInstallment,
-                MembershipCycleId,
-                ClubId,
-                Id,  // installment guid
-                DueDate);
-        }
+        } 
     }
 }
