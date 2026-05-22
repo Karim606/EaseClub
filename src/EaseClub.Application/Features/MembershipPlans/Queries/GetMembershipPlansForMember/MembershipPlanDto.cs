@@ -9,7 +9,8 @@ namespace EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPla
 {
     public sealed class MembershipPlanDto
     {
-        public MembershipPlanDto(Guid id,string name,int maxPaymentPeriod,int subscriptionValidity,int maxFamilyMembers,decimal price,EnrollmentMode enrollmentMode,string? description) {
+        public MembershipPlanDto(Guid id,string name,int maxPaymentPeriod,int subscriptionValidity,int maxFamilyMembers,decimal price,EnrollmentMode enrollmentMode,PaymentMode paymentMode,
+            bool installmentsAllowedInRenewal,decimal renewPrice,string? description) {
             Id = id;
             Name = name;
             MaxPaymentPeriodInDays = maxPaymentPeriod;
@@ -18,6 +19,10 @@ namespace EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPla
             SubscriptionValidityInYears = subscriptionValidity;
             MaxFamilyMembers = maxFamilyMembers;
             EnrollmentMode = enrollmentMode;
+            PaymentMode = paymentMode;
+            InstallmentsAllowedInRenewal = installmentsAllowedInRenewal;
+            RenewPrice = renewPrice;
+
         }
         public Guid Id {  get; init; }
         public string Name { get; init; }
@@ -27,6 +32,10 @@ namespace EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPla
         public int MaxFamilyMembers { get; init; }
         public decimal Price { get; init; }
         public EnrollmentMode EnrollmentMode { get; init; }
+        public decimal RenewPrice { get; init; }
+        public bool InstallmentsAllowedInRenewal { get; init; }
+        public PaymentMode PaymentMode { get; init; }
+
 
     }
 }

@@ -54,6 +54,9 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                     p.MaxFamilyMembers,
                     p.TotalPrice,
                     p.EnrollmentMode,
+                    p.PaymentMode,
+                    p.InstallmentsAllowdInRenewal,
+                    p.RenewPrice,
                     p.Description),
                 orderSelector: p => p.Name, // Default sorting by Name
                 cancellationToken: ct
@@ -82,6 +85,10 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                     Price = p.TotalPrice,
                     IsActive = p.IsActive,
                     MembershipTypeName = p.MembershipType.Name,
+                    EnrollmentMode = p.EnrollmentMode,
+                    PaymentMode = p.PaymentMode,
+                    InstallmentsAllowdInRenewal = p.InstallmentsAllowdInRenewal,
+                    RenewPrice = p.RenewPrice
                 } ,
                 orderSelector: p => p.Name, // Default sorting by Name
                 cancellationToken: ct
