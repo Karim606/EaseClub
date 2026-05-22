@@ -11,5 +11,6 @@ namespace EaseClub.Domain.Memberships
         Task<Enrollment?> GetActiveDirectPayAsync(Guid userId, Guid planId, CancellationToken ct = default);
         Task<List<Enrollment>> GetExpiredEnrollmentsAsync(DateTime now, CancellationToken ct = default);
         Task<Enrollment?> GetLatestActiveByUserIdAsync(Guid userId, CancellationToken ct = default);
+        Task<List<Enrollment>> GetActiveByUserIdAsync(Guid userId, CancellationToken ct = default);
     }
 }

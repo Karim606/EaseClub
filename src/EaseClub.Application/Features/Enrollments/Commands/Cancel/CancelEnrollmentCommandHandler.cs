@@ -15,8 +15,6 @@ namespace EaseClub.Application.Features.Enrollments.Commands.Cancel
     {
         public async Task<Result<Success>> Handle(CancelEnrollmentCommand request, CancellationToken ct)
         {
-            var member = await memberUserRepository.GetByIdAsync(request.MemberId, ct);
-            if (member == null) return Error.NotFound(description: "Member not found.");
 
             var enrollment = await enrollmentRepository.GetByIdAsync(request.EnrollmentId, ct);
             if (enrollment == null) return Error.NotFound();

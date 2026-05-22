@@ -2,6 +2,7 @@ using EaseClub.Application.Common;
 using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
 using MediatR;
+using System.Collections.Generic;
 
 namespace EaseClub.Application.Features.Enrollments.Queries.GetActive
 {
@@ -12,9 +13,10 @@ namespace EaseClub.Application.Features.Enrollments.Queries.GetActive
         decimal TotalPrice,
         decimal AmountToPay,
         DateTime ExpiresAt,
-        string Source);
+        string Source,
+        Guid? ExistingMembershipId);
 
-    public record GetActiveEnrollmentQuery(Guid MemberId) : IRequest<Result<ActiveEnrollmentDto?>>, IRequireResourceValidation
+    public record GetActiveEnrollmentQuery(Guid MemberId) : IRequest<Result<List<ActiveEnrollmentDto>>>, IRequireResourceValidation
     {
         public IEnumerable<OwnershipRule> Rules()
         {

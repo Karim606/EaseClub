@@ -6,16 +6,12 @@ using MediatR;
 
 namespace EaseClub.Application.Features.Enrollments.Commands.Cancel
 {
-    public record CancelEnrollmentCommand(Guid EnrollmentId, Guid MemberId) : IRequest<Result<Success>>, IRequireResourceValidation
+    public record CancelEnrollmentCommand(Guid EnrollmentId) : IRequest<Result<Success>>, IRequireResourceValidation
     {
         public IEnumerable<OwnershipRule> Rules()
         {
-            yield return new OwnershipRule(
-                async (auth, _) => await Task.FromResult(auth.IsUserMatch(MemberId)),
-                nameof(MemberId),
-                MemberId);
              yield return new OwnershipRule(
-                async (auth, _) => await auth.DoesResourceBelongToUserAsync<Enrollment>(EnrollmentId, MemberId),
+                async (auth, _) => await auth.DoesResourceBelongToCurrentUserAsync<Enrollment>(EnrollmentId),
                 nameof(Enrollment),
                 EnrollmentId);
         }

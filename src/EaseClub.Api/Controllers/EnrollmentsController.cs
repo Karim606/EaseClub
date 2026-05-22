@@ -38,9 +38,9 @@ namespace EaseClub.Api.Controllers
 
         [Authorize(Roles = "Member")]
         [HttpGet("active/{memberId:guid}")]
-        [ProducesResponseType(typeof(ActiveEnrollmentDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<ActiveEnrollmentDto>), StatusCodes.Status200OK)]
         [EndpointName("GetActiveEnrollment")]
-        [EndpointSummary("Retrieves the user's current active enrollment intent.")]
+        [EndpointSummary("Retrieves the user's current active enrollment intents.")]
         public async Task<IActionResult> GetActiveEnrollment(Guid memberId, CancellationToken ct)
         {
             var result = await sender.Send(new GetActiveEnrollmentQuery(memberId), ct);
@@ -59,12 +59,12 @@ namespace EaseClub.Api.Controllers
         }
 
         [Authorize(Roles = "Member")]
-        [HttpDelete("{id:guid}/{memberId:guid}")]
+        [HttpDelete("{id:guid}")]
         [EndpointName("CancelEnrollment")]
         [EndpointSummary("Cancels an active enrollment intent.")]
-        public async Task<IActionResult> CancelEnrollment(Guid id, Guid memberId, CancellationToken ct)
+        public async Task<IActionResult> CancelEnrollment(Guid id, CancellationToken ct)
         {
-            var result = await sender.Send(new CancelEnrollmentCommand(id, memberId), ct);
+            var result = await sender.Send(new CancelEnrollmentCommand(id), ct);
             return result.Match(_ => NoContent(), Problem);
         }
     }

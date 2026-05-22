@@ -69,5 +69,17 @@ namespace EaseClub.Infrastructure.Data.Repositories
                 .OrderByDescending(x => x.CreatedAt)
                 .FirstOrDefaultAsync(ct);
         }
+
+        public async Task<List<Enrollment>> GetActiveByUserIdAsync(Guid userId, CancellationToken ct = default)
+        {
+            return await _context.Enrollments
+                .Where(x => x.MemberId == userId && 
+                           x.Status == EnrollmentStatus.WaitingForFirstPayment && 
+                           x.ExpiresAt > DateTime.UtcNow)
+                .Include(x => x.MembershipPlan)
+                .Include(x => x.Club)
+                .OrderByDescending(x => x.CreatedAt)
+                .ToListAsync(ct);
+        }
     }
 }
