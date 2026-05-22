@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.ApplicationTemplates.ValueObjects.ValidationRulesSet;
+using EaseClub.Domain.ApplicationTemplates.ValueObjects.ValidationRulesSet;
 using EaseClub.Domain.Common.Results;
 using System;
 using System.Collections.Generic;
@@ -20,10 +20,22 @@ namespace EaseClub.Application.Common.Dtos
     DateTime? MaxDate = null
     )
     {
-        public Result<ValidationRuleSet> ToDomain() => ValidationRuleSet.Create(IsRequired,
-                MinLength,  MaxLength //,Regex
-                                       ,MinValue, MaxValue);
-        public static ValidationRuleSetDto FromDomain(ValidationRuleSet rule) => new(rule.IsRequired,rule.MinLength, rule.MaxLength //,rule.Regex
-                                                                                                                                    ,rule.MinValue, rule.MaxValue);
+        public Result<ValidationRuleSet> ToDomain() => ValidationRuleSet.Create(
+            IsRequired,
+            MinLength,
+            MaxLength,
+            MinValue,
+            MaxValue,
+            MinDate,
+            MaxDate);
+
+        public static ValidationRuleSetDto FromDomain(ValidationRuleSet rule) => new(
+            rule.IsRequired,
+            rule.MinLength,
+            rule.MaxLength,
+            rule.MinValue,
+            rule.MaxValue,
+            rule.MinDate,
+            rule.MaxDate);
     }
 }
