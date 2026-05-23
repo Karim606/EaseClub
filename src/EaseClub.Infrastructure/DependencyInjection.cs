@@ -29,6 +29,8 @@ using EaseClub.Domain.Memberships;
 using EaseClub.Domain.MembershipTypes;
 using EaseClub.Domain.Notifications;
 using EaseClub.Domain.Payment.Repositories;
+using EaseClub.Domain.Events;
+using EaseClub.Infrastructure.Data.Repositories;
 using EaseClub.Domain.PricingPolices;
 using EaseClub.Infrastructure.Auth.Entities;
 using EaseClub.Infrastructure.Auth.interfaces;
@@ -221,6 +223,9 @@ namespace EaseClub.Application
             Services.AddScoped<INotificationRepository, NotificationRepository>();
             Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
             Services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
+            Services.AddScoped<IEventRepository, EventRepository>();
+
+
 
             return Services;
         }
