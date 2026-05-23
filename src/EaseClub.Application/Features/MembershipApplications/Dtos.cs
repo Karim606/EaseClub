@@ -16,6 +16,7 @@ namespace EaseClub.Application.Features.MembershipApplications
     public record AnswerRequestDto(Guid FieldId, string Value, string? InstanceId = null);
     public class MembershipAppDto
     {
+        public Guid Id { get; set; }
         public Guid ClubId { get; set; }
         public Guid UserId { get; set; }
         public string TrackingNumber { get; set; }

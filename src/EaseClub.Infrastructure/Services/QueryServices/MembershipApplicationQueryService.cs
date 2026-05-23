@@ -88,6 +88,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                 parameters,
                 selector: p => new MembershipAppDto()
                 {
+                    Id = p.Id,
                     ClubId = p.ClubId,
                     UserId = p.MemberId,
                     TrackingNumber = p.TrackingNumber,
