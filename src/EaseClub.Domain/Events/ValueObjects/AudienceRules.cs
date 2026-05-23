@@ -19,6 +19,8 @@ public record AccessRules
         return accessType switch
         {
             EventAccessType.MembersOnly => new AccessRules(accessType, true),
+            EventAccessType.MembersAndGuests => new AccessRules(accessType, true),
+            EventAccessType.MembersAndFamily => new AccessRules(accessType, true),
             EventAccessType.Public => new AccessRules(accessType, false),
             _ => throw new ArgumentOutOfRangeException(nameof(accessType), "Invalid access type.")
         };
