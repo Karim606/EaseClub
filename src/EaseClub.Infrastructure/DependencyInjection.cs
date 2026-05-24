@@ -198,6 +198,7 @@ namespace EaseClub.Application
             services.AddScoped<IInvoiceQueryService, InvoiceQueryService>();
             services.AddScoped<IMembershipInstallmentQueryService, MembershipInstallmentsQueryService>();
             services.AddScoped<IMembershipQueryService, MembershipQueryService>();
+            services.AddScoped<IClubAdminDashboardQueryService, ClubAdminDashboardQueryService>();
             return services;
         }
         private static IServiceCollection AddRepositories(this IServiceCollection Services)
