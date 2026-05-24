@@ -1,4 +1,4 @@
-﻿using EaseClub.Api.Common;
+using EaseClub.Api.Common;
 using EaseClub.Api.Common.Filters;
 using EaseClub.Api.Infrastructure;
 using EaseClub.Application.Common.Interfaces;
@@ -93,6 +93,7 @@ namespace EaseClub.Application
                                    .GetRequiredService<IApiVersionDescriptionProvider>();
                 
                 options.OperationFilter<ClientTypeHeaderFilter>();
+                options.CustomSchemaIds(type => type.FullName?.Replace("+", "."));
                 
                 foreach (var description in provider.ApiVersionDescriptions)
                 {
