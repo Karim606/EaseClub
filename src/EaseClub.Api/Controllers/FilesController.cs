@@ -52,7 +52,7 @@ namespace EaseClub.Api.Controllers
 
         [HttpGet("{id:guid}")]
         [MapToApiVersion("1.0")]
-        [ProducesResponseType(typeof(SecureFileResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(FileDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         [EndpointName("GetFileById")]
