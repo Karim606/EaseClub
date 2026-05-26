@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Common.Pagination;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Payment.Enums;
@@ -36,5 +36,6 @@ namespace EaseClub.Application.Features.Payment.Queries.GetInvoicesForClub
         public string? Method { get; set; }
         public string InvoiceReadableId { get; set; } = string.Empty;
         public string ClubName { get; set; } = string.Empty;
+        public string BillingItemReadableId { get; set; } = string.Empty;
     }
 }

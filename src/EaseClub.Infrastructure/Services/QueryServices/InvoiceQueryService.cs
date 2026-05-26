@@ -71,7 +71,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                                 .Where(t => t.Status == PaymentTransactionStatus.Succeeded)
                                 .Select(t => t.Method)
                                 .FirstOrDefault(),
-                    
+                    BillingItemReadableId = i.BillingItemReadableId
                 },
                 orderSelector: i => i.CreatedAt, // default sorting by due date
                 cancellationToken: ct
