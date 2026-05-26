@@ -65,23 +65,38 @@ namespace EaseClub.Application.Features.Clubs.Commands.UpdateClubDetails
                 // Mark the temporary upload as a permanent asset
                 coverImage.MarkAsPermanent();
             }
-            string? logoUrl = null;
-            string? coverImageUrl = null;
+            // 4. Capture current IDs for cleanup
+            var oldLogoId = club.LogoId;
+            var oldCoverId = club.CoverImageId;
 
-            if(logo != null) 
-            logoUrl = fileStorageService.GetFileUrl(logo.FilePath);
-
-            if(coverImage != null)
-                coverImageUrl = fileStorageService.GetFileUrl(coverImage.FilePath);
-            // 4. Execute Domain Logic
+            // 5. Execute Domain Logic
             club.UpdateDetails(
                 request.Data.about,
                 contactInfo,
                 schedules.Select(s => s.Value),
                 amenities,
-                logoUrl,
-                coverImageUrl
+                request.Data.LogoId,
+                request.Data.coverImageId
                 );
+
+            // 6. Cleanup old FileResources from the database
+            if (oldLogoId.HasValue && oldLogoId.Value != request.Data.LogoId)
+            {
+                var oldLogo = await fileRepo.GetByIdAsync(oldLogoId.Value, ct);
+                if (oldLogo != null)
+                {
+                    await fileRepo.DeleteAsync(oldLogo, ct);
+                }
+            }
+
+            if (oldCoverId.HasValue && oldCoverId.Value != request.Data.coverImageId)
+            {
+                var oldCover = await fileRepo.GetByIdAsync(oldCoverId.Value, ct);
+                if (oldCover != null)
+                {
+                    await fileRepo.DeleteAsync(oldCover, ct);
+                }
+            }
 
             // 5. Persist Changes
             await unitOfWork.SaveChangesAsync(ct);
