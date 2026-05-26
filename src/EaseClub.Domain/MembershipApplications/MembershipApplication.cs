@@ -346,7 +346,7 @@ namespace EaseClub.Domain.MembershipApplications
             // 4. Finalize State
             Status = ApplicationStatus.Submitted;
             PricingState = PricingState.Locked;
-
+            SubmittedAt = DateTime.UtcNow;
             return Result.Success;
         }
 
