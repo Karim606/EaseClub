@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,10 +8,10 @@ namespace EaseClub.Domain.Files.Enums
 {
     public enum FilePurpose
     {
-        General,
-        ClubLogo,
-        ClubBanner,
-        UserProfileImage,
-        ApplicationDocument
+        ClubLogo = 1,
+        ClubBanner = 2,
+        UserProfileImage = 3,
+        ApplicationDocument = 4,
+        EventImage = 5
     }
 }
