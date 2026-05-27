@@ -6,6 +6,8 @@ using EaseClub.Domain.MembershipPlans;
 using EaseClub.Domain.Payment;
 using EaseClub.Domain.Payment.Enums;
 using EaseClub.Domain.Payment.Repositories;
+using EaseClub.Domain.Events;
+using EaseClub.Domain.Events.Entities;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -15,6 +17,7 @@ namespace EaseClub.Application.Features.Payment.Commands.IssueInvoice
         IInvoiceRepository invoiceRepository,
         IEnrollmentRepository enrollmentRepository,
         IMembershipRepository membershipRepository,
+        IEventRepository eventRepository,
         IUnitOfWork unitOfWork,
         ILogger<IssueInvoiceCommandHandler> logger)
         : IRequestHandler<IssueInvoiceCommand, Result<Guid>>
@@ -69,6 +72,29 @@ namespace EaseClub.Application.Features.Payment.Commands.IssueInvoice
                     clubId = membership.ClubId;
                     break;
 
+                case BillingItemType.EventRegistration:
+                    var registration = await eventRepository.GetRegistrationByIdAsync(request.BillingItemId, ct);
+                    if (registration == null)
+                    {
+                        logger.LogError("Event Registration {Id} not found", request.BillingItemId);
+                        return Error.NotFound("Event registration not found");
+                    }
+
+                    if (registration.InvoiceId.HasValue)
+                        return registration.InvoiceId.Value;
+
+                    var @event = await eventRepository.GetByIdAsync(registration.EventId, ct);
+                    if (@event == null)
+                    {
+                        logger.LogError("Event {Id} not found for registration {RegId}", registration.EventId, registration.Id);
+                        return Error.NotFound("Event not found");
+                    }
+
+                    billingItem = registration;
+                    memberId = registration.RegistrantId;
+                    clubId = @event.ClubId;
+                    break;
+
                 default:
                     return Error.Validation("Unsupported billing item type");
             }
@@ -91,6 +117,11 @@ namespace EaseClub.Application.Features.Payment.Commands.IssueInvoice
             else if (request.Type == BillingItemType.MembershipInstallment)
             {
                 var attachResult = ((MembershipInstallment)billingItem).AttachInvoice(invoice.Id);
+                if (attachResult.IsError) return attachResult.TopError;
+            }
+            else if (request.Type == BillingItemType.EventRegistration)
+            {
+                var attachResult = ((EventRegistration)billingItem).SetInvoiceId(invoice.Id);
                 if (attachResult.IsError) return attachResult.TopError;
             }
 

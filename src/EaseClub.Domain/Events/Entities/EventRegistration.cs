@@ -4,9 +4,12 @@ using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Events.Enums;
 
+using EaseClub.Domain.Payment;
+using EaseClub.Domain.Payment.Enums;
+
 namespace EaseClub.Domain.Events.Entities;
 
-public class EventRegistration : AuditableEntity
+public class EventRegistration : AuditableEntity, IBillingItem
 {
     public Guid EventId { get; private set; }
     public Guid RegistrantId { get; private set; }
@@ -20,6 +23,28 @@ public class EventRegistration : AuditableEntity
     public decimal DiscountAmount { get; private set; }
     public decimal FinalTotal { get; private set; }
     public string? AppliedPolicies { get; private set; }
+    
+    public string ReadableId { get; private set; } = string.Empty;
+    
+    public decimal Amount => FinalTotal;
+
+    public BillingItemType GetBillingType() => BillingItemType.EventRegistration;
+
+    public Result<Success> CanBePaid()
+    {
+        if (Status == RegistrationStatus.Confirmed)
+            return EventErrors.InvalidStateTransition("Registration is already confirmed and paid.");
+
+        if (Status == RegistrationStatus.Cancelled)
+            return EventErrors.InvalidStateTransition("Registration has been cancelled.");
+
+        return Result.Success;
+    }
+
+    public void SetReadableId(string readableId)
+    {
+        ReadableId = readableId;
+    }
 
     private readonly List<Attendee> _attendees = new();
     public IReadOnlyCollection<Attendee> Attendees => _attendees.AsReadOnly();

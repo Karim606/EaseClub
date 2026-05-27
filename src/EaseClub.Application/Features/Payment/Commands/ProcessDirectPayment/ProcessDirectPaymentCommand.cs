@@ -11,6 +11,8 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using EaseClub.Domain.Memberships;
 using EaseClub.Domain.Payment.Enums;
+using EaseClub.Domain.Events;
+using EaseClub.Domain.Events.Entities;
 
 namespace EaseClub.Application.Features.Payment.Commands.ProcessDirectPayment
 {
@@ -26,6 +28,7 @@ namespace EaseClub.Application.Features.Payment.Commands.ProcessDirectPayment
         private readonly IPaymentGateway _paymentGateway;
         private readonly IEnrollmentRepository _enrollmentRepository;
         private readonly IMembershipRepository _membershipRepository;
+        private readonly IEventRepository _eventRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<ProcessDirectPaymentCommandHandler> _logger;
 
@@ -35,6 +38,7 @@ namespace EaseClub.Application.Features.Payment.Commands.ProcessDirectPayment
             IPaymentGateway paymentGateway,
             IEnrollmentRepository enrollmentRepository,
             IMembershipRepository membershipRepository,
+            IEventRepository eventRepository,
             IUnitOfWork unitOfWork,
             ILogger<ProcessDirectPaymentCommandHandler> logger)
         {
@@ -43,6 +47,7 @@ namespace EaseClub.Application.Features.Payment.Commands.ProcessDirectPayment
             _paymentGateway = paymentGateway;
             _enrollmentRepository = enrollmentRepository;
             _membershipRepository = membershipRepository;
+            _eventRepository = eventRepository;
             _unitOfWork = unitOfWork;
             _logger = logger;
         }
@@ -62,6 +67,10 @@ namespace EaseClub.Application.Features.Payment.Commands.ProcessDirectPayment
             else if (invoice.BillingItemType == BillingItemType.MembershipInstallment)
             {
                 billingItem = await _membershipRepository.GetInstallmentByIdAsync(invoice.BillingItemId, ct);
+            }
+            else if (invoice.BillingItemType == BillingItemType.EventRegistration)
+            {
+                billingItem = await _eventRepository.GetRegistrationByIdAsync(invoice.BillingItemId, ct);
             }
 
             if (billingItem == null)

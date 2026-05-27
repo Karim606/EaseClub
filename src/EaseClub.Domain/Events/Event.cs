@@ -8,6 +8,9 @@ using EaseClub.Domain.Events.DomainEvents;
 using EaseClub.Domain.Events.Entities;
 using EaseClub.Domain.Events.Enums;
 using EaseClub.Domain.Events.ValueObjects;
+using EaseClub.Domain.Payment;
+using EaseClub.Domain.Payment.Enums;
+using EaseClub.Domain.Files;
 
 namespace EaseClub.Domain.Events;
 
@@ -23,7 +26,8 @@ public class Event : AuditableEntity, IHaveClub
     public EventStatus Status { get; private set; }
 
     public string Venue { get; private set; } = string.Empty;
-    public string? ImageUrl { get; private set; }
+    public Guid? ImageId { get; private set; }
+    public FileResource? Image { get; private set; }
     public string? Badge { get; private set; }
 
     private readonly List<TicketType> _ticketTypes = new();
@@ -48,7 +52,7 @@ public class Event : AuditableEntity, IHaveClub
         int capacity, 
         EventAccessType accessType,
         string venue = "",
-        string? imageUrl = null,
+        Guid? imageId = null,
         string? badge = null)
     {
         if (clubId == Guid.Empty)
@@ -74,7 +78,7 @@ public class Event : AuditableEntity, IHaveClub
             AccessType = accessType,
             Status = EventStatus.Draft,
             Venue = venue ?? string.Empty,
-            ImageUrl = imageUrl,
+            ImageId = imageId,
             Badge = badge
         };
 
@@ -88,7 +92,7 @@ public class Event : AuditableEntity, IHaveClub
         DateTime endDate, 
         int capacity,
         string venue = "",
-        string? imageUrl = null,
+        Guid? imageId = null,
         string? badge = null)
     {
         if (Status != EventStatus.Draft)
@@ -114,10 +118,15 @@ public class Event : AuditableEntity, IHaveClub
         EndDate = endDate;
         Capacity = capacity;
         Venue = venue ?? string.Empty;
-        ImageUrl = imageUrl;
+        ImageId = imageId;
         Badge = badge;
 
         return Result.Success;
+    }
+
+    public void UpdateImageId(Guid? imageId)
+    {
+        ImageId = imageId;
     }
 
     public Result<TicketType> AddTicketType(
@@ -441,6 +450,15 @@ public class Event : AuditableEntity, IHaveClub
 
         // ─── CREATE REGISTRATION ────────────────────────────────────
         var newRegistration = new EventRegistration(Id, registrantId, isRegistrantAttending, totalBasePrice);
+        
+        var readableId = BillingITemIdGenerator.Generate(
+            BillingItemType.EventRegistration,
+            registrantId,
+            ClubId,
+            newRegistration.Id,
+            StartDate
+        );
+        newRegistration.SetReadableId(readableId);
 
         // Add registrant as attendee if attending
         if (isRegistrantAttending && registrantTicket != null)
