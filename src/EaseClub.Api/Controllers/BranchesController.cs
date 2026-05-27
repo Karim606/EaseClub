@@ -1,5 +1,4 @@
 using EaseClub.Application.Features.Branches.Commands.CreateBranch;
-using EaseClub.Application.Features.Branches.Commands.DeleteBranch;
 using EaseClub.Application.Features.Branches.Commands.EditBranch;
 using EaseClub.Application.Features.Branches.Commands.ToggleBranchStatus;
 using EaseClub.Application.Features.Branches.Queries.GetBranchById;
@@ -115,21 +114,6 @@ namespace EaseClub.Api.Controllers
             var result = await sender.Send(new ToggleBranchStatusCommand(id));
             return result.Match(
                 _ => NoContent(),
-                Problem);
-        }
-
-        [Authorize(Roles = "ClubAdmin,SuperAdmin")]
-        [HttpDelete("{id}")]
-        [MapToApiVersion("1.0")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [EndpointName("DeleteBranch")]
-        [EndpointSummary("Remove a branch from the club.")]
-        public async Task<IActionResult> Delete(Guid id)
-        {
-            var result = await sender.Send(new DeleteBranchCommand(id));
-
-            return result.Match(
-                (_) => NoContent(),
                 Problem);
         }
     }
