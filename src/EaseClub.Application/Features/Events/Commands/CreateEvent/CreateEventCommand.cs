@@ -15,5 +15,5 @@ public record CreateEventCommand(
     int Capacity,
     EventAccessType AccessType,
     string Venue = "",
-    string? ImageUrl = null,
+    Guid? ImageId = null,
     string? Badge = null) : IRequest<Result<EventActionResponseDto>>;

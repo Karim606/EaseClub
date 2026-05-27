@@ -1,4 +1,5 @@
-﻿using EaseClub.Domain.Common.Results;
+﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Files.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -13,7 +14,6 @@ namespace EaseClub.Application.Features.Files.Commands.UploadClubFile
     public record UploadClubFileCommand(
      IFormFile File,
      Guid ClubId,
-     FilePurpose Purpose,
-     bool IsPrivate = false
-     ) : IRequest<Result<SecureFileResponse>>;
+     FilePurpose Purpose
+     ) : IRequest<Result<SecureFileResponse>>,IRequireClubAdmin;
 }

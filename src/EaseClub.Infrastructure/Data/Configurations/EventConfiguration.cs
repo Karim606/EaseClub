@@ -22,8 +22,12 @@ public class EventConfiguration : IEntityTypeConfiguration<Event>
         builder.Property(e => e.Status).HasConversion<string>().IsRequired();
         
         builder.Property(e => e.Venue).HasMaxLength(500);
-        builder.Property(e => e.ImageUrl).HasMaxLength(1000);
         builder.Property(e => e.Badge).HasMaxLength(100);
+
+        builder.HasOne(e => e.Image)
+            .WithMany()
+            .HasForeignKey(e => e.ImageId)
+            .OnDelete(DeleteBehavior.SetNull);
 
 
         // Foreign Key to Club

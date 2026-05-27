@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.Clubs;
+using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Files.Enums;
@@ -61,6 +61,9 @@ namespace EaseClub.Domain.Files
 
             if (purpose == FilePurpose.ApplicationDocument && ownerType != FileOwnerType.Application)
                 return Error.Validation("Application documents must have Application as owner.");
+
+            if (purpose == FilePurpose.EventImage && ownerType != FileOwnerType.Club)
+                return Error.Validation("Event images must have Club as owner.");
  
             var file = new FileResource(id, fileName, filePath, contentType, size,isPrivate, true, purpose, ownerType, ownerId);
 

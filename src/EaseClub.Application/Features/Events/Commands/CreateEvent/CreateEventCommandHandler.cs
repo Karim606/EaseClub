@@ -8,11 +8,15 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using EaseClub.Application.Features.Events.Dtos;
+using EaseClub.Domain.Files;
+using EaseClub.Domain.Files.Enums;
+using EaseClub.Domain.Common;
 
 namespace EaseClub.Application.Features.Events.Commands.CreateEvent;
 
 public class CreateEventCommandHandler(
     IEventRepository eventRepository,
+    IFileRepository fileRepository,
     IUnitOfWork unitOfWork,
     ILogger<CreateEventCommandHandler> logger)
     : IRequestHandler<CreateEventCommand, Result<EventActionResponseDto>>
@@ -28,7 +32,7 @@ public class CreateEventCommandHandler(
             request.Capacity,
             request.AccessType,
             request.Venue,
-            request.ImageUrl,
+            request.ImageId,
             request.Badge);
 
         if (eventResult.IsError)
@@ -37,10 +41,26 @@ public class CreateEventCommandHandler(
                 string.Join(", ", eventResult.Errors.Select(e => e.Description)));
             return eventResult.Errors.First();
         }
+
+        var @event = eventResult.Value;
+
+        if (request.ImageId.HasValue)
+        {
+            var imageFile = await fileRepository.GetByIdAsync(request.ImageId.Value, cancellationToken);
+            if (imageFile == null)
+            {
+                return Error.NotFound("Image file not found.");
+            }
+            if (imageFile.OwnerType != FileOwnerType.Club || imageFile.OwnerId != request.ClubId)
+            {
+                return Error.Unauthorized("File does not belong to this club");
+            }
+            imageFile.MarkAsPermanent();
+        }
         
-        await eventRepository.AddAsync(eventResult.Value, cancellationToken);
+        await eventRepository.AddAsync(@event, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new EventActionResponseDto(eventResult.Value.Id, eventResult.Value.Name);
+        return new EventActionResponseDto(@event.Id, @event.Name);
     }
 }

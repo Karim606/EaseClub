@@ -13,5 +13,5 @@ public record UpdateEventCommand(
     DateTime EndDate,
     int Capacity,
     string Venue = "",
-    string? ImageUrl = null,
+    Guid? ImageId = null,
     string? Badge = null) : IRequest<Result<EventActionResponseDto>>;
