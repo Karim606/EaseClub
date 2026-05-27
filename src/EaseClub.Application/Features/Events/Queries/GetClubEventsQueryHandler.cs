@@ -1,35 +1,22 @@
 using EaseClub.Application.Features.Events.Dtos;
 using EaseClub.Domain.Common.Results;
-using EaseClub.Domain.Events;
+using EaseClub.Application.Common.Pagination;
 using MediatR;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.Events.Queries;
 
-public class GetClubEventsQueryHandler(IEventRepository eventRepository)
-    : IRequestHandler<GetClubEventsQuery, Result<List<EventSummaryDto>>>
+public class GetClubEventsQueryHandler(IEventQueryService eventQueryService)
+    : IRequestHandler<GetClubEventsQuery, Result<UnifiedPaginatedResponse<EventSummaryDto>>>
 {
-    public async Task<Result<List<EventSummaryDto>>> Handle(GetClubEventsQuery request, CancellationToken cancellationToken)
+    public async Task<Result<UnifiedPaginatedResponse<EventSummaryDto>>> Handle(GetClubEventsQuery request, CancellationToken cancellationToken)
     {
-        var events = await eventRepository.GetByClubIdAsync(request.ClubId, cancellationToken);
-        
-        var dtos = events.Select(e => new EventSummaryDto(
-            e.Id,
-            e.Name,
-            e.StartDate,
-            e.EndDate,
-            e.AccessType,
-            e.Status,
-            e.Venue,
-            e.ImageUrl,
-            e.Badge,
-            e.TicketTypes.Sum(t => t.AvailableQuantity),
-            e.TicketTypes.Sum(t => t.SoldQuantity)
-        )).ToList();
-
-        return dtos;
+        return await eventQueryService.GetClubEventsAsync(
+            request.ClubId, 
+            request.Search, 
+            request.Status, 
+            request.Pagination, 
+            cancellationToken);
     }
 }

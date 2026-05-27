@@ -1,9 +1,12 @@
 using EaseClub.Application.Features.Events.Dtos;
 using EaseClub.Domain.Common.Results;
+using EaseClub.Application.Common.Pagination;
 using MediatR;
 using System;
-using System.Collections.Generic;
 
 namespace EaseClub.Application.Features.Events.Queries.GetEventRegistrations;
 
-public record GetEventRegistrationsQuery(Guid EventId) : IRequest<Result<List<EventRegistrationDto>>>;
+public record GetEventRegistrationsQuery(
+    Guid EventId,
+    PaginationRequest Pagination
+) : IRequest<Result<UnifiedPaginatedResponse<EventRegistrationDto>>>;

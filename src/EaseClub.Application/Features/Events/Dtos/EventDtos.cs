@@ -73,3 +73,15 @@ public record FamilyMemberDto(
     int Age);
 
 public record EventActionResponseDto(Guid Id, string Name, Guid? InvoiceId = null);
+
+public record EventStatsDto(
+    int TotalCapacity,
+    int TotalSold,
+    int TotalAvailable,
+    Dictionary<string, int> Details);
+
+public record ClubEventStatusCountsDto(
+    int Total,
+    int Published,
+    int Draft,
+    int Cancelled);

@@ -14,7 +14,11 @@ using EaseClub.Application.Features.Events.Queries.GetMyRegistrations;
 using EaseClub.Application.Features.Events.Queries.GetRegistrationById;
 using EaseClub.Application.Features.Events.Queries.GetEventRegistrations;
 using EaseClub.Application.Features.Events.Queries.GetFamilyMembersForEvent;
+using EaseClub.Application.Features.Events.Queries.GetEventStats;
+using EaseClub.Application.Features.Events.Queries.GetClubEventStatusCounts;
 using EaseClub.Application.Common.Interfaces; 
+using EaseClub.Application.Common.Pagination;
+using EaseClub.Domain.Events.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -46,26 +50,46 @@ public class EventsController(ISender sender) : ApiController
 
     [HttpGet("club/{clubId:guid}")]
     [MapToApiVersion("1.0")]
-    [ProducesResponseType(typeof(List<EventSummaryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(UnifiedPaginatedResponse<EventSummaryDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     [EndpointName("GetClubEvents")]
-    [EndpointSummary("Get all events for a specific club (all statuses)")]
-    public async Task<IActionResult> GetByClubId(Guid clubId)
+    [EndpointSummary("Get all events for a specific club (all statuses) with pagination, search and status filter")]
+    public async Task<IActionResult> GetByClubId(
+        Guid clubId, 
+        [FromQuery] string? search, 
+        [FromQuery] EventStatus? status, 
+        [FromQuery] PaginationRequest pagination)
     {
-        var result = await sender.Send(new GetClubEventsQuery(clubId));
+        var result = await sender.Send(new GetClubEventsQuery(clubId, search, status, pagination));
         return result.Match(_ => Ok(_), Problem);
     }
 
     [HttpGet("club/{clubId:guid}/upcoming")]
     [MapToApiVersion("1.0")]
-    [ProducesResponseType(typeof(List<EventSummaryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(UnifiedPaginatedResponse<EventSummaryDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     [EndpointName("GetUpcomingEvents")]
-    [EndpointSummary("Get upcoming published events for a club that are still open for registration")]
-    public async Task<IActionResult> GetUpcoming(Guid clubId)
+    [EndpointSummary("Get upcoming published events for a club with pagination and search")]
+    public async Task<IActionResult> GetUpcoming(
+        Guid clubId, 
+        [FromQuery] string? search, 
+        [FromQuery] PaginationRequest pagination)
     {
-        var result = await sender.Send(new GetUpcomingEventsQuery(clubId));
+        var result = await sender.Send(new GetUpcomingEventsQuery(clubId, search, pagination));
         return result.Match(_ => Ok(_), Problem);
+    }
+
+    [HttpGet("club/{clubId:guid}/status-counts")]
+    [Authorize(Roles = "ClubAdmin,SuperAdmin")]
+    [MapToApiVersion("1.0")]
+    [ProducesResponseType(typeof(ClubEventStatusCountsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    [EndpointName("GetClubEventsStatusCounts")]
+    [EndpointSummary("Admin: Get the counts of total, published, draft, and cancelled events for a club")]
+    public async Task<IActionResult> GetStatusCounts(Guid clubId)
+    {
+        var result = await sender.Send(new GetClubEventStatusCountsQuery(clubId));
+        return result.Match(counts => Ok(counts), Problem);
     }
 
     [HttpGet("my-registrations")]
@@ -101,17 +125,30 @@ public class EventsController(ISender sender) : ApiController
     [HttpGet("{id:guid}/registrations")]
     [Authorize(Roles = "ClubAdmin,SuperAdmin")]
     [MapToApiVersion("1.0")]
-    [ProducesResponseType(typeof(List<EventRegistrationDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(UnifiedPaginatedResponse<EventRegistrationDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     [EndpointName("GetEventRegistrations")]
-    [EndpointSummary("Admin: Get all registrations for a specific event")]
-    public async Task<IActionResult> GetEventRegistrations(Guid id)
+    [EndpointSummary("Admin: Get all registrations for a specific event with pagination")]
+    public async Task<IActionResult> GetEventRegistrations(Guid id, [FromQuery] PaginationRequest pagination)
     {
-        var result = await sender.Send(new GetEventRegistrationsQuery(id));
+        var result = await sender.Send(new GetEventRegistrationsQuery(id, pagination));
         return result.Match(_ => Ok(_), Problem);
+    }
+
+    [HttpGet("{id:guid}/stats")]
+    [Authorize(Roles = "ClubAdmin,SuperAdmin")]
+    [MapToApiVersion("1.0")]
+    [ProducesResponseType(typeof(EventStatsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [EndpointName("GetEventStats")]
+    [EndpointSummary("Admin: Retrieve ticket sales and capacity stats for an event")]
+    public async Task<IActionResult> GetStats(Guid id)
+    {
+        var result = await sender.Send(new GetEventStatsQuery(id));
+        return result.Match(stats => Ok(stats), Problem);
     }
 
     [HttpGet("club/{clubId:guid}/family-members")]

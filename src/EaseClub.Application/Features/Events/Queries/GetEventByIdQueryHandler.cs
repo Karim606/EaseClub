@@ -2,6 +2,7 @@ using EaseClub.Application.Features.Events.Dtos;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Events;
+using EaseClub.Application.Common.Interfaces;
 using MediatR;
 using System.Linq;
 using System.Threading;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.Events.Queries;
 
-public class GetEventByIdQueryHandler(IEventRepository eventRepository)
+public class GetEventByIdQueryHandler(IEventRepository eventRepository, IFileStorageService fileStorageService)
     : IRequestHandler<GetEventByIdQuery, Result<EventDto>>
 {
     public async Task<Result<EventDto>> Handle(GetEventByIdQuery request, CancellationToken cancellationToken)
@@ -31,7 +32,7 @@ public class GetEventByIdQueryHandler(IEventRepository eventRepository)
             @event.AccessType,
             @event.Status,
             @event.Venue,
-            @event.ImageUrl,
+            @event.Image != null ? fileStorageService.GetFileUrl(@event.Image.FilePath) : null,
             @event.Badge,
             @event.PricingPolicyIds.ToList(),
             @event.TicketTypes.Select(t => new TicketTypeDto(

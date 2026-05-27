@@ -1,35 +1,21 @@
 using EaseClub.Application.Features.Events.Dtos;
 using EaseClub.Domain.Common.Results;
-using EaseClub.Domain.Events;
+using EaseClub.Application.Common.Pagination;
 using MediatR;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.Events.Queries.GetUpcomingEvents;
 
-public class GetUpcomingEventsQueryHandler(IEventRepository eventRepository)
-    : IRequestHandler<GetUpcomingEventsQuery, Result<List<EventSummaryDto>>>
+public class GetUpcomingEventsQueryHandler(IEventQueryService eventQueryService)
+    : IRequestHandler<GetUpcomingEventsQuery, Result<UnifiedPaginatedResponse<EventSummaryDto>>>
 {
-    public async Task<Result<List<EventSummaryDto>>> Handle(GetUpcomingEventsQuery request, CancellationToken cancellationToken)
+    public async Task<Result<UnifiedPaginatedResponse<EventSummaryDto>>> Handle(GetUpcomingEventsQuery request, CancellationToken cancellationToken)
     {
-        var events = await eventRepository.GetUpcomingEventsAsync(request.ClubId, cancellationToken);
-        
-        var dtos = events.Select(e => new EventSummaryDto(
-            e.Id,
-            e.Name,
-            e.StartDate,
-            e.EndDate,
-            e.AccessType,
-            e.Status,
-            e.Venue,
-            e.ImageUrl,
-            e.Badge,
-            e.TicketTypes.Sum(t => t.AvailableQuantity),
-            e.Registrations.Count
-        )).ToList();
-
-        return dtos;
+        return await eventQueryService.GetUpcomingEventsAsync(
+            request.ClubId, 
+            request.Search, 
+            request.Pagination, 
+            cancellationToken);
     }
 }

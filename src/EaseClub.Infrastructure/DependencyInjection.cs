@@ -30,6 +30,7 @@ using EaseClub.Domain.MembershipTypes;
 using EaseClub.Domain.Notifications;
 using EaseClub.Domain.Payment.Repositories;
 using EaseClub.Domain.Events;
+using EaseClub.Application.Features.Events.Queries;
 using EaseClub.Infrastructure.Data.Repositories;
 using EaseClub.Domain.PricingPolices;
 using EaseClub.Infrastructure.Auth.Entities;
@@ -199,6 +200,7 @@ namespace EaseClub.Application
             services.AddScoped<IMembershipInstallmentQueryService, MembershipInstallmentsQueryService>();
             services.AddScoped<IMembershipQueryService, MembershipQueryService>();
             services.AddScoped<IClubAdminDashboardQueryService, ClubAdminDashboardQueryService>();
+            services.AddScoped<IEventQueryService, EventQueryService>();
             return services;
         }
         private static IServiceCollection AddRepositories(this IServiceCollection Services)
