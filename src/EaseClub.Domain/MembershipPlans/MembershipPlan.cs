@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.Common;
+using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipApplications.ValueObjects;
@@ -200,6 +200,9 @@ namespace EaseClub.Domain.MembershipPlans
             ApplicationTemplateId = templateId;
             return Result.Success;
         }
+
+        public void Activate() => IsActive = true;
+        public void Deactivate() => IsActive = false;
 
         public MembershipPlanSnapshot ToSnapshot() => MembershipPlanSnapshot.FromDomain(this);
     }
