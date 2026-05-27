@@ -27,7 +27,7 @@ namespace EaseClub.Application.Features.Clubs.Queries.GetAdminDashboard
         Guid EventId,
         string EventTitle,
         DateTime StartDate,
-        int RegisteredCount,
+        int SoldTickets,
         int MaxCapacity,
         double FillPercentage
     );
