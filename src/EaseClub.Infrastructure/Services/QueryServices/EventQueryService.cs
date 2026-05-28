@@ -48,6 +48,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                 selector: e => new EventSummaryDto(
                     e.Id,
                     e.Name,
+                    e.Description,
                     e.StartDate,
                     e.EndDate,
                     e.AccessType,
@@ -81,6 +82,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                 selector: e => new EventSummaryDto(
                     e.Id,
                     e.Name,
+                    e.Description,
                     e.StartDate,
                     e.EndDate,
                     e.AccessType,

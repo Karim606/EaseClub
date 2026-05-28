@@ -35,6 +35,7 @@ public record TicketTypeDto(
 public record EventSummaryDto(
     Guid Id,
     string Name,
+    string Description,
     DateTime StartDate,
     DateTime EndDate,
     EventAccessType AccessType,
