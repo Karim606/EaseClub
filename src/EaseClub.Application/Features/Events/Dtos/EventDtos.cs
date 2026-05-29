@@ -44,11 +44,13 @@ public record EventSummaryDto(
     string? ImageUrl,
     string? Badge,
     int RemainingCapacity,
-    int RegistrationsCount);
+    int RegistrationsCount,
+    bool IsUserEligible);
 
 public record EventRegistrationDto(
     Guid Id,
     Guid EventId,
+    Guid ClubId,
     Guid RegistrantId,
     bool IsRegistrantAttending,
     RegistrationStatus Status,

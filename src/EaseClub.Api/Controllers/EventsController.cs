@@ -64,18 +64,58 @@ public class EventsController(ISender sender) : ApiController
         return result.Match(_ => Ok(_), Problem);
     }
 
+    [HttpGet("upcoming")]
+    [MapToApiVersion("1.0")]
+    [ProducesResponseType(typeof(UnifiedPaginatedResponse<EventSummaryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    [EndpointName("GetGlobalUpcomingEvents")]
+    [EndpointSummary("Get all upcoming published events with pagination, search, and optional eligibility filtering")]
+    public async Task<IActionResult> GetGlobalUpcoming(
+        [FromQuery] bool eligibleOnly,
+        [FromQuery] string? search, 
+        [FromQuery] PaginationRequest pagination,
+        [FromServices] ICurrentUserService currentUserService)
+    {
+        Guid? userId = null;
+        if (Guid.TryParse(currentUserService.GetId(), out var parsedId))
+        {
+            userId = parsedId;
+        }
+
+        var result = await sender.Send(new GetUpcomingEventsQuery(
+            ClubId: null,
+            MemberId: userId,
+            EligibleOnly: eligibleOnly,
+            Search: search,
+            Pagination: pagination));
+        return result.Match(_ => Ok(_), Problem);
+    }
+
     [HttpGet("club/{clubId:guid}/upcoming")]
     [MapToApiVersion("1.0")]
     [ProducesResponseType(typeof(UnifiedPaginatedResponse<EventSummaryDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     [EndpointName("GetUpcomingEvents")]
-    [EndpointSummary("Get upcoming published events for a club with pagination and search")]
+    [EndpointSummary("Get upcoming published events for a club with pagination, search, and optional eligibility filtering")]
     public async Task<IActionResult> GetUpcoming(
         Guid clubId, 
+        [FromQuery] bool eligibleOnly,
         [FromQuery] string? search, 
-        [FromQuery] PaginationRequest pagination)
+        [FromQuery] PaginationRequest pagination,
+        [FromServices] ICurrentUserService currentUserService)
     {
-        var result = await sender.Send(new GetUpcomingEventsQuery(clubId, search, pagination));
+        Guid? userId = null;
+        if (Guid.TryParse(currentUserService.GetId(), out var parsedId))
+        {
+            userId = parsedId;
+        }
+
+        var result = await sender.Send(new GetUpcomingEventsQuery(
+            ClubId: clubId, 
+            MemberId: userId,
+            EligibleOnly: eligibleOnly,
+            Search: search, 
+            Pagination: pagination));
         return result.Match(_ => Ok(_), Problem);
     }
 

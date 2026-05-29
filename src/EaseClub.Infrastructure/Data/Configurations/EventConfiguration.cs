@@ -48,7 +48,7 @@ public class EventConfiguration : IEntityTypeConfiguration<Event>
 
         // Registrations - owned collection
         builder.HasMany(e => e.Registrations)
-            .WithOne()
+            .WithOne(r => r.Event)
             .HasForeignKey(r => r.EventId)
             .OnDelete(DeleteBehavior.Cascade);
 

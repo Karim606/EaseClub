@@ -7,11 +7,14 @@ using EaseClub.Domain.Events.Enums;
 using EaseClub.Domain.Payment;
 using EaseClub.Domain.Payment.Enums;
 
+using EaseClub.Domain.Events;
+
 namespace EaseClub.Domain.Events.Entities;
 
 public class EventRegistration : AuditableEntity, IBillingItem
 {
     public Guid EventId { get; private set; }
+    public Event Event { get; private set; } = null!;
     public Guid RegistrantId { get; private set; }
     public RegistrationStatus Status { get; private set; }
     public bool IsRegistrantAttending { get; private set; }

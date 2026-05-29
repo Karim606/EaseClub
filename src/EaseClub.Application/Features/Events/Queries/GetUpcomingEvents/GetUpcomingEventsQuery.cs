@@ -7,7 +7,9 @@ using System;
 namespace EaseClub.Application.Features.Events.Queries.GetUpcomingEvents;
 
 public record GetUpcomingEventsQuery(
-    Guid ClubId,
+    Guid? ClubId,
+    Guid? MemberId,
+    bool EligibleOnly,
     string? Search,
     PaginationRequest Pagination
 ) : IRequest<Result<UnifiedPaginatedResponse<EventSummaryDto>>>;

@@ -14,6 +14,8 @@ public class GetUpcomingEventsQueryHandler(IEventQueryService eventQueryService)
     {
         return await eventQueryService.GetUpcomingEventsAsync(
             request.ClubId, 
+            request.MemberId,
+            request.EligibleOnly,
             request.Search, 
             request.Pagination, 
             cancellationToken);

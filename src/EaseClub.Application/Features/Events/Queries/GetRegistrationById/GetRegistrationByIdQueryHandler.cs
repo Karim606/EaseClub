@@ -20,6 +20,7 @@ public class GetRegistrationByIdQueryHandler(IEventRepository eventRepository)
         var dto = new EventRegistrationDto(
             r.Id,
             r.EventId,
+            r.Event.ClubId,
             r.RegistrantId,
             r.IsRegistrantAttending,
             r.Status,

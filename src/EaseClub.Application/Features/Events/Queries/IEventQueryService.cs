@@ -18,7 +18,9 @@ namespace EaseClub.Application.Features.Events.Queries
             CancellationToken ct);
 
         Task<Result<UnifiedPaginatedResponse<EventSummaryDto>>> GetUpcomingEventsAsync(
-            Guid clubId,
+            Guid? clubId,
+            Guid? memberId,
+            bool eligibleOnly,
             string? search,
             PaginationRequest parameters,
             CancellationToken ct);

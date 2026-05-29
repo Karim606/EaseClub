@@ -19,6 +19,7 @@ public class GetMyRegistrationsQueryHandler(IEventRepository eventRepository)
         var dtos = registrations.Select(r => new EventRegistrationDto(
             r.Id,
             r.EventId,
+            r.Event.ClubId,
             r.RegistrantId,
             r.IsRegistrantAttending,
             r.Status,

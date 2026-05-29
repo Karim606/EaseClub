@@ -6,6 +6,7 @@ using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Events;
 using EaseClub.Domain.Events.Entities;
 using EaseClub.Domain.Events.Enums;
+using EaseClub.Domain.Memberships;
 using EaseClub.Infrastructure.Common.QueryServices;
 using EaseClub.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -57,7 +58,8 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                     e.Image != null ? e.Image.FilePath : null,
                     e.Badge,
                     e.TicketTypes.Sum(t => t.TotalQuantity - t.SoldQuantity), // Remaining Capacity
-                    e.Registrations.Count(r => r.Status != RegistrationStatus.Cancelled) // Registrations Count
+                    e.Registrations.Count(r => r.Status != RegistrationStatus.Cancelled), // Registrations Count
+                    e.AccessType == EventAccessType.Public ? true : false
                 ),
                 orderSelector: e => e.StartDate,
                 cancellationToken: ct
@@ -65,10 +67,31 @@ namespace EaseClub.Infrastructure.Services.QueryServices
         }
 
         public async Task<Result<UnifiedPaginatedResponse<EventSummaryDto>>> GetUpcomingEventsAsync(
-            Guid clubId, string? search, PaginationRequest parameters, CancellationToken ct)
+            Guid? clubId, Guid? memberId, bool eligibleOnly, string? search, PaginationRequest parameters, CancellationToken ct)
         {
+            // Fetch the user's active club memberships first to avoid EF Core referencing DbContext in projection
+            var userClubIds = new List<Guid>();
+            if (memberId.HasValue)
+            {
+                userClubIds = await _context.Memberships
+                    .Where(m => m.MemberId == memberId.Value && m.Status == MembershipStatus.Active)
+                    .Select(m => m.ClubId)
+                    .ToListAsync(ct);
+            }
+
             var query = Query()
-                .Where(e => e.ClubId == clubId && e.Status == EventStatus.Published && e.StartDate > DateTime.UtcNow);
+                .Where(e => e.Status == EventStatus.Published && e.StartDate > DateTime.UtcNow);
+
+            if (clubId.HasValue && clubId.Value != Guid.Empty)
+            {
+                query = query.Where(e => e.ClubId == clubId.Value);
+            }
+
+            if (eligibleOnly && memberId.HasValue)
+            {
+                query = query.Where(e => e.AccessType == EventAccessType.Public 
+                                         || userClubIds.Contains(e.ClubId));
+            }
 
             // Search by Event Name
             if (!string.IsNullOrWhiteSpace(search))
@@ -91,7 +114,8 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                     e.Image != null ? e.Image.FilePath : null,
                     e.Badge,
                     e.TicketTypes.Sum(t => t.TotalQuantity - t.SoldQuantity),
-                    e.Registrations.Count(r => r.Status != RegistrationStatus.Cancelled)
+                    e.Registrations.Count(r => r.Status != RegistrationStatus.Cancelled),
+                    (e.AccessType == EventAccessType.Public || userClubIds.Contains(e.ClubId)) ? true : false
                 ),
                 orderSelector: e => e.StartDate,
                 cancellationToken: ct
@@ -125,6 +149,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                     selector: r => new EventRegistrationDto(
                         r.Id,
                         r.EventId,
+                        r.Event.ClubId,
                         r.RegistrantId,
                         r.IsRegistrantAttending,
                         r.Status,
