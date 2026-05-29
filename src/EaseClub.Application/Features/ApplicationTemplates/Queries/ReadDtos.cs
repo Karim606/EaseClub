@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Dtos;
+using EaseClub.Application.Common.Dtos;
 using EaseClub.Application.Features.ApplicationTemplates.Commands;
 using EaseClub.Domain.ApplicationTemplates;
 using EaseClub.Domain.ApplicationTemplates.SystemSections;
@@ -13,11 +13,15 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.ApplicationTemplates.Queries
 {
-    public record TemplateSummaryDto(Guid Id, string Name,bool IsActive, DateTime CreatedAt, DateTime? LastModified, List<string> ConnectedMembershipPlans);
+    public record TemplateSummaryDto(Guid Id, string Name,bool IsActive, DateTime CreatedAt, DateTime? LastModified, List<string> ConnectedMembershipPlans, bool SupportsFamilyPlans);
 
     public record TemplateTreeQuery(
     Guid Id,
     string Name,
+    bool SupportsFamilyPlans,
+    bool HasConnectedFamilyPlan,
+    string? ConnectedFamilyPlanName,
+    int? MaxFamilyMembersOfConnectedPlan,
     List<StepQuery> Steps
 );
 
