@@ -31,7 +31,7 @@ public class EventConfiguration : IEntityTypeConfiguration<Event>
 
 
         // Foreign Key to Club
-        builder.HasOne<Club>()
+        builder.HasOne(e => e.Club)
             .WithMany()
             .HasForeignKey(e => e.ClubId)
             .OnDelete(DeleteBehavior.Restrict);

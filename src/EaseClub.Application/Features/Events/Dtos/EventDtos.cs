@@ -35,6 +35,7 @@ public record TicketTypeDto(
 
 public record EventSummaryDto(
     Guid Id,
+    Guid ClubId,
     string Name,
     string Description,
     DateTime StartDate,
@@ -45,6 +46,7 @@ public record EventSummaryDto(
     string ClubName,
     string? ImageUrl,
     string? Badge,
+    int Capacity,
     int RemainingCapacity,
     int RegistrationsCount,
     bool IsUserEligible);
@@ -61,6 +63,13 @@ public record EventRegistrationDto(
     decimal DiscountAmount,
     decimal FinalTotal,
     string? AppliedPolicies,
+    string ReadableId,
+    // Event context for client display (avoids extra API calls)
+    string EventName,
+    DateTime EventStartDate,
+    string EventVenue,
+    string? EventImageUrl,
+    string EventClubName,
     List<AttendeeDto> Attendees);
 
 public record AttendeeDto(

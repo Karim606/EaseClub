@@ -1,3 +1,4 @@
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Common.Pagination;
 using EaseClub.Application.Common.Pagination.Results;
 using EaseClub.Application.Features.Events.Dtos;
@@ -20,10 +21,14 @@ namespace EaseClub.Infrastructure.Services.QueryServices
 {
     public class EventQueryService : BaseQueryService<Event>, IEventQueryService
     {
+        private readonly IFileStorageService _fileStorageService;
+
         public EventQueryService(
             AppDbContext context,
-            ILogger<EventQueryService> logger) : base(context, logger)
+            ILogger<EventQueryService> logger,
+            IFileStorageService fileStorageService) : base(context, logger)
         {
+            _fileStorageService = fileStorageService;
         }
 
         public async Task<Result<UnifiedPaginatedResponse<EventSummaryDto>>> GetClubEventsAsync(
@@ -48,6 +53,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                 parameters,
                 selector: e => new EventSummaryDto(
                     e.Id,
+                    e.ClubId,
                     e.Name,
                     e.Description,
                     e.StartDate,
@@ -56,8 +62,9 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                     e.Status,
                     e.Venue,
                     _context.Clubs.Where(c => c.Id == e.ClubId).Select(c => c.Name).FirstOrDefault() ?? string.Empty,
-                    e.Image != null ? e.Image.FilePath : null,
+                    e.Image != null ? _fileStorageService.GetFileUrl(e.Image.FilePath) : null,
                     e.Badge,
+                    e.TicketTypes.Sum(t => t.TotalQuantity), // Capacity
                     e.TicketTypes.Sum(t => t.TotalQuantity - t.SoldQuantity), // Remaining Capacity
                     e.Registrations.Count(r => r.Status != RegistrationStatus.Cancelled), // Registrations Count
                     e.AccessType == EventAccessType.Public ? true : false
@@ -105,6 +112,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                 parameters,
                 selector: e => new EventSummaryDto(
                     e.Id,
+                    e.ClubId,
                     e.Name,
                     e.Description,
                     e.StartDate,
@@ -113,9 +121,10 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                     e.Status,
                     e.Venue,
                     _context.Clubs.Where(c => c.Id == e.ClubId).Select(c => c.Name).FirstOrDefault() ?? string.Empty,
-                    e.Image != null ? e.Image.FilePath : null,
+                    e.Image != null ? _fileStorageService.GetFileUrl(e.Image.FilePath) : null,
                     e.Badge,
-                    e.TicketTypes.Sum(t => t.TotalQuantity - t.SoldQuantity),
+                    e.TicketTypes.Sum(t => t.TotalQuantity), // Capacity
+                    e.TicketTypes.Sum(t => t.TotalQuantity - t.SoldQuantity), // Remaining Capacity
                     e.Registrations.Count(r => r.Status != RegistrationStatus.Cancelled),
                     (e.AccessType == EventAccessType.Public || userClubIds.Contains(e.ClubId)) ? true : false
                 ),
@@ -131,15 +140,18 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                 .Where(r => r.EventId == eventId)
                 .Include(r => r.Attendees);
 
-            var helper = new RegistrationQueryHelper(_context, _logger);
+            var helper = new RegistrationQueryHelper(_context, _logger, _fileStorageService);
             return await helper.GetRegistrationsAsync(query, parameters, ct);
         }
 
         // Nested helper class to paginated query EventRegistration (since EventQueryService inherits BaseQueryService<Event>)
         private class RegistrationQueryHelper : BaseQueryService<EventRegistration>
         {
-            public RegistrationQueryHelper(AppDbContext context, ILogger logger) : base(context, logger)
+            private readonly IFileStorageService _fileStorageService;
+
+            public RegistrationQueryHelper(AppDbContext context, ILogger logger, IFileStorageService fileStorageService) : base(context, logger)
             {
+                _fileStorageService = fileStorageService;
             }
 
             public async Task<Result<UnifiedPaginatedResponse<EventRegistrationDto>>> GetRegistrationsAsync(
@@ -160,6 +172,12 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                         r.DiscountAmount,
                         r.FinalTotal,
                         r.AppliedPolicies,
+                        r.ReadableId,
+                        r.Event.Name,
+                        r.Event.StartDate,
+                        r.Event.Venue,
+                        r.Event.Image != null ? _fileStorageService.GetFileUrl(r.Event.Image.FilePath) : null,
+                        _context.Clubs.Where(c => c.Id == r.Event.ClubId).Select(c => c.Name).FirstOrDefault() ?? string.Empty,
                         r.Attendees.Select(a => new AttendeeDto(
                             a.Id,
                             a.TicketTypeId,

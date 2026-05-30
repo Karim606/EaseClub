@@ -11,6 +11,7 @@ using EaseClub.Domain.Events.ValueObjects;
 using EaseClub.Domain.Payment;
 using EaseClub.Domain.Payment.Enums;
 using EaseClub.Domain.Files;
+using EaseClub.Domain.Clubs;
 
 namespace EaseClub.Domain.Events;
 
@@ -38,6 +39,7 @@ public class Event : AuditableEntity, IHaveClub
 
     private readonly List<Guid> _pricingPolicyIds = new();
     public IReadOnlyCollection<Guid> PricingPolicyIds => _pricingPolicyIds.AsReadOnly();
+    public Club Club { get; private set; }
 
     private Event() { }
 
