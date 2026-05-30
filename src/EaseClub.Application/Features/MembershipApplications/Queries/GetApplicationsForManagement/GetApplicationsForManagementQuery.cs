@@ -21,7 +21,7 @@ namespace EaseClub.Application.Features.MembershipApplications.Queries.GetApplic
     }
 
     public class GetApplicationsQueryFilters {
-        public AppStatus? Status { get; set; }
+        public ApplicationStatus? Status { get; set; }
         public DateOnly? SubmittedFrom { get; set; }
         public DateOnly? SubmittedTo { get; set; }
         public string? TrackingNumber { get; set; }

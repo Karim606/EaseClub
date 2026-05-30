@@ -22,17 +22,16 @@ namespace EaseClub.Infrastructure.Services.QueryServices
 
         public async Task<Result<OffsetPaginatedResult<MembershipAppAdminDto>>> GetMembershipApplicationsForManagementAsync(Guid clubId, GetApplicationsQueryFilters filters, OffsetPaginationParameters parameters, CancellationToken ct = default)
         {
-            var query = Query().Where(p => p.ClubId == clubId);
+            var query = Query().Where(p => p.ClubId == clubId&&p.Status != ApplicationStatus.Draft);
 
             if (filters != null)
             {
                 if (!string.IsNullOrWhiteSpace(filters.TrackingNumber))
                     query = query.Where(p => p.TrackingNumber.ToLower() == filters.TrackingNumber.ToLower());
 
-                if (filters.Status.HasValue)
+                if (filters.Status.HasValue&&filters.Status.Value != ApplicationStatus.Draft)
                 {
-                    var status = (ApplicationStatus)filters.Status.Value;
-                    query = query.Where(p => p.Status == status);
+                    query = query.Where(p => p.Status == filters.Status.Value);
                 }
 
                 var from = filters.SubmittedFrom?.ToDateTime(TimeOnly.MinValue);
