@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipPlans;
 using FluentAssertions;
 using Xunit;
@@ -133,7 +133,8 @@ public class MembershipInstallmentTests
     private Result<MembershipInstallment> CreateValidInstallment(decimal validAmount=100,DateTime? customDate = null)
     {
         return MembershipInstallment.Create(
-            _validMembershipId,
+            Guid.NewGuid(), // membershipId
+            _validMembershipId, // membershipCycleId
             _validClubId,  // clubId
             Guid.NewGuid(), // membershipTypeId
             Guid.NewGuid(), // planId

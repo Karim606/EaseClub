@@ -44,9 +44,10 @@ namespace EaseClub.Domain.MembershipPlans
         public string ReadableId { get; private set; }
         private MembershipInstallment() { }
 
-        public MembershipInstallment(Guid membershipCycleId,Guid clubId,Guid membershipTypeId,Guid planId,Guid? installmentTemplateId,
+        public MembershipInstallment(Guid membershipId, Guid membershipCycleId,Guid clubId,Guid membershipTypeId,Guid planId,Guid? installmentTemplateId,
             int order, decimal amount, DateTime dueDate):base(Guid.NewGuid())
         {
+            MembershipId = membershipId;
             MembershipCycleId = membershipCycleId;
             ClubId = clubId;
             Order = order;
@@ -90,9 +91,11 @@ namespace EaseClub.Domain.MembershipPlans
 
         }
 
-        public static Result<MembershipInstallment> Create(Guid membershipCycleId,Guid clubId,Guid membershipTypeId,
+        public static Result<MembershipInstallment> Create(Guid membershipId, Guid membershipCycleId,Guid clubId,Guid membershipTypeId,
            Guid planId,Guid? installmentTemplateId, int order, decimal amount, DateTime dueDate)
         {
+            if (membershipId == Guid.Empty)
+                return Error.Validation(description: "MembershipIdMustBeProvided");
             if (membershipCycleId == Guid.Empty)
                return MembershipInstallmentErrors.MembershipCycleIdMustBeProvided;
             if (clubId == Guid.Empty)
@@ -109,11 +112,11 @@ namespace EaseClub.Domain.MembershipPlans
             
             if (amount <= 0)
                 return  MembershipInstallmentErrors.InstallmentAmountMustBeGreaterThanZero;
-           
+            
             if (dueDate < DateTime.UtcNow.Date)
                 return MembershipInstallmentErrors.InstallmentDueDateMustBeInTheFuture;
 
-            var membershipInstallment = new MembershipInstallment(membershipCycleId, clubId, membershipTypeId, planId, installmentTemplateId, order, amount, dueDate);
+            var membershipInstallment = new MembershipInstallment(membershipId, membershipCycleId, clubId, membershipTypeId, planId, installmentTemplateId, order, amount, dueDate);
              membershipInstallment.ReadableId = BillingITemIdGenerator.Generate(
                 BillingItemType.MembershipInstallment,
                 membershipCycleId,
