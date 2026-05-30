@@ -72,14 +72,22 @@ namespace EaseClub.Application.Features.Payment.EventHandlers
 
             // 1. Mark Enrollment as Completed
             var completeResult = enrollment.MarkCompleted();
-            if (completeResult.IsError) return;
+            if (completeResult.IsError)
+            {
+                _logger.LogError("Failed to mark new enrollment {EnrollmentId} as completed: {Error}", enrollment.Id, completeResult.TopError.Description);
+                return;
+            }
 
             // 2. Prevent Double Creation
             MembershipApplication? app = null;
             if (enrollment.MembershipApplicationId.HasValue)
             {
                 var existing = await _membershipRepository.GetByApplicationIdAsync(enrollment.MembershipApplicationId.Value, ct);
-                if (existing != null) return;
+                if (existing != null)
+                {
+                    _logger.LogWarning("Membership already exists for application {ApplicationId}, skipping creation.", enrollment.MembershipApplicationId.Value);
+                    return;
+                }
 
                 app = await _applicationRepository.GetByIdAsync(enrollment.MembershipApplicationId.Value, ct);
             }
@@ -90,11 +98,19 @@ namespace EaseClub.Application.Features.Payment.EventHandlers
 
             // Fetch Plan for Capacity
             var plan = await _planRepository.GetByIdAsync(enrollment.MembershipPlanId, ct);
-            if (plan == null) return;
+            if (plan == null)
+            {
+                _logger.LogError("Membership plan {PlanId} not found for enrollment {EnrollmentId}", enrollment.MembershipPlanId, enrollment.Id);
+                return;
+            }
 
             // Pass the application (if any) to map family members
             var membershipResult = Membership.CreateFromEnrollment(enrollment, membershipNumber, plan.MaxFamilyMembers, app);
-            if (membershipResult.IsError) return;
+            if (membershipResult.IsError)
+            {
+                _logger.LogError("Failed to create membership from enrollment {EnrollmentId}: {Error}", enrollment.Id, membershipResult.TopError.Description);
+                return;
+            }
 
             var membership = membershipResult.Value;
 
