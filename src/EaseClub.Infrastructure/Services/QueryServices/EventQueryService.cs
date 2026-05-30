@@ -55,6 +55,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                     e.AccessType,
                     e.Status,
                     e.Venue,
+                    _context.Clubs.Where(c => c.Id == e.ClubId).Select(c => c.Name).FirstOrDefault() ?? string.Empty,
                     e.Image != null ? e.Image.FilePath : null,
                     e.Badge,
                     e.TicketTypes.Sum(t => t.TotalQuantity - t.SoldQuantity), // Remaining Capacity
@@ -111,6 +112,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                     e.AccessType,
                     e.Status,
                     e.Venue,
+                    _context.Clubs.Where(c => c.Id == e.ClubId).Select(c => c.Name).FirstOrDefault() ?? string.Empty,
                     e.Image != null ? e.Image.FilePath : null,
                     e.Badge,
                     e.TicketTypes.Sum(t => t.TotalQuantity - t.SoldQuantity),

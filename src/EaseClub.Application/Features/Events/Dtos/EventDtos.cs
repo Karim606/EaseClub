@@ -7,6 +7,7 @@ namespace EaseClub.Application.Features.Events.Dtos;
 public record EventDto(
     Guid Id,
     Guid ClubId,
+    string ClubName,
     string Name,
     string Description,
     DateTime StartDate,
@@ -41,6 +42,7 @@ public record EventSummaryDto(
     EventAccessType AccessType,
     EventStatus Status,
     string Venue,
+    string ClubName,
     string? ImageUrl,
     string? Badge,
     int RemainingCapacity,

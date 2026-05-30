@@ -2,6 +2,7 @@ using EaseClub.Application.Features.Events.Dtos;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Events;
+using EaseClub.Domain.Clubs;
 using EaseClub.Application.Common.Interfaces;
 using MediatR;
 using System.Linq;
@@ -10,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Application.Features.Events.Queries;
 
-public class GetEventByIdQueryHandler(IEventRepository eventRepository, IFileStorageService fileStorageService)
+public class GetEventByIdQueryHandler(IEventRepository eventRepository, IClubRepository clubRepository, IFileStorageService fileStorageService)
     : IRequestHandler<GetEventByIdQuery, Result<EventDto>>
 {
     public async Task<Result<EventDto>> Handle(GetEventByIdQuery request, CancellationToken cancellationToken)
@@ -21,9 +22,13 @@ public class GetEventByIdQueryHandler(IEventRepository eventRepository, IFileSto
             return Error.NotFound("Event.NotFound", "Event not found.");
         }
 
+        var club = await clubRepository.GetByIdAsync(@event.ClubId, cancellationToken);
+        var clubName = club?.Name ?? "Unknown Club";
+
         var dto = new EventDto(
             @event.Id,
             @event.ClubId,
+            clubName,
             @event.Name,
             @event.Description,
             @event.StartDate,
