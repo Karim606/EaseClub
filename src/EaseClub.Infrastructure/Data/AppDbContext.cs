@@ -84,8 +84,15 @@ namespace EaseClub.Infrastructure.Data
             return await base.SaveChangesAsync();
         }
 
+        private static int _inMemorySequence = 1000;
+
         public async Task<int> GetNextMembershipSequenceAsync()
         {
+            if (!Database.IsSqlServer())
+            {
+                return System.Threading.Interlocked.Increment(ref _inMemorySequence);
+            }
+
             var connection = Database.GetDbConnection();
             await using var command = connection.CreateCommand();
             command.CommandText = "SELECT NEXT VALUE FOR MembershipSequence";

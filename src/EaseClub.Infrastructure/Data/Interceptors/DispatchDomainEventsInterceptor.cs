@@ -31,7 +31,7 @@ namespace EaseClub.Infrastructure.Data.Interceptors
         private async Task DispatchDomainEvents(DbContext context)
         {
             var entities = context.ChangeTracker
-                .Entries<AuditableEntity>()
+                .Entries<Entity>()
                 .Where(e => e.Entity.DomainEvents.Any())
                 .Select(e => e.Entity);
 
