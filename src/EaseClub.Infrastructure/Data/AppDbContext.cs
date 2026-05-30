@@ -86,11 +86,28 @@ namespace EaseClub.Infrastructure.Data
 
         public async Task<int> GetNextMembershipSequenceAsync()
         {
-            var value = await Database
-            .SqlQuery<int>($"SELECT NEXT VALUE FOR MembershipSequence")
-            .SingleAsync();
-
-            return value;
+            var connection = Database.GetDbConnection();
+            await using var command = connection.CreateCommand();
+            command.CommandText = "SELECT NEXT VALUE FOR MembershipSequence";
+            
+            bool opened = false;
+            if (connection.State != System.Data.ConnectionState.Open)
+            {
+                await connection.OpenAsync();
+                opened = true;
+            }
+            try
+            {
+                var result = await command.ExecuteScalarAsync();
+                return Convert.ToInt32(result);
+            }
+            finally
+            {
+                if (opened)
+                {
+                    await connection.CloseAsync();
+                }
+            }
         }
 
         public DbSet<AuthUser> AuthUsers => Users;
