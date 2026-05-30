@@ -67,11 +67,18 @@ namespace EaseClub.Application.Features.MembershipApplications.EventHandlers
             }
 
             // 4. Notify the user that they can now pay
+            var metadata = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                enrollmentId = result.Value.EnrollmentId,
+                invoiceId = result.Value.InvoiceId
+            });
+
             var notification = Notification.ForUser(
                 app.MemberId,
                 "Application Approved",
-                $"Your application for {plan.Name} has been approved. You can now proceed to payment.",
-                NotificationType.MembershipApplicationApproved);
+                $"Your application for {plan.Name} has been approved. Please pay the first installment to activate your membership within 48 hours, before enrollment expiration.",
+                NotificationType.MembershipApplicationApproved,
+                metadata);
 
             await DispatchNotification(notification, ct);
             

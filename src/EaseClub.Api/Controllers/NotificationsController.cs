@@ -1,7 +1,8 @@
-﻿using EaseClub.Application.Features.Notifications.Commands.MarkAllNotificationsAsRead;
+using EaseClub.Application.Features.Notifications.Commands.MarkAllNotificationsAsRead;
 using EaseClub.Application.Features.Notifications.Commands.MarkNotificationAsRead;
 using EaseClub.Application.Features.Notifications.Commands.RegisterDevice;
 using EaseClub.Application.Features.Notifications.Queries.GetNotifications;
+using EaseClub.Application.Features.Notifications.Queries.GetUnreadNotificationsCount;
 using EaseClub.Domain.Common.Results;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -28,6 +29,24 @@ namespace EaseClub.Api.Controllers
             var result = await sender.Send(query,ct);
             return result.Match(
                 notifications => Ok(notifications),
+                Problem);
+        }
+
+        [HttpGet("unread-count")]
+        [MapToApiVersion("1.0")]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+        [EndpointName("GetUnreadNotificationsCount")]
+        [EndpointSummary("Gets the count of unread notifications for a user or club.")]
+        [EndpointDescription("Returns the total count of unread notifications for the specified user or club.")]
+        public async Task<IActionResult> GetUnreadCount([FromQuery] GetUnreadNotificationsCountQuery query, CancellationToken ct)
+        {
+            var result = await sender.Send(query, ct);
+            return result.Match(
+                count => Ok(new { UnreadCount = count }),
                 Problem);
         }
 

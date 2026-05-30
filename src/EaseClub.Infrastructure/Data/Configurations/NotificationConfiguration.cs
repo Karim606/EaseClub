@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.Notifications;
+using EaseClub.Domain.Notifications;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
@@ -31,6 +31,9 @@ namespace EaseClub.Infrastructure.Data.Configurations
 
             builder.Property(n => n.CreatedAt)
                 .IsRequired();
+
+            builder.Property(n => n.MetadataJson)
+                .IsRequired(false);
 
             builder.Property(n => n.UserId)
                 .IsRequired(false);

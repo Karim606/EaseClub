@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.Common;
+using EaseClub.Domain.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,9 +21,11 @@ namespace EaseClub.Domain.Notifications
 
         public bool IsRead { get; private set; }  
 
+        public string? MetadataJson { get; private set; }
+
         private Notification() { }
 
-        public static Notification ForUser(Guid userId, string title, string message, NotificationType type)
+        public static Notification ForUser(Guid userId, string title, string message, NotificationType type, string? metadataJson = null)
         {
             return new Notification
             {
@@ -31,6 +33,7 @@ namespace EaseClub.Domain.Notifications
                 Title = title,
                 Message = message,
                 Type = type,
+                MetadataJson = metadataJson,
                 CreatedAt = DateTime.UtcNow,
                 IsRead = false
             };
