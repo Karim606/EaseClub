@@ -388,6 +388,7 @@ public class Event : AuditableEntity, IHaveClub
                 }
 
                 // 2. Age restriction check
+                if (ticketType.MinAge.HasValue && (!req.Age.HasValue || req.Age < ticketType.MinAge.Value))
                     return EventErrors.AgeRestriction(ticketType.Category.ToString(), ticketType.MinAge.Value, ticketType.MaxAge ?? 99);
                 if (ticketType.MaxAge.HasValue && (!req.Age.HasValue || req.Age > ticketType.MaxAge.Value))
                     return EventErrors.AgeRestriction(ticketType.Category.ToString(), ticketType.MinAge ?? 0, ticketType.MaxAge.Value);
@@ -501,8 +502,11 @@ public class Event : AuditableEntity, IHaveClub
         var ticketCounts = registration.Attendees.GroupBy(a => a.TicketTypeId).ToDictionary(g => g.Key, g => g.Count());
         foreach (var tc in ticketCounts)
         {
-            var ticketType = _ticketTypes.First(t => t.Id == tc.Key);
-            ticketType.ReleaseSeats(tc.Value);
+            var ticketType = _ticketTypes.FirstOrDefault(t => t.Id == tc.Key);
+            if (ticketType != null)
+            {
+                ticketType.ReleaseSeats(tc.Value);
+            }
         }
 
         RaiseDomainEvent(new EventRegistrationCancelled(registration.Id, Id));

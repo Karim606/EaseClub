@@ -33,7 +33,7 @@ public class EventPublishedEventHandler : DomainEventHandler<EventPublished, Eve
             return;
         }
 
-        var notification = Notification.ForUser(
+        var notification = Notification.ForClub(
             @event.ClubId,
             "Event Published",
             $"Event '{@event.Name}' has been published successfully.",
