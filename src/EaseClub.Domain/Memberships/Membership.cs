@@ -34,6 +34,7 @@ namespace EaseClub.Domain.Memberships
             ClubId = clubId;
             MembershipTypeId = membershipTypeId;
             MembershipPlanId = membershipPlanId;
+            MembershipNumber = membershipNumber;
             Status = MembershipStatus.Active;
             ExtraDataJson = extraDataJson;
         }
