@@ -12,7 +12,6 @@ public record AddTicketTypeCommand(
     decimal BasePrice,
     int TotalQuantity,
     int? MaxPerMember = null,
-    bool RequiresMembership = false,
     int? MinAge = null,
     int? MaxAge = null,
     string? GenderRestriction = null) : IRequest<Result<EventActionResponseDto>>;

@@ -30,7 +30,6 @@ public class UpdateTicketTypeCommandHandler(
             request.BasePrice,
             request.TotalQuantity,
             request.MaxPerMember,
-            request.RequiresMembership,
             request.MinAge,
             request.MaxAge,
             request.GenderRestriction);

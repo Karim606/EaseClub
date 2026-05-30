@@ -27,7 +27,6 @@ public class TicketType : Entity
         decimal basePrice, 
         int totalQuantity, 
         int? maxPerMember = null,
-        bool requiresMembership = false,
         int? minAge = null,
         int? maxAge = null,
         string? genderRestriction = null) : base(Guid.NewGuid())
@@ -38,7 +37,7 @@ public class TicketType : Entity
         TotalQuantity = totalQuantity;
         SoldQuantity = 0;
         MaxPerMember = maxPerMember;
-        RequiresMembership = requiresMembership;
+        RequiresMembership = category == AttendeeCategory.Member || category == AttendeeCategory.FamilyMember;
         MinAge = minAge;
         MaxAge = maxAge;
         GenderRestriction = genderRestriction;
@@ -50,7 +49,6 @@ public class TicketType : Entity
         decimal basePrice, 
         int totalQuantity, 
         int? maxPerMember,
-        bool requiresMembership,
         int? minAge,
         int? maxAge,
         string? genderRestriction)
@@ -61,16 +59,10 @@ public class TicketType : Entity
         if (totalQuantity < SoldQuantity)
             return EventErrors.InvalidTicketQuantity;
 
-        if (requiresMembership && (Category == AttendeeCategory.Public || Category == AttendeeCategory.Guest))
-            return EventErrors.PublicTicketCannotRequireMembership;
-        
-        if (!requiresMembership && (Category == AttendeeCategory.Member || Category == AttendeeCategory.FamilyMember))
-            return EventErrors.MemberTicketMustRequireMembership;
-
         BasePrice = basePrice;
         TotalQuantity = totalQuantity;
         MaxPerMember = maxPerMember;
-        RequiresMembership = requiresMembership;
+        RequiresMembership = Category == AttendeeCategory.Member || Category == AttendeeCategory.FamilyMember;
         MinAge = minAge;
         MaxAge = maxAge;
         GenderRestriction = genderRestriction;

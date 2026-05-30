@@ -117,14 +117,13 @@ public class RegisterForEventCommandHandler(
             }
         }
 
-        // 5. Invoice Generation (Placeholder Guid for now as per MVP plan)
-        var invoiceId = Guid.NewGuid();
-        registration.SetInvoiceId(invoiceId);
-
-        // 6. Persistence
+        // 5. Persistence
+        // NOTE: Invoice is NOT created here. The mobile client calls IssueInvoice(registrationId)
+        // which creates the real Invoice entity and links it back. This keeps registration
+        // and billing concerns separated.
         await eventRepository.UpdateAsync(@event, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new EventActionResponseDto(registration.Id, @event.Name, invoiceId);
+        return new EventActionResponseDto(registration.Id, @event.Name);
     }
 }

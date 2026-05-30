@@ -134,7 +134,6 @@ public class Event : AuditableEntity, IHaveClub
         decimal basePrice, 
         int totalQuantity, 
         int? maxPerMember = null,
-        bool requiresMembership = false,
         int? minAge = null,
         int? maxAge = null,
         string? genderRestriction = null)
@@ -149,13 +148,6 @@ public class Event : AuditableEntity, IHaveClub
         if (basePrice < 0)
             return EventErrors.InvalidTicketPrice;
 
-        // Consistency check: Category vs RequiresMembership
-        if (requiresMembership && (category == AttendeeCategory.Public || category == AttendeeCategory.Guest))
-            return EventErrors.PublicTicketCannotRequireMembership;
-        
-        if (!requiresMembership && (category == AttendeeCategory.Member || category == AttendeeCategory.FamilyMember))
-            return EventErrors.MemberTicketMustRequireMembership;
-            
         if (totalQuantity <= 0)
             return EventErrors.InvalidTicketQuantity;
             
@@ -172,7 +164,6 @@ public class Event : AuditableEntity, IHaveClub
             basePrice, 
             totalQuantity, 
             maxPerMember,
-            requiresMembership,
             minAge,
             maxAge,
             genderRestriction);
@@ -199,7 +190,6 @@ public class Event : AuditableEntity, IHaveClub
         decimal basePrice, 
         int totalQuantity, 
         int? maxPerMember = null,
-        bool requiresMembership = false,
         int? minAge = null,
         int? maxAge = null,
         string? genderRestriction = null)
@@ -228,7 +218,6 @@ public class Event : AuditableEntity, IHaveClub
             basePrice, 
             totalQuantity, 
             maxPerMember,
-            requiresMembership,
             minAge,
             maxAge,
             genderRestriction);
