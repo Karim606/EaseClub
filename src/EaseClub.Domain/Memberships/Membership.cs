@@ -140,7 +140,15 @@ namespace EaseClub.Domain.Memberships
                 var relationshipStr = group.FirstOrDefault(a => a.FieldKey == FamilyMemberField.Relationship)?.Value;
                 var dobStr = group.FirstOrDefault(a => a.FieldKey == FamilyMemberField.DateOfBirth)?.Value;
 
-                var dob  = DateOnly.TryParse(dobStr, out var parsedDob) ? parsedDob : default;
+                var dob = DateOnly.MinValue;
+                if (DateOnly.TryParse(dobStr, out var parsedDob))
+                {
+                    dob = parsedDob;
+                }
+                else if (DateTime.TryParse(dobStr, out var parsedDateTime))
+                {
+                    dob = DateOnly.FromDateTime(parsedDateTime);
+                }
                 var rel  = Enum.TryParse<FamilyRelationship>(relationshipStr, true, out var parsedRel) ? parsedRel : default;
 
                 var member = FamilyMember.Create(membership.Id,fullName, rel, dob);
