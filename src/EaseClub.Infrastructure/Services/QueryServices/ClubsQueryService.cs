@@ -33,7 +33,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
             var result = await GetPaginatedAsync<ClubsDto, string, CursorPaginatedResult<ClubsDto>>(
                 query,
                 parameters,
-                selector: c => new ClubsDto(c.Id, c.Name, c.Logo != null ? c.Logo.FilePath : null),
+                selector: c => new ClubsDto(c.Id, c.Name, c.Logo != null ? c.Logo.FilePath : null, c.CoverImage != null ? c.CoverImage.FilePath : null),
                 orderSelector: c => c.Name,
                 ct);
 
@@ -44,6 +44,10 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                     if (!string.IsNullOrEmpty(item.LogoUrl))
                     {
                         item.LogoUrl = _fileStorageService.GetFileUrl(item.LogoUrl);
+                    }
+                    if (!string.IsNullOrEmpty(item.CoverImageUrl))
+                    {
+                        item.CoverImageUrl = _fileStorageService.GetFileUrl(item.CoverImageUrl);
                     }
                 }
             }

@@ -15,6 +15,7 @@ namespace EaseClub.Application.Features.Clubs.Queries.GetClubById
         public string About { get; init; } = string.Empty;
         public string LogoUrl { get; init; } = string.Empty;
         public string CoverImageUrl { get; init; } = string.Empty;
+        public string ImageUrl => CoverImageUrl;
         public Guid? LogoId { get; init; }
         public Guid? CoverImageId { get; init; }
         public List<Amenity>Amenities { get; init; } = new List<Amenity>();
