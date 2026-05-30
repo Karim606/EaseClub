@@ -42,7 +42,7 @@ namespace EaseClub.Application.Features.MembershipApplications.EventHandlers
             }
 
             // 2. Get the plan to ensure it exists
-            var plan = await _planRepository.GetByIdAsync(app.MembershipPlanId, ct);
+            var plan = await _planRepository.GetPlanWithDetailsAsync(app.MembershipPlanId, ct);
             if (plan == null)
             {
                 _logger.LogError("Plan {PlanId} not found for approved application {AppId}", app.MembershipPlanId, app.Id);

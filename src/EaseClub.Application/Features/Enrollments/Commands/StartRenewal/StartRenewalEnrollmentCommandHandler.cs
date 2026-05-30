@@ -24,7 +24,7 @@ namespace EaseClub.Application.Features.Enrollments.Commands.StartRenewal
             var membership = await membershipRepository.GetByIdAsync(request.MembershipId, ct);
             if (membership == null) return Error.NotFound(description: "Membership not found.");
 
-            var plan = await planRepository.GetByIdAsync(membership.MembershipPlanId, ct);
+            var plan = await planRepository.GetPlanWithDetailsAsync(membership.MembershipPlanId, ct);
             if (plan == null) return Error.NotFound(description: "Plan not found.");
 
             InstallmentTemplate? template = null;
