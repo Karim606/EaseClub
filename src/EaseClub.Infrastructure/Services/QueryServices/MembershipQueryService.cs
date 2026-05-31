@@ -46,35 +46,35 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                     m.Member.LastName.ToLower().Contains(normalized) ||
                     m.MembershipNumber.ToLower().Contains(normalized));
             }
+            var now = DateTime.UtcNow;
 
             var pagedResult = await GetUnifiedPaginatedAsync(
                 query,
                 paginationRequest,
-                selector: m => m,
-                orderSelector: m => m.CreatedAt,
-                cancellationToken);
-
-            if (pagedResult.IsError) return pagedResult.TopError;
-
-         var final=pagedResult.Value.Items.Select(m => new MembershipsAdminDto(
+                selector: m => new MembershipsAdminDto(
                     m.Id,
                     m.Member.FirstName + " " + m.Member.LastName,
                     m.MembershipNumber,
                     m.MembershipType.Name,
                     m.MembershipPlan.Name,
                     m.MembershipPlan.MaxFamilyMembers > 0,
-                    m.GetCurrentCycle(), 
+
+                     m.MembershipCycles
+                    .Where(c => c.Period.StartDate <= now && c.Period.EndDate >= now)
+                    .OrderBy(c => c.Period.StartDate)
+                    .FirstOrDefault()
+                    ?? 
+                    m.MembershipCycles
+                    .Where(c => c.Period.StartDate > now)
+                    .OrderBy(c => c.Period.StartDate)
+                    .FirstOrDefault(), 
+
                     m.CreatedAt,
                     m.Status
-                   )).ToList();
-
-            return new UnifiedPaginatedResponse<MembershipsAdminDto>(
-                final,
-                pagedResult.Value.HasMore,
-                pagedResult.Value.Page,
-                pagedResult.Value.TotalCount,
-                pagedResult.Value.NextCursor
-            );
+                   ),
+                orderSelector: m => m.CreatedAt,
+                cancellationToken);
+            return pagedResult;
         }
     }
 }
