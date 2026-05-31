@@ -3,6 +3,7 @@ using EaseClub.Application.Features.Events.Commands.CancelEvent;
 using EaseClub.Application.Features.Events.Commands.CancelRegistration;
 using EaseClub.Application.Features.Events.Commands.CreateEvent;
 using EaseClub.Application.Features.Events.Commands.PublishEvent;
+using EaseClub.Application.Features.Events.Commands.PreviewEventRegistration;
 using EaseClub.Application.Features.Events.Commands.RegisterForEvent;
 using EaseClub.Application.Features.Events.Commands.RemoveTicketType;
 using EaseClub.Application.Features.Events.Commands.UpdateEvent;
@@ -346,6 +347,26 @@ public class EventsController(ISender sender) : ApiController
     {
         if (id != command.EventId) return BadRequest("ID mismatch.");
         // Override RegistrantId from the authenticated token — never trust the request body for identity.
+        var registrantId = Guid.Parse(currentUserService.GetId() ?? Guid.Empty.ToString());
+        var secureCommand = command with { RegistrantId = registrantId };
+        var result = await sender.Send(secureCommand);
+        return result.Match(response => Ok(response), Problem);
+    }
+
+    [HttpPost("{id:guid}/registration-preview")]
+    [Authorize]
+    [MapToApiVersion("1.0")]
+    [ProducesResponseType(typeof(EventRegistrationPreviewDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    [EndpointName("PreviewEventRegistration")]
+    [EndpointSummary("Preview event registration attendees, ticket prices, applied policies, and final total")]
+    public async Task<IActionResult> PreviewRegistration(Guid id, PreviewEventRegistrationCommand command, [FromServices] ICurrentUserService currentUserService)
+    {
+        if (id != command.EventId) return BadRequest("ID mismatch.");
         var registrantId = Guid.Parse(currentUserService.GetId() ?? Guid.Empty.ToString());
         var secureCommand = command with { RegistrantId = registrantId };
         var result = await sender.Send(secureCommand);

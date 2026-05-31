@@ -90,6 +90,25 @@ public record FamilyMemberDto(
 
 public record EventActionResponseDto(Guid Id, string Name, Guid? InvoiceId = null);
 
+public record EventRegistrationPreviewDto(
+    Guid EventId,
+    decimal TotalBasePrice,
+    decimal DiscountAmount,
+    decimal FinalTotal,
+    List<AppliedPolicyPreviewDto> AppliedPolicies,
+    List<TicketBreakdownDto> TicketBreakdown);
+
+public record AppliedPolicyPreviewDto(
+    string Name,
+    decimal Adjustment);
+
+public record TicketBreakdownDto(
+    Guid TicketTypeId,
+    AttendeeCategory TicketCategory,
+    int Quantity,
+    decimal UnitPrice,
+    decimal TotalPrice);
+
 public record EventStatsDto(
     int TotalCapacity,
     int TotalSold,

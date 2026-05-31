@@ -10,9 +10,6 @@ public static class EventFieldKeys
     /// <summary>Ticket category: Member | FamilyMember | Public | Guest</summary>
     public const string AttendeeCategory = "attendeeCategory";
 
-    /// <summary>Whether the ticket requires active membership (true/false)</summary>
-    public const string RequiresMembership = "requiresMembership";
-
     /// <summary>The base price of the selected ticket type (decimal string)</summary>
     public const string TicketBasePrice = "ticketBasePrice";
 
@@ -25,14 +22,25 @@ public static class EventFieldKeys
     /// <summary>Total number of attendees in this registration (integer string)</summary>
     public const string AttendeeCount = "attendeeCount";
 
+    /// <summary>Number of attendees with category Guest</summary>
+    public const string GuestCount = "guestCount";
+
+    /// <summary>Number of attendees with category FamilyMember</summary>
+    public const string FamilyMemberCount = "familyMemberCount";
+
+    /// <summary>Whether the registrant holds an active membership at this club (true/false)</summary>
+    public const string IsMember = "isMember";
+
     /// <summary>All supported field keys — passed to PricingPolicyAssignment.Create() for validation.</summary>
     public static readonly HashSet<string> All = new(StringComparer.OrdinalIgnoreCase)
     {
         AttendeeCategory,
-        RequiresMembership,
         TicketBasePrice,
         AttendeeAge,
         AttendeeGender,
         AttendeeCount,
+        GuestCount,
+        FamilyMemberCount,
+        IsMember,
     };
 }
