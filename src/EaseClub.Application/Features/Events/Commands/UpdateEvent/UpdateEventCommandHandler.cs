@@ -47,6 +47,14 @@ public class UpdateEventCommandHandler(
             return result.Errors.First();
         }
 
+        var changeAccessTypeResult = @event.ChangeAccessType(request.AccessType);
+        if (changeAccessTypeResult.IsError)
+        {
+            logger.LogWarning("Failed to change access type for event {EventId}: {Errors}", 
+                request.Id, string.Join(", ", changeAccessTypeResult.Errors.Select(e => e.Description)));
+            return changeAccessTypeResult.Errors.First();
+        }
+
         if (request.ImageId.HasValue)
         {
             var imageFile = await fileRepository.GetByIdAsync(request.ImageId.Value, cancellationToken);
