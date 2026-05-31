@@ -124,7 +124,7 @@ namespace EaseClub.Application.Features.Payment.EventHandlers
                 enrollment.MemberId,
                 "Membership Activated",
                 "Your membership is now active after successful payment of the first installment.",
-                NotificationType.MembershipApplicationApproved);
+                NotificationType.MembershipActivated);
 
             await DispatchNotification(notification, ct);
             await _unitOfWork.SaveChangesAsync(ct);
