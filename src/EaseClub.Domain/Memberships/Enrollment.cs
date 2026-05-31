@@ -191,7 +191,7 @@ namespace EaseClub.Domain.Memberships
                 membership.Id,
                 EnrollmentSource.Renewal,
                 plan.SubscriptionValidityInYears,
-                plan.TotalPrice);
+                plan.RenewPrice);
 
             return Create(req);
         }

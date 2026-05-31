@@ -76,6 +76,7 @@ public record EventRegistrationDto(
 public record AttendeeDto(
     Guid Id,
     Guid TicketTypeId,
+    AttendeeCategory TicketCategory,
     Guid? AttendeeId,
     string AttendeeName,
     int? Age,

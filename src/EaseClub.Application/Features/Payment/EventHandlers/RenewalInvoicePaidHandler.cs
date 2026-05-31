@@ -104,7 +104,7 @@ namespace EaseClub.Application.Features.Payment.EventHandlers
                 enrollment.MemberId,
                 "Membership Renewed",
                 "Your membership has been successfully renewed.",
-                NotificationType.MembershipApplicationApproved);
+                NotificationType.MembershipRenewed);
 
             await DispatchNotification(notification, ct);
             await _unitOfWork.SaveChangesAsync(ct);

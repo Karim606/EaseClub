@@ -40,6 +40,7 @@ public class EventRepository : EfRepository<Event>, IEventRepository
     public async Task<EventRegistration?> GetRegistrationByIdAsync(Guid registrationId, CancellationToken cancellationToken = default)
     {
         var @event = await _context.Events
+            .Include(e => e.TicketTypes)
             .Include(e => e.Registrations)
                 .ThenInclude(r => r.Attendees)
             .FirstOrDefaultAsync(e => e.Registrations.Any(r => r.Id == registrationId), cancellationToken);
@@ -50,6 +51,7 @@ public class EventRepository : EfRepository<Event>, IEventRepository
     public async Task<List<EventRegistration>> GetRegistrationsByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var events = await _context.Events
+            .Include(e => e.TicketTypes)
             .Include(e => e.Registrations)
                 .ThenInclude(r => r.Attendees)
             .Where(e => e.Registrations.Any(r => r.RegistrantId == userId))
@@ -61,6 +63,7 @@ public class EventRepository : EfRepository<Event>, IEventRepository
     public async Task<List<EventRegistration>> GetRegistrationsByEventIdAsync(Guid eventId, CancellationToken cancellationToken = default)
     {
         var @event = await _context.Events
+            .Include(e => e.TicketTypes)
             .Include(e => e.Registrations)
                 .ThenInclude(r => r.Attendees)
             .FirstOrDefaultAsync(e => e.Id == eventId, cancellationToken);

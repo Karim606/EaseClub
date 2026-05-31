@@ -181,6 +181,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                         r.Attendees.Select(a => new AttendeeDto(
                             a.Id,
                             a.TicketTypeId,
+                            r.Event.TicketTypes.First(t => t.Id == a.TicketTypeId).Category,
                             a.AttendeeId,
                             a.AttendeeName,
                             a.Age,
