@@ -37,6 +37,9 @@ namespace EaseClub.Domain.ApplicationTemplates
         public bool IsActive { get; private set; } = true;
         public bool SupportsFamilyPlans { get; private set; } = false;
 
+        public void Activate() => IsActive = true;
+        public void Deactivate() => IsActive = false;
+
         //private readonly List<ApplicationFieldDefinition> _Fields = new();
         //public  IReadOnlyList<ApplicationFieldDefinition> Fields => _Fields.AsReadOnly();
 
