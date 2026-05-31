@@ -1,4 +1,5 @@
 using FluentValidation;
+using EaseClub.Domain.Events.Enums;
 
 namespace EaseClub.Application.Features.Events.Commands.UpdateTicketType;
 
@@ -11,6 +12,9 @@ public class UpdateTicketTypeCommandValidator : AbstractValidator<UpdateTicketTy
 
         RuleFor(x => x.TicketTypeId)
             .NotEmpty().WithMessage("Ticket Type ID is required.");
+
+        RuleFor(x => x.Category)
+            .IsInEnum().WithMessage("Invalid attendee category.");
 
         RuleFor(x => x.BasePrice)
             .GreaterThanOrEqualTo(0).WithMessage("Ticket price cannot be negative.");

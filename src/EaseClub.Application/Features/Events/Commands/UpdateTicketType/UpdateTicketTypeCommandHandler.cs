@@ -27,6 +27,7 @@ public class UpdateTicketTypeCommandHandler(
 
         var result = @event.UpdateTicketType(
             request.TicketTypeId,
+            request.Category,
             request.BasePrice,
             request.TotalQuantity,
             request.MaxPerMember,

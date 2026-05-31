@@ -189,6 +189,7 @@ public class Event : AuditableEntity, IHaveClub
 
     public Result<Success> UpdateTicketType(
         Guid ticketTypeId, 
+        AttendeeCategory category,
         decimal basePrice, 
         int totalQuantity, 
         int? maxPerMember = null,
@@ -203,6 +204,9 @@ public class Event : AuditableEntity, IHaveClub
         if (ticket is null)
             return EventErrors.TicketNotFound;
  
+        if (ticket.Category != category && _ticketTypes.Any(t => t.Id != ticketTypeId && t.Category == category))
+            return EventErrors.DuplicateTicketCategory(category.ToString());
+
         if (basePrice < 0)
             return EventErrors.InvalidTicketPrice;
             
@@ -217,6 +221,7 @@ public class Event : AuditableEntity, IHaveClub
             return EventErrors.CapacityExceeded;
  
         var result = ticket.UpdateDetails(
+            category,
             basePrice, 
             totalQuantity, 
             maxPerMember,

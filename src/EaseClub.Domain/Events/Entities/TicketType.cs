@@ -46,6 +46,7 @@ public class TicketType : Entity
     private TicketType() { }
 
     internal Result<Success> UpdateDetails(
+        AttendeeCategory category,
         decimal basePrice, 
         int totalQuantity, 
         int? maxPerMember,
@@ -59,10 +60,11 @@ public class TicketType : Entity
         if (totalQuantity < SoldQuantity)
             return EventErrors.InvalidTicketQuantity;
 
+        Category = category;
         BasePrice = basePrice;
         TotalQuantity = totalQuantity;
         MaxPerMember = maxPerMember;
-        RequiresMembership = Category == AttendeeCategory.Member || Category == AttendeeCategory.FamilyMember;
+        RequiresMembership = category == AttendeeCategory.Member || category == AttendeeCategory.FamilyMember;
         MinAge = minAge;
         MaxAge = maxAge;
         GenderRestriction = genderRestriction;
