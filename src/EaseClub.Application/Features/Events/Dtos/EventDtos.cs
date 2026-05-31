@@ -13,6 +13,7 @@ public record EventDto(
     DateTime StartDate,
     DateTime EndDate,
     int Capacity,
+    int RemainingCapacity,
     EventAccessType AccessType,
     EventStatus Status,
     string Venue,

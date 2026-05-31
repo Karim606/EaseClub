@@ -59,7 +59,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                         e.Id,
                         e.Name,
                         e.StartDate,
-                        e.Capacity,
+                        Capacity = e.TicketTypes.Any() ? e.TicketTypes.Sum(t => t.TotalQuantity) : e.Capacity,
                         // Sum sold quantity from all ticket types
                         SoldTicketsCount = e.TicketTypes.Sum(t => t.SoldQuantity)
                     })

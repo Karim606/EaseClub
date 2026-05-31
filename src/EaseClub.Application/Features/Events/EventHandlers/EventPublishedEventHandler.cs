@@ -33,13 +33,13 @@ public class EventPublishedEventHandler : DomainEventHandler<EventPublished, Eve
             return;
         }
 
-        var notification = Notification.ForClub(
-            @event.ClubId,
-            "Event Published",
-            $"Event '{@event.Name}' has been published successfully.",
-            NotificationType.General);
+        //var notification = Notification.ForClub(
+        //    @event.ClubId,
+        //    "Event Published",
+        //    $"Event '{@event.Name}' has been published successfully.",
+        //    NotificationType.General);
 
-        await DispatchNotification(notification,ct);
+        //await DispatchNotification(notification,ct);
 
         _logger.LogInformation("Event '{@event.Name}' (Id: {@event.Id}) has been published successfully.", @event.Name, @event.Id);
     }

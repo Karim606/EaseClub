@@ -17,18 +17,18 @@ public class GetFamilyMembersForEventQueryHandler(IMembershipRepository membersh
     public async Task<Result<List<FamilyMemberDto>>> Handle(GetFamilyMembersForEventQuery request, CancellationToken cancellationToken)
     {
         var memberships = await membershipRepository.GetByMemberIdAsync(request.UserId,null,cancellationToken);
-        var membership = memberships.FirstOrDefault(m => m.ClubId == request.ClubId);
+        var membershipsInClub = memberships.Where(m => m.ClubId == request.ClubId);
 
-        if (membership == null)
-            return Error.NotFound("Membership.NotFound", "Membership not found in this club.");
 
-        var dtos = membership.FamilyMembers.Select(fm => new FamilyMemberDto(
+        List<FamilyMemberDto> dtos = new List<FamilyMemberDto>();
+        foreach (var fm in membershipsInClub){
+            dtos.AddRange(fm.FamilyMembers.Select(fm => new FamilyMemberDto(
             fm.Id,
             fm.FullName,
             fm.Relationship,
             fm.GetAge(DateOnly.FromDateTime(DateTime.UtcNow))
-        )).ToList();
-
+            )).ToList());
+        }
         return dtos;
     }
 }

@@ -117,6 +117,18 @@ public class RegisterForEventCommandHandler(
             }
         }
 
+        // Auto-confirm if registration is free (FinalTotal == 0)
+        if (registration.FinalTotal == 0)
+        {
+            var confirmResult = @event.ConfirmRegistration(registration.Id);
+            if (confirmResult.IsError)
+            {
+                logger.LogError("Failed to auto-confirm free registration {Id}: {Error}", registration.Id, confirmResult.TopError.Description);
+                return confirmResult.TopError;
+            }
+            logger.LogInformation("Auto-confirmed free registration {RegistrationId} for event {EventId}", registration.Id, @event.Id);
+        }
+
         // 5. Persistence
         // NOTE: Invoice is NOT created here. The mobile client calls IssueInvoice(registrationId)
         // which creates the real Invoice entity and links it back. This keeps registration
