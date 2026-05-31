@@ -460,6 +460,10 @@ namespace EaseClub.Domain.Memberships
             return (GetCurrentCycle()?.Period.EndDate - DateTime.UtcNow)?.Days ?? 0;
         }
 
+        public DateTime FarestEndDate => _MembershipCycles.Any()
+            ? _MembershipCycles.Max(c => c.Period.EndDate)
+            : (GetCurrentCycle()?.Period.EndDate ?? CreatedAt);
+
         #endregion
     }
 }

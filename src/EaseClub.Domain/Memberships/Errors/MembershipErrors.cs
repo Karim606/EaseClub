@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.Common;
+using EaseClub.Domain.Common;
 
 namespace EaseClub.Domain.Memberships.Errors
 {
@@ -79,5 +79,9 @@ namespace EaseClub.Domain.Memberships.Errors
         public static Error CannotPeriodOfCurrentCycleNotEnded => Error.Conflict(
             code: "Membership.PeriodOfCurrentCycle.NotEnded",
             description: "Cannot expire a membership its current cycle  has not yet ended.");
+
+        public static Error RenewalNotAllowedEarly => Error.Validation(
+            code: "Membership.Renewal.Early",
+            description: "Renewal not allowed. You can only renew your membership when it has 15 days or less remaining.");
     }
 }

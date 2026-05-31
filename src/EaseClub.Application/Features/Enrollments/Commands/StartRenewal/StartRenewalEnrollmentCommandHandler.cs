@@ -21,7 +21,7 @@ namespace EaseClub.Application.Features.Enrollments.Commands.StartRenewal
     {
         public async Task<Result<EnrollmentPaymentResponse>> Handle(StartRenewalEnrollmentCommand request, CancellationToken ct)
         {
-            var membership = await membershipRepository.GetByIdAsync(request.MembershipId, ct);
+            var membership = await membershipRepository.GetByIdWithDetailsAsync(request.MembershipId, ct);
             if (membership == null) return Error.NotFound(description: "Membership not found.");
 
             var plan = await planRepository.GetPlanWithDetailsAsync(membership.MembershipPlanId, ct);

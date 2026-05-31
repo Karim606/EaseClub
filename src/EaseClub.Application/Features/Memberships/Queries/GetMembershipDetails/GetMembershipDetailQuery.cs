@@ -36,7 +36,8 @@ namespace EaseClub.Application.Features.Memberships.Queries.GetMembershipDetails
             DateTime CreatedAt,
             MembershipPeriod CurrentPeriod,
             MembershipStatus Status,
-            List<FamilyMemberDto> FamilyMembers
+            List<FamilyMemberDto> FamilyMembers,
+            DateTime FarestEndDate
         );
 
     public record FamilyMemberDto(
