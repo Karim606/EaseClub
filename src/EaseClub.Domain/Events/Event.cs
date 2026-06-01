@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using EaseClub.Domain.Events.ValueObjects;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
@@ -143,6 +144,11 @@ public class Event : AuditableEntity, IHaveClub
         if (Status != EventStatus.Draft)
             return EventErrors.NotDraft("add tickets to");
 
+        // Validate category is compatible with event access type
+        var rules = AccessRules.For(AccessType);
+        if (!rules.IsCategoryAllowed(category))
+            return EventErrors.InvalidTicketCategory(category.ToString(), AccessType.ToString());
+
         if (_ticketTypes.Any(t => t.Category == category))
             return EventErrors.DuplicateTicketCategory(category.ToString());
  
@@ -203,6 +209,11 @@ public class Event : AuditableEntity, IHaveClub
         var ticket = _ticketTypes.FirstOrDefault(t => t.Id == ticketTypeId);
         if (ticket is null)
             return EventErrors.TicketNotFound;
+
+        // Validate category is compatible with event access type
+        var rules = AccessRules.For(AccessType);
+        if (!rules.IsCategoryAllowed(category))
+            return EventErrors.InvalidTicketCategory(category.ToString(), AccessType.ToString());
  
         if (ticket.Category != category && _ticketTypes.Any(t => t.Id != ticketTypeId && t.Category == category))
             return EventErrors.DuplicateTicketCategory(category.ToString());
@@ -239,6 +250,14 @@ public class Event : AuditableEntity, IHaveClub
     {
         if (Status != EventStatus.Draft)
             return EventErrors.NotDraft("change access type for");
+
+        // Check if existing ticket types are compatible with the new access type
+        var newRules = AccessRules.For(newAccessType);
+        foreach (var ticket in _ticketTypes)
+        {
+            if (!newRules.IsCategoryAllowed(ticket.Category))
+                return EventErrors.IncompatibleAudience(newAccessType.ToString(), ticket.Category.ToString(), ticket.Category.ToString());
+        }
 
         AccessType = newAccessType;
         return Result.Success;
