@@ -27,8 +27,5 @@ public class CreateEventCommandValidator : AbstractValidator<CreateEventCommand>
 
         RuleFor(x => x.Capacity)
             .GreaterThan(0).WithMessage("Capacity must be greater than zero.");
-
-        RuleFor(x => x.AccessType)
-            .IsInEnum().WithMessage("Invalid access type.");
     }
 }

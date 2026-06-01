@@ -30,7 +30,6 @@ public class CreateEventCommandHandler(
             request.StartDate,
             request.EndDate,
             request.Capacity,
-            request.AccessType,
             request.Venue,
             request.ImageId,
             request.Badge);

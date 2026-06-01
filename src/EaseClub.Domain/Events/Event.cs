@@ -53,7 +53,6 @@ public class Event : AuditableEntity, IHaveClub
         DateTime startDate, 
         DateTime endDate, 
         int capacity, 
-        EventAccessType accessType,
         string venue = "",
         Guid? imageId = null,
         string? badge = null)
@@ -78,7 +77,7 @@ public class Event : AuditableEntity, IHaveClub
             StartDate = startDate,
             EndDate = endDate,
             Capacity = capacity,
-            AccessType = accessType,
+            AccessType = EventAccessType.MembersOnly,
             Status = EventStatus.Draft,
             Venue = venue ?? string.Empty,
             ImageId = imageId,
@@ -144,6 +143,11 @@ public class Event : AuditableEntity, IHaveClub
         if (Status != EventStatus.Draft)
             return EventErrors.NotDraft("add tickets to");
 
+        if (category == AttendeeCategory.Public)
+        {
+            AccessType = EventAccessType.Public;
+        }
+
         // Validate category is compatible with event access type
         var rules = AccessRules.For(AccessType);
         if (!rules.IsCategoryAllowed(category))
@@ -190,6 +194,12 @@ public class Event : AuditableEntity, IHaveClub
             return EventErrors.TicketNotFound;
 
         _ticketTypes.Remove(ticket);
+
+        if (!_ticketTypes.Any(t => t.Category == AttendeeCategory.Public))
+        {
+            AccessType = EventAccessType.MembersOnly;
+        }
+
         return Result.Success;
     }
 
@@ -209,6 +219,11 @@ public class Event : AuditableEntity, IHaveClub
         var ticket = _ticketTypes.FirstOrDefault(t => t.Id == ticketTypeId);
         if (ticket is null)
             return EventErrors.TicketNotFound;
+
+        if (category == AttendeeCategory.Public)
+        {
+            AccessType = EventAccessType.Public;
+        }
 
         // Validate category is compatible with event access type
         var rules = AccessRules.For(AccessType);
@@ -243,25 +258,15 @@ public class Event : AuditableEntity, IHaveClub
         if (result.IsError)
             return result.TopError;
 
-        return Result.Success;
-    }
-
-    public Result<Success> ChangeAccessType(EventAccessType newAccessType)
-    {
-        if (Status != EventStatus.Draft)
-            return EventErrors.NotDraft("change access type for");
-
-        // Check if existing ticket types are compatible with the new access type
-        var newRules = AccessRules.For(newAccessType);
-        foreach (var ticket in _ticketTypes)
+        if (!_ticketTypes.Any(t => t.Category == AttendeeCategory.Public))
         {
-            if (!newRules.IsCategoryAllowed(ticket.Category))
-                return EventErrors.IncompatibleAudience(newAccessType.ToString(), ticket.Category.ToString(), ticket.Category.ToString());
+            AccessType = EventAccessType.MembersOnly;
         }
 
-        AccessType = newAccessType;
         return Result.Success;
     }
+
+
 
     public Result<Success> AssignPricingPolicy(Guid policyId)
     {
@@ -291,8 +296,50 @@ public class Event : AuditableEntity, IHaveClub
         string registrantName,
         int? registrantAge,
         string? registrantGender,
-        IEnumerable<AttendeeRequest> attendees,
-        IEnumerable<Guid>? familyMemberIds = null)
+        IReadOnlyCollection<AttendeeRequest> attendees,
+        IReadOnlyCollection<Guid> familyMemberIds)
+    {
+        var context = BuildContext(
+            registrantId,
+            isRegistrantMember,
+            isRegistrantAttending,
+            registrantName,
+            registrantAge,
+            registrantGender,
+            attendees,
+            familyMemberIds);
+
+        var validation = ValidateRegistration(context);
+        if (validation.IsError)
+            return validation.TopError;
+
+        ReserveSeats(context);
+
+        var registration = CreateRegistration(context);
+
+        _registrations.Add(registration);
+
+        RaiseDomainEvent(
+            new EventRegistrationCreated(registration.Id, Id));
+
+        return registration;
+    }
+
+    private Result<Success> ValidateRegistration(RegistrationContext context)
+    {
+        var result = ValidateEventState(context);
+        if (result.IsError) return result;
+
+        result = ValidateRegistrant(context);
+        if (result.IsError) return result;
+
+        result = ValidateAttendees(context);
+        if (result.IsError) return result;
+
+        return ValidateCapacity(context);
+    }
+
+    private Result<Success> ValidateEventState(RegistrationContext context)
     {
         if (Status != EventStatus.Published)
             return EventErrors.NotPublished;
@@ -300,203 +347,290 @@ public class Event : AuditableEntity, IHaveClub
         if (StartDate <= DateTime.UtcNow)
             return EventErrors.EventAlreadyStarted;
 
-        // Access control
         var rules = AccessRules.For(AccessType);
-        if (rules.RequiresMemberRegistrant && !isRegistrantMember)
+
+        if (rules.RequiresMemberRegistrant && !context.IsMember)
             return EventErrors.RegistrantMustBeMember;
 
-        // Must have at least 1 person
-        if (!isRegistrantAttending && (attendees == null || !attendees.Any()))
+        if (!context.IsAttending && !context.Attendees.Any())
             return EventErrors.NoAttendees;
 
-        // ─── VALIDATION PHASE (no state changes) ───────────────────
+        return Result.Success;
+    }
 
-        // Determine registrant ticket
-        TicketType? registrantTicket = null;
-        if (isRegistrantAttending)
+    private Result<Success> ValidateRegistrant(RegistrationContext context)
+    {
+        if (!context.IsAttending)
+            return Result.Success;
+
+        var category = context.IsMember
+            ? (_ticketTypes.Any(t => t.Category == AttendeeCategory.Member) ? AttendeeCategory.Member : AttendeeCategory.Public)
+            : AttendeeCategory.Public;
+
+        var ticket = _ticketTypes.FirstOrDefault(t => t.Category == category);
+
+        if (ticket == null)
+            return EventErrors.TicketNotFoundForCategory(category.ToString());
+
+        context.RegistrantTicket = ticket;
+
+        if (IsAlreadyRegistered(context.RegistrantId))
+            return EventErrors.AlreadyRegistered(context.RegistrantName);
+
+        var restriction = ValidateTicketRestrictions(
+            ticket,
+            context.Age,
+            context.Gender);
+
+        if (restriction.IsError)
+            return restriction;
+
+        if (ticket.AvailableQuantity < 1)
+            return EventErrors.NotEnoughSeats(ticket.Category.ToString());
+
+        return Result.Success;
+    }
+
+    private bool IsAlreadyRegistered(Guid attendeeId)
+    {
+        return _registrations
+            .Where(r => r.Status != RegistrationStatus.Cancelled)
+            .SelectMany(r => r.Attendees)
+            .Any(a => a.AttendeeId == attendeeId);
+    }
+
+    private Result<Success> ValidateAttendees(RegistrationContext context)
+    {
+        var duplicateIds = context.Attendees
+            .Where(a => a.AttendeeId.HasValue)
+            .GroupBy(a => a.AttendeeId!.Value)
+            .Any(g => g.Count() > 1);
+
+        if (duplicateIds)
+            return EventErrors.DuplicateAttendees;
+
+        foreach (var attendee in context.Attendees)
         {
-            // Determine registrant ticket category with fallback
-            AttendeeCategory registrantCategory;
-            if (isRegistrantMember)
+            if (!context.TicketLookup.TryGetValue(attendee.TicketTypeId, out var ticket))
+                return EventErrors.TicketNotFound;
+
+            var membership = ValidateMembershipRules(context, attendee, ticket);
+            if (membership.IsError) return membership;
+
+            var restriction = ValidateTicketRestrictions(ticket, attendee.Age, attendee.Gender);
+            if (restriction.IsError) return restriction;
+
+            if (attendee.AttendeeId.HasValue &&
+                IsAlreadyRegistered(attendee.AttendeeId.Value))
             {
-                // Try Member ticket first, fallback to Public if no Member ticket exists
-                registrantCategory = _ticketTypes.Any(t => t.Category == AttendeeCategory.Member) 
-                    ? AttendeeCategory.Member 
-                    : AttendeeCategory.Public;
+                return EventErrors.AlreadyRegistered(attendee.AttendeeName ?? "");
             }
-            else
-            {
-                registrantCategory = AttendeeCategory.Public;
-            }
-
-            registrantTicket = _ticketTypes.FirstOrDefault(t => t.Category == registrantCategory);
-            if (registrantTicket == null)
-                return EventErrors.TicketNotFoundForCategory(registrantCategory.ToString());
-
-            // Check not already registered
-            bool alreadyRegistered = _registrations
-                .Where(r => r.Status != RegistrationStatus.Cancelled)
-                .SelectMany(r => r.Attendees)
-                .Any(a => a.AttendeeId == registrantId);
-            if (alreadyRegistered)
-                return EventErrors.AlreadyRegistered(registrantName);
-
-            // Validate age/gender restrictions
-            if (registrantTicket.MinAge.HasValue && (!registrantAge.HasValue || registrantAge < registrantTicket.MinAge.Value))
-                return EventErrors.AgeRestriction(registrantTicket.Category.ToString(), registrantTicket.MinAge.Value, registrantTicket.MaxAge ?? 99);
-            if (registrantTicket.MaxAge.HasValue && (!registrantAge.HasValue || registrantAge > registrantTicket.MaxAge.Value))
-                return EventErrors.AgeRestriction(registrantTicket.Category.ToString(), registrantTicket.MinAge ?? 0, registrantTicket.MaxAge.Value);
-            if (!string.IsNullOrEmpty(registrantTicket.GenderRestriction) && !string.Equals(registrantGender, registrantTicket.GenderRestriction, StringComparison.OrdinalIgnoreCase))
-                return EventErrors.GenderRestriction(registrantTicket.Category.ToString(), registrantTicket.GenderRestriction);
-
-            // Check availability
-            if (registrantTicket.AvailableQuantity < 1)
-                return EventErrors.NotEnoughSeats(registrantTicket.Category.ToString());
         }
 
-        // Validate other attendees
-        if (attendees != null && attendees.Any())
+        return Result.Success;
+    }
+
+    private Result<Success> ValidateMembershipRules(
+        RegistrationContext context,
+        AttendeeRequest attendee,
+        TicketType ticket)
+    {
+        if (!ticket.RequiresMembership)
+            return Result.Success;
+
+        if (!context.IsMember)
+            return EventErrors.MemberTicketRequired;
+
+        if (ticket.Category == AttendeeCategory.Member &&
+            attendee.AttendeeId != context.RegistrantId)
+            return EventErrors.MemberTicketRequired;
+
+        if (ticket.Category == AttendeeCategory.FamilyMember)
         {
-            // If registrant is attending, we should not have him in the attendees list as well
-            if (isRegistrantAttending)
-            {
-                attendees = attendees.Where(a => a.AttendeeId != registrantId).ToList();
-            }
+            if (!attendee.AttendeeId.HasValue)
+                return EventErrors.AttendeeIdRequired;
 
-            if (!attendees.Any() && !isRegistrantAttending)
-                return EventErrors.NoAttendees;
-            // Duplicate attendee ID check
-            var groupedIds = attendees
-                .Where(a => a.AttendeeId.HasValue)
-                .GroupBy(a => a.AttendeeId!.Value);
-            if (groupedIds.Any(g => g.Count() > 1))
-                return EventErrors.DuplicateAttendees;
+            if (!context.FamilyMemberIds.Contains(attendee.AttendeeId.Value))
+                return EventErrors.NotAFamilyMember(attendee.AttendeeName ?? "Attendee");
+        }
 
-            // Check each attendee not already registered
-            foreach (var req in attendees.Where(a => a.AttendeeId.HasValue))
+        return Result.Success;
+    }
+
+    private Result<Success> ValidateTicketRestrictions(
+        TicketType ticket,
+        int? age,
+        string? gender)
+    {
+        if (ticket.MinAge.HasValue &&
+            (!age.HasValue || age < ticket.MinAge.Value))
+        {
+            return EventErrors.AgeRestriction(
+                ticket.Category.ToString(),
+                ticket.MinAge.Value,
+                ticket.MaxAge ?? 99);
+        }
+
+        if (ticket.MaxAge.HasValue &&
+            (!age.HasValue || age > ticket.MaxAge.Value))
+        {
+            return EventErrors.AgeRestriction(
+                ticket.Category.ToString(),
+                ticket.MinAge ?? 0,
+                ticket.MaxAge.Value);
+        }
+
+        if (!string.IsNullOrEmpty(ticket.GenderRestriction) &&
+            !string.Equals(gender, ticket.GenderRestriction, StringComparison.OrdinalIgnoreCase))
+        {
+            return EventErrors.GenderRestriction(
+                ticket.Category.ToString(),
+                ticket.GenderRestriction);
+        }
+
+        return Result.Success;
+    }
+
+    private Result<Success> ValidateCapacity(RegistrationContext context)
+    {
+        var grouped = context.Attendees.GroupBy(a => a.TicketTypeId);
+
+        foreach (var group in grouped)
+        {
+            var ticket = context.TicketLookup[group.Key];
+
+            if (ticket.AvailableQuantity < group.Count())
+                return EventErrors.NotEnoughSeats(ticket.Category.ToString());
+
+            if (ticket.MaxPerMember.HasValue)
             {
-                bool alreadyRegistered = _registrations
-                    .Where(r => r.Status != RegistrationStatus.Cancelled)
+                var previous = _registrations
+                    .Where(r => r.RegistrantId == context.RegistrantId &&
+                                r.Status != RegistrationStatus.Cancelled)
                     .SelectMany(r => r.Attendees)
-                    .Any(a => a.AttendeeId == req.AttendeeId!.Value);
-                if (alreadyRegistered)
-                    return EventErrors.AlreadyRegistered(req.AttendeeName ?? "");
-            }
+                    .Count(a => a.TicketTypeId == group.Key);
 
-            // Validate age/gender restrictions
-            foreach (var req in attendees)
-            {
-                var ticketType = _ticketTypes.FirstOrDefault(t => t.Id == req.TicketTypeId);
-                if (ticketType == null) return EventErrors.TicketNotFound;
-
-                // 1. Membership Check
-                if (ticketType.RequiresMembership)
-                {
-                    // Basic Rule: Only members can purchase tickets that require membership
-                    if (!isRegistrantMember)
-                        return EventErrors.MemberTicketRequired;
-
-                    // Specific Rule: A 'Member' category ticket is ONLY for the registrant themselves
-                    if (ticketType.Category == AttendeeCategory.Member && req.AttendeeId != registrantId)
-                        return EventErrors.MemberTicketRequired;
-                    
-                    // For FamilyMember category: must be in the registrant's family member list
-                    if (ticketType.Category == AttendeeCategory.FamilyMember)
-                    {
-                        if (!req.AttendeeId.HasValue)
-                            return EventErrors.AttendeeIdRequired;
-
-                        if (familyMemberIds == null || !familyMemberIds.Contains(req.AttendeeId.Value))
-                            return EventErrors.NotAFamilyMember(req.AttendeeName ?? "Attendee");
-                    }
-                }
-
-                // 2. Age restriction check
-                if (ticketType.MinAge.HasValue && (!req.Age.HasValue || req.Age < ticketType.MinAge.Value))
-                    return EventErrors.AgeRestriction(ticketType.Category.ToString(), ticketType.MinAge.Value, ticketType.MaxAge ?? 99);
-                if (ticketType.MaxAge.HasValue && (!req.Age.HasValue || req.Age > ticketType.MaxAge.Value))
-                    return EventErrors.AgeRestriction(ticketType.Category.ToString(), ticketType.MinAge ?? 0, ticketType.MaxAge.Value);
-                if (!string.IsNullOrEmpty(ticketType.GenderRestriction) && !string.Equals(req.Gender, ticketType.GenderRestriction, StringComparison.OrdinalIgnoreCase))
-                    return EventErrors.GenderRestriction(ticketType.Category.ToString(), ticketType.GenderRestriction);
-            }
-
-            // Check availability per ticket type
-            var ticketRequests = attendees.GroupBy(a => a.TicketTypeId).ToDictionary(g => g.Key, g => g.Count());
-            foreach (var ticketGroup in ticketRequests)
-            {
-                var ticketType = _ticketTypes.FirstOrDefault(t => t.Id == ticketGroup.Key);
-                if (ticketType == null) return EventErrors.TicketNotFound;
-                if (ticketType.AvailableQuantity < ticketGroup.Value)
-                    return EventErrors.NotEnoughSeats(ticketType.Category.ToString());
-
-                // MaxPerMember check
-                if (ticketType.MaxPerMember.HasValue)
-                {
-                    var previousCount = _registrations
-                        .Where(r => r.RegistrantId == registrantId && r.Status != RegistrationStatus.Cancelled)
-                        .SelectMany(r => r.Attendees)
-                        .Count(a => a.TicketTypeId == ticketGroup.Key);
-                    if (previousCount + ticketGroup.Value > ticketType.MaxPerMember.Value)
-                        return EventErrors.MaxPerMemberExceeded(ticketType.Category.ToString(), ticketType.MaxPerMember.Value);
-                }
+                if (previous + group.Count() > ticket.MaxPerMember.Value)
+                    return EventErrors.MaxPerMemberExceeded(
+                        ticket.Category.ToString(),
+                        ticket.MaxPerMember.Value);
             }
         }
 
-        // ─── RESERVATION PHASE (state changes) ─────────────────────
-        decimal totalBasePrice = 0;
+        return Result.Success;
+    }
 
-        // Reserve registrant seat
-        if (isRegistrantAttending && registrantTicket != null)
+    private void ReserveSeats(RegistrationContext context)
+    {
+        if (context.RegistrantTicket != null)
         {
-            registrantTicket.ReserveSeats(1);
-            totalBasePrice += registrantTicket.BasePrice;
+            context.RegistrantTicket.ReserveSeats(1);
+            context.TotalBasePrice += context.RegistrantTicket.BasePrice;
         }
 
-        // Reserve attendee seats
-        if (attendees != null && attendees.Any())
+        foreach (var group in context.Attendees.GroupBy(a => a.TicketTypeId))
         {
-            var ticketRequests = attendees.GroupBy(a => a.TicketTypeId).ToDictionary(g => g.Key, g => g.Count());
-            foreach (var ticketGroup in ticketRequests)
-            {
-                var ticketType = _ticketTypes.First(t => t.Id == ticketGroup.Key);
-                ticketType.ReserveSeats(ticketGroup.Value);
-                totalBasePrice += (ticketType.BasePrice * ticketGroup.Value);
-            }
-        }
+            var ticket = context.TicketLookup[group.Key];
 
-        // ─── CREATE REGISTRATION ────────────────────────────────────
-        var newRegistration = new EventRegistration(Id, registrantId, isRegistrantAttending, totalBasePrice);
-        
+            ticket.ReserveSeats(group.Count());
+
+            context.TotalBasePrice += ticket.BasePrice * group.Count();
+        }
+    }
+
+    private EventRegistration CreateRegistration(RegistrationContext context)
+    {
+        var registration = new EventRegistration(
+            Id,
+            context.RegistrantId,
+            context.IsAttending,
+            context.TotalBasePrice);
+
         var readableId = BillingITemIdGenerator.Generate(
             BillingItemType.EventRegistration,
-            registrantId,
+            context.RegistrantId,
             ClubId,
-            newRegistration.Id,
+            registration.Id,
             StartDate
         );
-        newRegistration.SetReadableId(readableId);
+        registration.SetReadableId(readableId);
 
-        // Add registrant as attendee if attending
-        if (isRegistrantAttending && registrantTicket != null)
+        if (context.IsAttending && context.RegistrantTicket != null)
         {
-            newRegistration.AddAttendee(new Attendee(
-                newRegistration.Id, registrantTicket.Id, registrantId, registrantName, registrantAge, registrantGender));
+            registration.AddAttendee(
+                new Attendee(
+                    registration.Id,
+                    context.RegistrantTicket.Id,
+                    context.RegistrantId,
+                    context.RegistrantName,
+                    context.Age,
+                    context.Gender));
         }
 
-        // Add other attendees
-        if (attendees != null)
+        foreach (var attendee in context.Attendees)
         {
-            foreach (var req in attendees)
-            {
-                newRegistration.AddAttendee(new Attendee(
-                    newRegistration.Id, req.TicketTypeId, req.AttendeeId, req.AttendeeName, req.Age, req.Gender));
-            }
+            registration.AddAttendee(
+                new Attendee(
+                    registration.Id,
+                    attendee.TicketTypeId,
+                    attendee.AttendeeId,
+                    attendee.AttendeeName,
+                    attendee.Age,
+                    attendee.Gender));
         }
 
-        _registrations.Add(newRegistration);
-        RaiseDomainEvent(new EventRegistrationCreated(newRegistration.Id, Id));
+        return registration;
+    }
 
-        return newRegistration;
+    private sealed class RegistrationContext
+    {
+        public Guid RegistrantId { get; init; }
+        public bool IsMember { get; init; }
+        public bool IsAttending { get; init; }
+        public string RegistrantName { get; init; }
+        public int? Age { get; init; }
+        public string? Gender { get; init; }
+
+        public IReadOnlyCollection<AttendeeRequest> Attendees { get; init; }
+        public IReadOnlyCollection<Guid> FamilyMemberIds { get; init; }
+
+        public Dictionary<Guid, TicketType> TicketLookup { get; init; } = new();
+
+        public TicketType? RegistrantTicket { get; set; }
+        public decimal TotalBasePrice { get; set; }
+    }
+
+    private RegistrationContext BuildContext(
+        Guid registrantId,
+        bool isRegistrantMember,
+        bool isRegistrantAttending,
+        string registrantName,
+        int? registrantAge,
+        string? registrantGender,
+        IReadOnlyCollection<AttendeeRequest> attendees,
+        IReadOnlyCollection<Guid> familyMemberIds)
+    {
+        var normalizedAttendees = attendees?.ToList() ?? [];
+
+        if (isRegistrantAttending)
+        {
+            normalizedAttendees = normalizedAttendees
+                .Where(a => a.AttendeeId != registrantId)
+                .ToList();
+        }
+
+        return new RegistrationContext
+        {
+            RegistrantId = registrantId,
+            IsMember = isRegistrantMember,
+            IsAttending = isRegistrantAttending,
+            RegistrantName = registrantName,
+            Age = registrantAge,
+            Gender = registrantGender,
+            Attendees = normalizedAttendees,
+            FamilyMemberIds = familyMemberIds ?? Array.Empty<Guid>(),
+            TicketLookup = _ticketTypes.ToDictionary(t => t.Id)
+        };
     }
 
     public Result<Success> ConfirmRegistration(Guid registrationId)
