@@ -351,9 +351,23 @@ public class Event : AuditableEntity, IHaveClub
         if (!context.IsAttending)
             return Result.Success;
 
-        var category = context.IsMember
-            ? (_ticketTypes.Any(t => t.Category == AttendeeCategory.Member) ? AttendeeCategory.Member : AttendeeCategory.Public)
-            : AttendeeCategory.Public;
+        AttendeeCategory category;
+        if (context.IsMember)
+        {
+            if (_ticketTypes.Any(t => t.Category == AttendeeCategory.Member))
+                category = AttendeeCategory.Member;
+            else if (_ticketTypes.Any(t => t.Category == AttendeeCategory.Public))
+                category = AttendeeCategory.Public;
+            else
+                category = AttendeeCategory.Guest;
+        }
+        else
+        {
+            if (_ticketTypes.Any(t => t.Category == AttendeeCategory.Public))
+                category = AttendeeCategory.Public;
+            else
+                category = AttendeeCategory.Guest;
+        }
 
         var ticket = _ticketTypes.FirstOrDefault(t => t.Category == category);
 
