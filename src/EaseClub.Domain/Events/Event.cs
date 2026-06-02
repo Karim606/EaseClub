@@ -340,6 +340,10 @@ public class Event : AuditableEntity, IHaveClub
         if (rules.RequiresMemberRegistrant && !context.IsMember)
             return EventErrors.RegistrantMustBeMember;
 
+        // Non-members (Public users) can only register for themselves — they cannot invite others
+        if (!context.IsMember && context.Attendees.Any())
+            return EventErrors.PublicUserCannotInviteOthers;
+
         if (!context.IsAttending && !context.Attendees.Any())
             return EventErrors.NoAttendees;
 
@@ -351,28 +355,14 @@ public class Event : AuditableEntity, IHaveClub
         if (!context.IsAttending)
             return Result.Success;
 
-        AttendeeCategory category;
-        if (context.IsMember)
-        {
-            if (_ticketTypes.Any(t => t.Category == AttendeeCategory.Member))
-                category = AttendeeCategory.Member;
-            else if (_ticketTypes.Any(t => t.Category == AttendeeCategory.Guest))
-                category = AttendeeCategory.Guest;
-            else
-                category = AttendeeCategory.Public;
-        }
-        else
-        {
-            if (_ticketTypes.Any(t => t.Category == AttendeeCategory.Guest))
-                category = AttendeeCategory.Guest;
-            else
-                category = AttendeeCategory.Public;
-        }
+        // Strict category matching — no fallback allowed:
+        // Members must use Member tickets; non-members (Public users) must use Public tickets
+        var expectedCategory = context.IsMember ? AttendeeCategory.Member : AttendeeCategory.Public;
 
-        var ticket = _ticketTypes.FirstOrDefault(t => t.Category == category);
+        var ticket = _ticketTypes.FirstOrDefault(t => t.Category == expectedCategory);
 
         if (ticket == null)
-            return EventErrors.TicketNotFoundForCategory(category.ToString());
+            return EventErrors.TicketNotFoundForCategory(expectedCategory.ToString());
 
         context.RegistrantTicket = ticket;
 
@@ -428,24 +418,33 @@ public class Event : AuditableEntity, IHaveClub
         AttendeeRequest attendee,
         TicketType ticket)
     {
-        if (!ticket.RequiresMembership)
-            return Result.Success;
+        // Determine the required category for this attendee:
+        // - FamilyMember: attendee is in the registrant's family member list → must use FamilyMember ticket
+        // - Guest: attendee has no AttendeeId OR is not in family list → must use Guest ticket
+        //   (only reachable when IsMember = true, since Public users cannot invite others)
+        var isFamilyMember = attendee.AttendeeId.HasValue &&
+                             context.FamilyMemberIds.Contains(attendee.AttendeeId.Value);
 
-        if (!context.IsMember)
-            return EventErrors.MemberTicketRequired;
+        var expectedCategory = isFamilyMember
+            ? AttendeeCategory.FamilyMember
+            : AttendeeCategory.Guest;
 
-        if (ticket.Category == AttendeeCategory.Member &&
-            attendee.AttendeeId != context.RegistrantId)
-            return EventErrors.MemberTicketRequired;
+        if (ticket.Category != expectedCategory)
+            return EventErrors.TicketCategoryMismatch(expectedCategory.ToString(), ticket.Category.ToString());
 
-        if (ticket.Category == AttendeeCategory.FamilyMember)
+        // FamilyMember tickets additionally require the registrant to be a member
+        if (expectedCategory == AttendeeCategory.FamilyMember)
         {
+            if (!context.IsMember)
+                return EventErrors.MemberTicketRequired;
+
             if (!attendee.AttendeeId.HasValue)
                 return EventErrors.AttendeeIdRequired;
-
-            if (!context.FamilyMemberIds.Contains(attendee.AttendeeId.Value))
-                return EventErrors.NotAFamilyMember(attendee.AttendeeName ?? "Attendee");
         }
+
+        // Guest tickets require the registrant to be a member (members invite guests)
+        if (expectedCategory == AttendeeCategory.Guest && !context.IsMember)
+            return EventErrors.MemberTicketRequired;
 
         return Result.Success;
     }

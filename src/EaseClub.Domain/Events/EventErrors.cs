@@ -30,6 +30,7 @@ public static class EventErrors
     public static Error AttendeeIdRequired => Error.Validation("Event.AttendeeIdRequired", "Attendee ID is required for family member tickets.");
     public static Error NotAFamilyMember(string name) => Error.Validation("Event.NotAFamilyMember", $"{name} is not recognized as a registered family member for your membership.");
     public static Error PublicUserCannotInviteOthers => Error.Validation("Event.PublicUserCannotInviteOthers", "Non-members can only register for themselves and cannot add other attendees.");
+    public static Error TicketCategoryMismatch(string expectedCategory, string actualCategory) => Error.Validation("Event.TicketCategoryMismatch", $"Ticket category mismatch: expected a '{expectedCategory}' ticket but got a '{actualCategory}' ticket.");
     public static Error DuplicateAttendees => Error.Validation("Event.DuplicateAttendees", "Duplicate attendee IDs found in the registration request.");
     public static Error AlreadyRegistered(string attendeeName) => Error.Validation("Event.AlreadyRegistered", $"Attendee {attendeeName} is already registered for this event.");
     public static Error MaxPerMemberExceeded(string ticketName, int maxPerMember) => Error.Validation("Event.MaxPerMemberExceeded", $"Registrant limits exceeded for ticket '{ticketName}'. Maximum allowed is {maxPerMember}.");
