@@ -1,9 +1,10 @@
+using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Events;
 using EaseClub.Domain.Events.Entities;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using EaseClub.Infrastructure.Auth.Entities;
-using EaseClub.Domain.Clubs;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace EaseClub.Infrastructure.Data.Configurations;
 
@@ -56,15 +57,29 @@ public class EventConfiguration : IEntityTypeConfiguration<Event>
             .FindNavigation(nameof(Event.Registrations))!
             .SetPropertyAccessMode(PropertyAccessMode.Field);
 
-        // PricingPolicyIds stored as a JSON column
-        builder.Property(e => e.PricingPolicyIds)
+        var comparer = new ValueComparer<IReadOnlyCollection<Guid>>(
+            (a, b) =>
+                a == null && b == null ||
+                (a != null && b != null && a.SequenceEqual(b)),
+            v => v == null
+                ? 0
+                : v.Aggregate(0, (hash, guid) => HashCode.Combine(hash, guid)),
+            v => v == null
+                ? new List<Guid>()
+                : v.ToList());
+
+        var pricingPolicyIdsProperty = builder.Property(e => e.PricingPolicyIds)
+            .HasField("_pricingPolicyIds")
             .HasConversion(
                 v => string.Join(',', v),
                 v => v.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                       .Select(Guid.Parse)
-                       .ToList()
-            )
-            .Metadata.SetPropertyAccessMode(PropertyAccessMode.Field);
+                    .Select(Guid.Parse)
+                    .ToList());
+
+        pricingPolicyIdsProperty.Metadata.SetValueComparer(comparer);
+        pricingPolicyIdsProperty.Metadata.SetPropertyAccessMode(PropertyAccessMode.Field);
+
+
     }
 }
 
@@ -132,10 +147,5 @@ public class AttendeeConfiguration : IEntityTypeConfiguration<Attendee>
         builder.Property(a => a.Age);
         builder.Property(a => a.Gender).HasMaxLength(50);
 
-        // Foreign Key to AuthUser (Attendee - nullable)
-        builder.HasOne<AuthUser>()
-            .WithMany()
-            .HasForeignKey(a => a.AttendeeId)
-            .OnDelete(DeleteBehavior.SetNull);
     }
 }
