@@ -356,17 +356,17 @@ public class Event : AuditableEntity, IHaveClub
         {
             if (_ticketTypes.Any(t => t.Category == AttendeeCategory.Member))
                 category = AttendeeCategory.Member;
-            else if (_ticketTypes.Any(t => t.Category == AttendeeCategory.Public))
-                category = AttendeeCategory.Public;
-            else
+            else if (_ticketTypes.Any(t => t.Category == AttendeeCategory.Guest))
                 category = AttendeeCategory.Guest;
+            else
+                category = AttendeeCategory.Public;
         }
         else
         {
-            if (_ticketTypes.Any(t => t.Category == AttendeeCategory.Public))
-                category = AttendeeCategory.Public;
-            else
+            if (_ticketTypes.Any(t => t.Category == AttendeeCategory.Guest))
                 category = AttendeeCategory.Guest;
+            else
+                category = AttendeeCategory.Public;
         }
 
         var ticket = _ticketTypes.FirstOrDefault(t => t.Category == category);
