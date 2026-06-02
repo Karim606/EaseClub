@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Pagination;
+using EaseClub.Application.Common.Pagination;
 using EaseClub.Application.Common.Pagination.Parameters;
 using EaseClub.Application.Common.Pagination.Results;
 using EaseClub.Application.Features.MembershipPlans.Queries;
@@ -79,7 +79,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                 selector: p => new MembershipPlanAdminDto {
                     Id = p.Id,
                     Name = p.Name,
-                    MaxPaymentPeriod = p.MaxPaymentPeriodInDays,
+                    MaxPaymentPeriodInDays = p.MaxPaymentPeriodInDays,
                     SubscriptionValidityInYears = p.SubscriptionValidityInYears,
                     MaxFamilyMembers = p.MaxFamilyMembers,
                     Price = p.TotalPrice,
