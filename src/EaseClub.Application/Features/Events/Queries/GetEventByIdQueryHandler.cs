@@ -48,10 +48,7 @@ public class GetEventByIdQueryHandler(IEventRepository eventRepository, IClubRep
                 t.TotalQuantity,
                 t.AvailableQuantity,
                 t.MaxPerMember,
-                t.RequiresMembership,
-                t.MinAge,
-                t.MaxAge,
-                t.GenderRestriction)).ToList()
+                t.RequiresMembership)).ToList()
         );
 
         return dto;

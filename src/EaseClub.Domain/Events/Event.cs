@@ -135,10 +135,7 @@ public class Event : AuditableEntity, IHaveClub
         AttendeeCategory category, 
         decimal basePrice, 
         int totalQuantity, 
-        int? maxPerMember = null,
-        int? minAge = null,
-        int? maxAge = null,
-        string? genderRestriction = null)
+        int? maxPerMember = null)
     {
         if (Status != EventStatus.Draft)
             return EventErrors.NotDraft("add tickets to");
@@ -175,10 +172,7 @@ public class Event : AuditableEntity, IHaveClub
             category, 
             basePrice, 
             totalQuantity, 
-            maxPerMember,
-            minAge,
-            maxAge,
-            genderRestriction);
+            maxPerMember);
         _ticketTypes.Add(ticket);
         
         return ticket;
@@ -208,10 +202,7 @@ public class Event : AuditableEntity, IHaveClub
         AttendeeCategory category,
         decimal basePrice, 
         int totalQuantity, 
-        int? maxPerMember = null,
-        int? minAge = null,
-        int? maxAge = null,
-        string? genderRestriction = null)
+        int? maxPerMember = null)
     {
         if (Status != EventStatus.Draft)
             return EventErrors.NotDraft("update tickets in");
@@ -250,10 +241,7 @@ public class Event : AuditableEntity, IHaveClub
             category,
             basePrice, 
             totalQuantity, 
-            maxPerMember,
-            minAge,
-            maxAge,
-            genderRestriction);
+            maxPerMember);
 
         if (result.IsError)
             return result.TopError;
@@ -377,13 +365,7 @@ public class Event : AuditableEntity, IHaveClub
         if (IsAlreadyRegistered(context.RegistrantId))
             return EventErrors.AlreadyRegistered(context.RegistrantName);
 
-        var restriction = ValidateTicketRestrictions(
-            ticket,
-            context.Age,
-            context.Gender);
 
-        if (restriction.IsError)
-            return restriction;
 
         if (ticket.AvailableQuantity < 1)
             return EventErrors.NotEnoughSeats(ticket.Category.ToString());
@@ -417,8 +399,7 @@ public class Event : AuditableEntity, IHaveClub
             var membership = ValidateMembershipRules(context, attendee, ticket);
             if (membership.IsError) return membership;
 
-            var restriction = ValidateTicketRestrictions(ticket, attendee.Age, attendee.Gender);
-            if (restriction.IsError) return restriction;
+
 
             if (attendee.AttendeeId.HasValue &&
                 IsAlreadyRegistered(attendee.AttendeeId.Value))
@@ -457,39 +438,7 @@ public class Event : AuditableEntity, IHaveClub
         return Result.Success;
     }
 
-    private Result<Success> ValidateTicketRestrictions(
-        TicketType ticket,
-        int? age,
-        string? gender)
-    {
-        if (ticket.MinAge.HasValue &&
-            (!age.HasValue || age < ticket.MinAge.Value))
-        {
-            return EventErrors.AgeRestriction(
-                ticket.Category.ToString(),
-                ticket.MinAge.Value,
-                ticket.MaxAge ?? 99);
-        }
 
-        if (ticket.MaxAge.HasValue &&
-            (!age.HasValue || age > ticket.MaxAge.Value))
-        {
-            return EventErrors.AgeRestriction(
-                ticket.Category.ToString(),
-                ticket.MinAge ?? 0,
-                ticket.MaxAge.Value);
-        }
-
-        if (!string.IsNullOrEmpty(ticket.GenderRestriction) &&
-            !string.Equals(gender, ticket.GenderRestriction, StringComparison.OrdinalIgnoreCase))
-        {
-            return EventErrors.GenderRestriction(
-                ticket.Category.ToString(),
-                ticket.GenderRestriction);
-        }
-
-        return Result.Success;
-    }
 
     private Result<Success> ValidateCapacity(RegistrationContext context)
     {
@@ -502,7 +451,7 @@ public class Event : AuditableEntity, IHaveClub
             if (ticket.AvailableQuantity < group.Count())
                 return EventErrors.NotEnoughSeats(ticket.Category.ToString());
 
-            if (ticket.MaxPerMember.HasValue)
+            if (ticket.MaxPerMember.HasValue && ticket.Category != AttendeeCategory.Member && ticket.Category != AttendeeCategory.Public)
             {
                 var previous = _registrations
                     .Where(r => r.RegistrantId == context.RegistrantId &&

@@ -29,10 +29,7 @@ public record TicketTypeDto(
     int TotalQuantity,
     int AvailableQuantity,
     int? MaxPerMember,
-    bool RequiresMembership,
-    int? MinAge,
-    int? MaxAge,
-    string? GenderRestriction);
+    bool RequiresMembership);
 
 public record EventSummaryDto(
     Guid Id,

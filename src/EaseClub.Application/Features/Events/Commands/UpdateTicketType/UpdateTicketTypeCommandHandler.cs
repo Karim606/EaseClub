@@ -30,10 +30,7 @@ public class UpdateTicketTypeCommandHandler(
             request.Category,
             request.BasePrice,
             request.TotalQuantity,
-            request.MaxPerMember,
-            request.MinAge,
-            request.MaxAge,
-            request.GenderRestriction);
+            request.MaxPerMember);
 
         if (result.IsError)
         {

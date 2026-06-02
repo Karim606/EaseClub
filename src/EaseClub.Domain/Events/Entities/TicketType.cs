@@ -17,19 +17,13 @@ public class TicketType : Entity
     
     public int? MaxPerMember { get; private set; }
     public bool RequiresMembership { get; private set; }
-    public int? MinAge { get; private set; }
-    public int? MaxAge { get; private set; }
-    public string? GenderRestriction { get; private set; }
 
     internal TicketType(
         Guid eventId, 
         AttendeeCategory category, 
         decimal basePrice, 
         int totalQuantity, 
-        int? maxPerMember = null,
-        int? minAge = null,
-        int? maxAge = null,
-        string? genderRestriction = null) : base(Guid.NewGuid())
+        int? maxPerMember = null) : base(Guid.NewGuid())
     {
         EventId = eventId;
         Category = category;
@@ -38,9 +32,6 @@ public class TicketType : Entity
         SoldQuantity = 0;
         MaxPerMember = maxPerMember;
         RequiresMembership = category == AttendeeCategory.Member || category == AttendeeCategory.FamilyMember;
-        MinAge = minAge;
-        MaxAge = maxAge;
-        GenderRestriction = genderRestriction;
     }
 
     private TicketType() { }
@@ -49,10 +40,7 @@ public class TicketType : Entity
         AttendeeCategory category,
         decimal basePrice, 
         int totalQuantity, 
-        int? maxPerMember,
-        int? minAge,
-        int? maxAge,
-        string? genderRestriction)
+        int? maxPerMember)
     {
         if (basePrice < 0)
             return EventErrors.InvalidTicketPrice;
@@ -65,9 +53,6 @@ public class TicketType : Entity
         TotalQuantity = totalQuantity;
         MaxPerMember = maxPerMember;
         RequiresMembership = category == AttendeeCategory.Member || category == AttendeeCategory.FamilyMember;
-        MinAge = minAge;
-        MaxAge = maxAge;
-        GenderRestriction = genderRestriction;
         
         return Result.Success;
     }

@@ -80,9 +80,6 @@ public class TicketTypeConfiguration : IEntityTypeConfiguration<TicketType>
         builder.Property(t => t.SoldQuantity).IsRequired();
         builder.Property(t => t.MaxPerMember);
         builder.Property(t => t.RequiresMembership).IsRequired().HasDefaultValue(false);
-        builder.Property(t => t.MinAge);
-        builder.Property(t => t.MaxAge);
-        builder.Property(t => t.GenderRestriction).HasMaxLength(50);
 
         builder.Ignore(t => t.AvailableQuantity);
     }

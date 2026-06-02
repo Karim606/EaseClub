@@ -11,7 +11,4 @@ public record AddTicketTypeCommand(
     AttendeeCategory Category,
     decimal BasePrice,
     int TotalQuantity,
-    int? MaxPerMember = null,
-    int? MinAge = null,
-    int? MaxAge = null,
-    string? GenderRestriction = null) : IRequest<Result<EventActionResponseDto>>;
+    int? MaxPerMember = null) : IRequest<Result<EventActionResponseDto>>;
