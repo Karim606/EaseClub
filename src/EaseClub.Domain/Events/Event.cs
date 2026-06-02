@@ -140,7 +140,7 @@ public class Event : AuditableEntity, IHaveClub
         if (Status != EventStatus.Draft)
             return EventErrors.NotDraft("add tickets to");
 
-        if (category == AttendeeCategory.Public)
+        if (category == AttendeeCategory.Public || category == AttendeeCategory.Guest)
         {
             AccessType = EventAccessType.Public;
         }
@@ -189,7 +189,7 @@ public class Event : AuditableEntity, IHaveClub
 
         _ticketTypes.Remove(ticket);
 
-        if (!_ticketTypes.Any(t => t.Category == AttendeeCategory.Public))
+        if (!_ticketTypes.Any(t => t.Category == AttendeeCategory.Public || t.Category == AttendeeCategory.Guest))
         {
             AccessType = EventAccessType.MembersOnly;
         }
@@ -211,7 +211,7 @@ public class Event : AuditableEntity, IHaveClub
         if (ticket is null)
             return EventErrors.TicketNotFound;
 
-        if (category == AttendeeCategory.Public)
+        if (category == AttendeeCategory.Public || category == AttendeeCategory.Guest)
         {
             AccessType = EventAccessType.Public;
         }
@@ -220,7 +220,7 @@ public class Event : AuditableEntity, IHaveClub
         var rules = AccessRules.For(AccessType);
         if (!rules.IsCategoryAllowed(category))
             return EventErrors.InvalidTicketCategory(category.ToString(), AccessType.ToString());
- 
+  
         if (ticket.Category != category && _ticketTypes.Any(t => t.Id != ticketTypeId && t.Category == category))
             return EventErrors.DuplicateTicketCategory(category.ToString());
 
@@ -232,11 +232,11 @@ public class Event : AuditableEntity, IHaveClub
             
         if (maxPerMember.HasValue && (maxPerMember.Value <= 0 || maxPerMember.Value > totalQuantity))
             return EventErrors.InvalidMaxPerMember;
- 
+  
         var otherTicketsQuantity = _ticketTypes.Where(t => t.Id != ticketTypeId).Sum(t => t.TotalQuantity);
         if (otherTicketsQuantity + totalQuantity > Capacity)
             return EventErrors.CapacityExceeded;
- 
+  
         var result = ticket.UpdateDetails(
             category,
             basePrice, 
@@ -246,7 +246,7 @@ public class Event : AuditableEntity, IHaveClub
         if (result.IsError)
             return result.TopError;
 
-        if (!_ticketTypes.Any(t => t.Category == AttendeeCategory.Public))
+        if (!_ticketTypes.Any(t => t.Category == AttendeeCategory.Public || t.Category == AttendeeCategory.Guest))
         {
             AccessType = EventAccessType.MembersOnly;
         }
