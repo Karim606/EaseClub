@@ -58,7 +58,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                     e.Description,
                     e.StartDate,
                     e.EndDate,
-                    e.TicketTypes.Any(t => t.Category == AttendeeCategory.Public || t.Category == AttendeeCategory.Guest)
+                    e.TicketTypes.Any(t => t.Category == AttendeeCategory.Public)
                         ? EventAccessType.Public
                         : EventAccessType.MembersOnly,
                     e.Status,
@@ -98,7 +98,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
 
             if (eligibleOnly && memberId.HasValue)
             {
-                query = query.Where(e => e.TicketTypes.Any(t => t.Category == AttendeeCategory.Public || t.Category == AttendeeCategory.Guest) 
+                query = query.Where(e => e.TicketTypes.Any(t => t.Category == AttendeeCategory.Public) 
                                          || userClubIds.Contains(e.ClubId));
             }
 
@@ -118,7 +118,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                     e.Description,
                     e.StartDate,
                     e.EndDate,
-                    e.TicketTypes.Any(t => t.Category == AttendeeCategory.Public || t.Category == AttendeeCategory.Guest)
+                    e.TicketTypes.Any(t => t.Category == AttendeeCategory.Public)
                         ? EventAccessType.Public
                         : EventAccessType.MembersOnly,
                     e.Status,

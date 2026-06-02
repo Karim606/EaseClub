@@ -27,7 +27,7 @@ public record AccessRules
             EventAccessType.MembersOnly => new AccessRules(
                 accessType, 
                 true, 
-                new[] { AttendeeCategory.Member, AttendeeCategory.FamilyMember }),
+                new[] { AttendeeCategory.Member, AttendeeCategory.FamilyMember, AttendeeCategory.Guest }),
             EventAccessType.Public => new AccessRules(
                 accessType, 
                 false, 

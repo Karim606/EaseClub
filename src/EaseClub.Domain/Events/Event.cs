@@ -140,7 +140,7 @@ public class Event : AuditableEntity, IHaveClub
         if (Status != EventStatus.Draft)
             return EventErrors.NotDraft("add tickets to");
 
-        if (category == AttendeeCategory.Public || category == AttendeeCategory.Guest)
+        if (category == AttendeeCategory.Public)
         {
             AccessType = EventAccessType.Public;
         }
@@ -189,7 +189,7 @@ public class Event : AuditableEntity, IHaveClub
 
         _ticketTypes.Remove(ticket);
 
-        if (!_ticketTypes.Any(t => t.Category == AttendeeCategory.Public || t.Category == AttendeeCategory.Guest))
+        if (!_ticketTypes.Any(t => t.Category == AttendeeCategory.Public))
         {
             AccessType = EventAccessType.MembersOnly;
         }
@@ -211,7 +211,7 @@ public class Event : AuditableEntity, IHaveClub
         if (ticket is null)
             return EventErrors.TicketNotFound;
 
-        if (category == AttendeeCategory.Public || category == AttendeeCategory.Guest)
+        if (category == AttendeeCategory.Public)
         {
             AccessType = EventAccessType.Public;
         }
@@ -246,7 +246,7 @@ public class Event : AuditableEntity, IHaveClub
         if (result.IsError)
             return result.TopError;
 
-        if (!_ticketTypes.Any(t => t.Category == AttendeeCategory.Public || t.Category == AttendeeCategory.Guest))
+        if (!_ticketTypes.Any(t => t.Category == AttendeeCategory.Public))
         {
             AccessType = EventAccessType.MembersOnly;
         }
@@ -351,23 +351,9 @@ public class Event : AuditableEntity, IHaveClub
         if (!context.IsAttending)
             return Result.Success;
 
-        AttendeeCategory category;
-        if (context.IsMember)
-        {
-            if (_ticketTypes.Any(t => t.Category == AttendeeCategory.Member))
-                category = AttendeeCategory.Member;
-            else if (_ticketTypes.Any(t => t.Category == AttendeeCategory.Public))
-                category = AttendeeCategory.Public;
-            else
-                category = AttendeeCategory.Guest;
-        }
-        else
-        {
-            if (_ticketTypes.Any(t => t.Category == AttendeeCategory.Public))
-                category = AttendeeCategory.Public;
-            else
-                category = AttendeeCategory.Guest;
-        }
+        var category = context.IsMember
+            ? (_ticketTypes.Any(t => t.Category == AttendeeCategory.Member) ? AttendeeCategory.Member : AttendeeCategory.Public)
+            : AttendeeCategory.Public;
 
         var ticket = _ticketTypes.FirstOrDefault(t => t.Category == category);
 
@@ -378,8 +364,6 @@ public class Event : AuditableEntity, IHaveClub
 
         if (IsAlreadyRegistered(context.RegistrantId))
             return EventErrors.AlreadyRegistered(context.RegistrantName);
-
-
 
         if (ticket.AvailableQuantity < 1)
             return EventErrors.NotEnoughSeats(ticket.Category.ToString());
