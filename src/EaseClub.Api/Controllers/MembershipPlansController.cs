@@ -1,6 +1,5 @@
 using EaseClub.Application.Common.Pagination;
 using EaseClub.Application.Features.MembershipPlans.Command.CreatePlan;
-using EaseClub.Application.Features.MembershipPlans.Command.DeleteMembershipPlan;
 using EaseClub.Application.Features.MembershipPlans.Command.SyncInstallmentTemplates;
 using EaseClub.Application.Features.MembershipPlans.Command.UpdatePlan;
 using EaseClub.Application.Features.MembershipPlans.Command.ToggleMembershipPlanStatus;
@@ -197,17 +196,6 @@ This endpoint supports two modes of pagination:
                 _ => NoContent(),
                 Problem);
         }
-
-        [Authorize(Roles = "ClubAdmin,SuperAdmin")]
-        [HttpDelete("{id}")]
-        [MapToApiVersion("1.0")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<IActionResult> Delete(Guid id)
-        {
-
-            var result = await sender.Send(new DeleteMembershipPlanCommand(id));
-
-            return result.Match(_ => NoContent(), Problem);
-        }
+        
     }
 }

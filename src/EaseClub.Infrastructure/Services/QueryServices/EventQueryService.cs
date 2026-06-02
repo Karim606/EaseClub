@@ -58,7 +58,9 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                     e.Description,
                     e.StartDate,
                     e.EndDate,
-                    e.AccessType,
+                    e.TicketTypes.Any(t => t.Category == AttendeeCategory.Public)
+                        ? EventAccessType.Public
+                        : EventAccessType.MembersOnly,
                     e.Status,
                     e.Venue,
                     _context.Clubs.Where(c => c.Id == e.ClubId).Select(c => c.Name).FirstOrDefault() ?? string.Empty,
@@ -66,9 +68,8 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                     e.Badge,
                     e.TicketTypes.Sum(t => t.TotalQuantity), // Capacity
                     e.TicketTypes.Sum(t => t.TotalQuantity - t.SoldQuantity), // Remaining Capacity
-                    e.Registrations.Count(r => r.Status != RegistrationStatus.Cancelled), // Registrations Count
-                    e.AccessType == EventAccessType.Public ? true : false
-                ),
+                    e.Registrations.Count(r => r.Status != RegistrationStatus.Cancelled) // Registrations Count
+ ),
                 orderSelector: e => e.StartDate,
                 cancellationToken: ct
             );
@@ -97,7 +98,7 @@ namespace EaseClub.Infrastructure.Services.QueryServices
 
             if (eligibleOnly && memberId.HasValue)
             {
-                query = query.Where(e => e.AccessType == EventAccessType.Public 
+                query = query.Where(e => e.TicketTypes.Any(t => t.Category == AttendeeCategory.Public) 
                                          || userClubIds.Contains(e.ClubId));
             }
 
@@ -117,7 +118,9 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                     e.Description,
                     e.StartDate,
                     e.EndDate,
-                    e.AccessType,
+                    e.TicketTypes.Any(t => t.Category == AttendeeCategory.Public)
+                        ? EventAccessType.Public
+                        : EventAccessType.MembersOnly,
                     e.Status,
                     e.Venue,
                     _context.Clubs.Where(c => c.Id == e.ClubId).Select(c => c.Name).FirstOrDefault() ?? string.Empty,
@@ -125,8 +128,8 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                     e.Badge,
                     e.TicketTypes.Sum(t => t.TotalQuantity), // Capacity
                     e.TicketTypes.Sum(t => t.TotalQuantity - t.SoldQuantity), // Remaining Capacity
-                    e.Registrations.Count(r => r.Status != RegistrationStatus.Cancelled),
-                    (e.AccessType == EventAccessType.Public || userClubIds.Contains(e.ClubId)) ? true : false
+                    e.Registrations.Count(r => r.Status != RegistrationStatus.Cancelled)
+                    
                 ),
                 orderSelector: e => e.StartDate,
                 cancellationToken: ct

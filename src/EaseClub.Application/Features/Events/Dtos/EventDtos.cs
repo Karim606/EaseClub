@@ -46,8 +46,7 @@ public record EventSummaryDto(
     string? Badge,
     int Capacity,
     int RemainingCapacity,
-    int RegistrationsCount,
-    bool IsUserEligible);
+    int RegistrationsCount);
 
 public record EventRegistrationDto(
     Guid Id,

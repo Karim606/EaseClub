@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,5 +13,11 @@ namespace EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPla
     int MaxPaymentPeriodInDays,
     decimal Price,
     bool IsActive,
-    List<InstallmentsTemplateDto> Templates);
+    List<InstallmentsTemplateDto> Templates,
+    decimal RenewPrice,
+    Guid MembershipTypeId,
+    string PaymentMode,
+    string EnrollmentMode,
+    int SubscriptionValidityInYears,
+    int MaxFamilyMembers);
 }
