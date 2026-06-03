@@ -149,7 +149,7 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
         public PricingPolicySnapshot(
             Guid id, string name, int priority, bool isIncrease,
             decimal? fixedAmount, decimal? percentageValue,
-            string? multiplierSourceKey, List<ConditionExpression>? conditions)
+            string? multiplierSourceKey, IReadOnlyList<ConditionExpression> conditions)
         {
             Id = id;
             Name = name;
@@ -158,7 +158,7 @@ namespace EaseClub.Domain.MembershipApplications.ValueObjects
             FixedAmount = fixedAmount;
             PercentageValue = percentageValue;
             MultiplierSourceKey = multiplierSourceKey;
-            Conditions = conditions ?? new();
+            Conditions = conditions ?? new List<ConditionExpression>();
         }
         private PricingPolicySnapshot() { }
 
