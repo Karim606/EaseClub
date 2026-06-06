@@ -13,7 +13,7 @@ namespace EaseClub.Infrastructure.Common.QueryServices;
 public abstract class BaseQueryService<TEntity> where TEntity : class
 {
     protected readonly AppDbContext _context;
-    private readonly ILogger _logger;
+    protected readonly ILogger _logger;
 
     protected BaseQueryService(AppDbContext context, ILogger logger)
     {

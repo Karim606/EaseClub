@@ -1,0 +1,29 @@
+using FluentValidation;
+
+namespace EaseClub.Application.Features.Events.Commands.AddTicketType;
+
+public class AddTicketTypeCommandValidator : AbstractValidator<AddTicketTypeCommand>
+{
+    public AddTicketTypeCommandValidator()
+    {
+        RuleFor(x => x.EventId)
+            .NotEmpty().WithMessage("Event ID is required.");
+
+        RuleFor(x => x.Category)
+            .IsInEnum().WithMessage("Invalid attendee category.");
+
+        RuleFor(x => x.BasePrice)
+            .GreaterThanOrEqualTo(0).WithMessage("Ticket price cannot be negative.");
+
+        RuleFor(x => x.TotalQuantity)
+            .GreaterThan(0).WithMessage("Ticket quantity must be greater than zero.");
+
+        RuleFor(x => x.MaxPerMember)
+            .GreaterThan(0).When(x => x.MaxPerMember.HasValue)
+            .WithMessage("Max per member must be greater than zero.");
+            
+        RuleFor(x => x)
+            .Must(x => !x.MaxPerMember.HasValue || x.MaxPerMember.Value <= x.TotalQuantity)
+            .WithMessage("Max per member cannot be greater than the total ticket quantity.");
+    }
+}

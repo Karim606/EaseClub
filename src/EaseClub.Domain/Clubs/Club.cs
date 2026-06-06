@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.Clubs;
+using EaseClub.Domain.Clubs;
 using EaseClub.Domain.Branches;
 using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using EaseClub.Domain.ClubAdmin;
 using EaseClub.Domain.Memberships;
 using EaseClub.Domain.Clubs.ValueObjects;
+using EaseClub.Domain.Files;
 
 namespace EaseClub.Domain.Clubs
 {
@@ -19,15 +20,15 @@ namespace EaseClub.Domain.Clubs
         private Club()
         {
         }
-        private Club(Guid id, string name, string about, ContactInfo contactInfo, IEnumerable<WorkSchedule> workSchedules, IEnumerable<Amenity> amenities,string code, string? logo = null, string? coverImage = null): base(id)
+        private Club(Guid id, string name, string about, ContactInfo contactInfo, IEnumerable<WorkSchedule> workSchedules, IEnumerable<Amenity> amenities,string code, Guid? logoId = null, Guid? coverImageId = null): base(id)
         {
             Name = name;
             About = about;
             ContactInfo = contactInfo;
             _workSchedules = workSchedules.ToList();
             _amenities = amenities.ToList();
-            LogoUrl = logo;
-            CoverImageUrl = coverImage;
+            LogoId = logoId;
+            CoverImageId = coverImageId;
             Code = code;
         }
         
@@ -42,8 +43,10 @@ namespace EaseClub.Domain.Clubs
 
         private readonly List<Membership> _Memberships = new List<Membership>();
         public IReadOnlyList<Membership> Memberships => _Memberships.AsReadOnly();
-        public string? LogoUrl { get; private set; } // Reference to your FileResource
-        public string? CoverImageUrl { get; private set; } // Reference to your FileResource
+        public Guid? LogoId { get; private set; }
+        public FileResource? Logo { get; private set; }
+        public Guid? CoverImageId { get; private set; }
+        public FileResource? CoverImage { get; private set; }
         public ContactInfo ContactInfo { get; private set; }
 
         private readonly List<WorkSchedule> _workSchedules = new();
@@ -54,7 +57,7 @@ namespace EaseClub.Domain.Clubs
         public string Code { get; private set; }
         public string About { get; private set; }
 
-        public static Result<Club> Create(Guid id, string name, string about, ContactInfo contactInfo, IEnumerable<WorkSchedule> workSchedules, IEnumerable<Amenity> amenities,string code, string? logo = null, string? coverImage = null)
+        public static Result<Club> Create(Guid id, string name, string about, ContactInfo contactInfo, IEnumerable<WorkSchedule> workSchedules, IEnumerable<Amenity> amenities,string code, Guid? logoId = null, Guid? coverImageId = null)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
@@ -67,7 +70,7 @@ namespace EaseClub.Domain.Clubs
             }
 
             
-            return new Club(id, name, about, contactInfo, workSchedules, amenities,code, logo, coverImage);
+            return new Club(id, name, about, contactInfo, workSchedules, amenities,code, logoId, coverImageId);
         }
 
         public void SetWorkSchedules(IEnumerable<WorkSchedule> schedules)
@@ -82,16 +85,16 @@ namespace EaseClub.Domain.Clubs
         ContactInfo contact,
         IEnumerable<WorkSchedule> schedules,
         IEnumerable<Amenity> amenities,
-        string? logoUrl,
-        string? coverImageUrl)
+        Guid? logoId,
+        Guid? coverImageId)
         {
             About = about;
             ContactInfo = contact;
             SetWorkSchedules(schedules);
             _amenities.Clear();
             _amenities.AddRange(amenities);
-            LogoUrl = logoUrl;
-            CoverImageUrl = coverImageUrl;
+            LogoId = logoId;
+            CoverImageId = coverImageId;
         }
         public void Deactivate() => IsActive = false;
         public void Activate() => IsActive = true;

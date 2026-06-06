@@ -22,7 +22,7 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.AddInstallmentTe
 
         public async Task<Result<Success>> Handle(AddInstallmentTemplateToPlanCommand request, CancellationToken cancellationToken)
         {
-            var plan = await planRepository.GetByIdAsync(request.PlanId);
+            var plan = await planRepository.GetPlanWithDetailsAsync(request.PlanId, cancellationToken);
             if (plan is null) return MembershipPlanErrors.NotFound;
 
             // Domain Logic: Plan ensures it doesn't add the same template twice

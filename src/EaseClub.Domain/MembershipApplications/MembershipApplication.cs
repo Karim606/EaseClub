@@ -346,7 +346,7 @@ namespace EaseClub.Domain.MembershipApplications
             // 4. Finalize State
             Status = ApplicationStatus.Submitted;
             PricingState = PricingState.Locked;
-
+            SubmittedAt = DateTime.UtcNow;
             return Result.Success;
         }
 
@@ -374,10 +374,10 @@ namespace EaseClub.Domain.MembershipApplications
             // Raise domain events
 
             if (review.Decision == DecisionsAboutApplication.Approved)
-                RaiseDomainEvent(new ApplicationApprovedEvent(MemberId,Id, review.Id,review.Note));
+                RaiseDomainEvent(new ApplicationApprovedEvent(MemberId,Id,TrackingNumber, review.Id,review.Note));
 
             if (review.Decision == DecisionsAboutApplication.Rejected)
-                RaiseDomainEvent(new ApplicationRejectedEvent(MemberId,Id, review.Id, review.Reason!));
+                RaiseDomainEvent(new ApplicationRejectedEvent(MemberId,Id, TrackingNumber, review.Id, review.Reason!));
 
             return Result.Success;
         }

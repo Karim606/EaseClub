@@ -3,11 +3,13 @@ using EaseClub.Application.Features.Payment.Queries.GetInvoicesByUser;
 using EaseClub.Application.Features.Payment.Queries.GetInvoicesForClub;
 using EaseClub.Application.Features.Payment.Commands.IssueInvoice;
 using EaseClub.Application.Features.Payment.Queries.GetInvoiceStatus;
+using EaseClub.Application.Features.Payment.Queries.GetPaymentStatsByClub;
 using EaseClub.Domain.Payment.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using EaseClub.Application.Features.Payment.Queries;
 
 namespace EaseClub.Api.Controllers
 {
@@ -43,6 +45,26 @@ namespace EaseClub.Api.Controllers
         {
             var result = await sender.Send(new GetInvoicesByClubQuery(clubId,filters,pagination),ct);
             
+            return result.Match(
+                success => Ok(success),
+                Problem
+            );
+        }
+
+        [Authorize(Roles = "ClubAdmin,SuperAdmin")]
+        [HttpGet("/api/v{version:ApiVersion}/clubs/{clubId}/invoices/stats")]
+        [ProducesResponseType(typeof(PaymentStatsDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+        [EndpointName("GetPaymentStatsByClub")]
+        [EndpointSummary("Get payment stats for a club")]
+        [EndpointDescription("Retrieves aggregated financial stats for a specific club (Total Receivables, Overdue Dues, Overdue Count, Monthly Revenue).")]
+        public async Task<IActionResult> GetPaymentStats(Guid clubId, CancellationToken ct = default)
+        {
+            var result = await sender.Send(new GetPaymentStatsByClubQuery(clubId), ct);
+
             return result.Match(
                 success => Ok(success),
                 Problem

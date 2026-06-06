@@ -71,20 +71,33 @@ namespace EaseClub.Infrastructure.Services
 
         public string GetSignedUrl(string filePath, int expireInSeconds = 300)
         {
-            // Compute expiry timestamp
-            long expireTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + expireInSeconds;
+            // Normalize base URL
+            var endpoint = _baseUrl.TrimEnd('/');
 
-            // The data to sign: path + expiry
+            // Normalize path
+            filePath = filePath.TrimStart('/');
+
+            // Expiry
+            long expireTime =
+                DateTimeOffset.UtcNow.ToUnixTimeSeconds() + expireInSeconds;
+
+            // EXACT string ImageKit signs
             string dataToSign = filePath + expireTime;
 
-            using var hmac = new HMACSHA1(Encoding.UTF8.GetBytes(_privateApiKey));
-            var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(dataToSign));
+            using var hmac = new HMACSHA1(
+                Encoding.UTF8.GetBytes(_privateApiKey)
+            );
 
-            // Convert to lowercase hex
-            string signature = BitConverter.ToString(hash).Replace("-", "").ToLower();
+            byte[] hash = hmac.ComputeHash(
+                Encoding.UTF8.GetBytes(dataToSign)
+            );
 
-            // Return signed URL
-            return $"{_baseUrl}{"/"+filePath}?ik-s={signature}&ik-t={expireTime}";
+            string signature = BitConverter
+                .ToString(hash)
+                .Replace("-", "")
+                .ToLowerInvariant();
+
+            return $"{endpoint}/{filePath}?ik-t={expireTime}&ik-s={signature}";
         }
 
         public string GetFileUrl(string filePath)

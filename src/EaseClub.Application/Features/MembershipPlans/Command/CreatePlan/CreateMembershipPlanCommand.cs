@@ -18,7 +18,7 @@ namespace EaseClub.Application.Features.MembershipPlans.Command.CreatePlan
     EnrollmentMode EnrollmentMode,
     string Name,
     decimal Price,
-    int DurationInDays,
+    int MaxPaymentPeriodInDays,
     int subscriptionValidityInYears,
     int maxFamilyMembers,
     PaymentMode paymentMode,

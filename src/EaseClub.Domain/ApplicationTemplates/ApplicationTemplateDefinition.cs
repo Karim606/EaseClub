@@ -37,6 +37,9 @@ namespace EaseClub.Domain.ApplicationTemplates
         public bool IsActive { get; private set; } = true;
         public bool SupportsFamilyPlans { get; private set; } = false;
 
+        public void Activate() => IsActive = true;
+        public void Deactivate() => IsActive = false;
+
         //private readonly List<ApplicationFieldDefinition> _Fields = new();
         //public  IReadOnlyList<ApplicationFieldDefinition> Fields => _Fields.AsReadOnly();
 
@@ -51,7 +54,7 @@ namespace EaseClub.Domain.ApplicationTemplates
 
         private HashSet<string>? _fieldKeys;
 
-        private HashSet<string> FieldKeys
+        public HashSet<string> FieldKeys
         {
             get
             {
@@ -98,6 +101,16 @@ namespace EaseClub.Domain.ApplicationTemplates
             if (duplicateKeys.Any())
             {
                 return Error.Conflict("Template.DuplicateKey", $"Duplicate keys found: {string.Join(", ", duplicateKeys)}");
+            }
+
+            // Validate at most one family section
+            var familySectionCount = newSteps
+                .SelectMany(s => s.Sections)
+                .Count(sec => sec.Intent == SectionIntent.FamilyMembers);
+
+            if (familySectionCount > 1)
+            {
+                return ApplicationTemplateDefinitionErrors.MultipleFamilySections;
             }
 
             // Replace existing steps with the new structure

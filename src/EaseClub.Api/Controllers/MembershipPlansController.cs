@@ -1,8 +1,8 @@
 using EaseClub.Application.Common.Pagination;
 using EaseClub.Application.Features.MembershipPlans.Command.CreatePlan;
-using EaseClub.Application.Features.MembershipPlans.Command.DeleteMembershipPlan;
 using EaseClub.Application.Features.MembershipPlans.Command.SyncInstallmentTemplates;
 using EaseClub.Application.Features.MembershipPlans.Command.UpdatePlan;
+using EaseClub.Application.Features.MembershipPlans.Command.ToggleMembershipPlanStatus;
 using EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPlanDetails;
 using EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPlansForMember;
 using EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPlansForAdmin;
@@ -184,15 +184,18 @@ This endpoint supports two modes of pagination:
         }
 
         [Authorize(Roles = "ClubAdmin,SuperAdmin")]
-        [HttpDelete("{id}")]
+        [HttpPatch("{id:guid}/toggle-status")]
         [MapToApiVersion("1.0")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<IActionResult> Delete(Guid id)
+        [EndpointName("ToggleMembershipPlanStatus")]
+        [EndpointSummary("Toggles the activation status (Active/Inactive) of a membership plan.")]
+        public async Task<IActionResult> ToggleStatus(Guid id)
         {
-
-            var result = await sender.Send(new DeleteMembershipPlanCommand(id));
-
-            return result.Match(_ => NoContent(), Problem);
+            var result = await sender.Send(new ToggleMembershipPlanStatusCommand(id));
+            return result.Match(
+                _ => NoContent(),
+                Problem);
         }
+        
     }
 }

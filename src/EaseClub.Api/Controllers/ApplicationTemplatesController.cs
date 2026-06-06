@@ -3,6 +3,7 @@ using EaseClub.Application.Common.Pagination.Results;
 using EaseClub.Application.Features.ApplicationTemplates.Commands;
 using EaseClub.Application.Features.ApplicationTemplates.Commands.Template.DeleteTemplate;
 using EaseClub.Application.Features.ApplicationTemplates.Commands.Template.SyncMembershipTypes;
+using EaseClub.Application.Features.ApplicationTemplates.Commands.Template.ToggleApplicationTemplateStatus;
 using EaseClub.Application.Features.ApplicationTemplates.Commands.Template.UpsertTemplate;
 using EaseClub.Application.Features.ApplicationTemplates.Queries;
 using EaseClub.Application.Features.ApplicationTemplates.Queries.GetTemplateById;
@@ -318,6 +319,21 @@ This endpoint is used to:
             return result.Match(
                 _ => NoContent(),
                 Problem);
+        }
+
+        [HttpPatch("{templateId}/toggle-status")]
+        [MapToApiVersion("1.0")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [EndpointName("ToggleApplicationTemplateStatus")]
+        [EndpointSummary("Toggles the activation status (Active/Inactive) of an application template.")]
+        public async Task<IActionResult> ToggleStatus(Guid templateId)
+        {
+            var result = await sender.Send(new ToggleApplicationTemplateStatusCommand(templateId));
+            return result.Match(_ => NoContent(), Problem);
         }
 
         #endregion

@@ -178,6 +178,10 @@ namespace EaseClub.Domain.Memberships
             if (installmentTemplate != null && plan.InstallmentsAllowdInRenewal == false)
                 return Error.Conflict("Renewal.InstallmentsNotAllowed", "This plan does not allow installments in renewal.");
 
+            var remainingDays = (membership.FarestEndDate - DateTime.UtcNow).Days;
+            if (remainingDays > 15)
+                return Errors.MembershipErrors.RenewalNotAllowedEarly;
+
             var req = new EnrollmentRequest(
                 membership.MemberId,
                 membership.ClubId,
@@ -187,7 +191,7 @@ namespace EaseClub.Domain.Memberships
                 membership.Id,
                 EnrollmentSource.Renewal,
                 plan.SubscriptionValidityInYears,
-                plan.TotalPrice);
+                plan.RenewPrice);
 
             return Create(req);
         }

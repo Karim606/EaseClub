@@ -26,5 +26,11 @@ namespace EaseClub.Domain.PricingPolices
         public Task<PricingPolicyAssignment?> GetAssignmentAsync(Guid targetId, Guid policyId, CancellationToken ct = default);
 
         public Task DeleteAssignmentAsync(PricingPolicyAssignment assignment, CancellationToken ct = default);
+
+        /// <summary>
+        /// Directly persists a new PricingPolicyAssignment row.
+        /// Used for Event-target assignments where no aggregate root owns the collection.
+        /// </summary>
+        public Task AddAssignmentAsync(PricingPolicyAssignment assignment, CancellationToken ct = default);
     }
 }

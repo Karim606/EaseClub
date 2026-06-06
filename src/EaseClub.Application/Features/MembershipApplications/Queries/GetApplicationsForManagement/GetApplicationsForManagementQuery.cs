@@ -21,7 +21,7 @@ namespace EaseClub.Application.Features.MembershipApplications.Queries.GetApplic
     }
 
     public class GetApplicationsQueryFilters {
-        public AppStatus? Status { get; set; }
+        public ApplicationStatus? Status { get; set; }
         public DateOnly? SubmittedFrom { get; set; }
         public DateOnly? SubmittedTo { get; set; }
         public string? TrackingNumber { get; set; }
@@ -33,7 +33,7 @@ namespace EaseClub.Application.Features.MembershipApplications.Queries.GetApplic
 
         Submitted,     // Pending Review
         //UnderReview,   // Admin is looking at it
-        NeedsChanges,  // Admin sent it back to the user
+        //NeedsChanges,  // Admin sent it back to the user
         Approved,      // The decision is made!
         Rejected       // The decision is made!
     }

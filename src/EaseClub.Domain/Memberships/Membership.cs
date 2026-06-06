@@ -34,6 +34,7 @@ namespace EaseClub.Domain.Memberships
             ClubId = clubId;
             MembershipTypeId = membershipTypeId;
             MembershipPlanId = membershipPlanId;
+            MembershipNumber = membershipNumber;
             Status = MembershipStatus.Active;
             ExtraDataJson = extraDataJson;
         }
@@ -139,7 +140,15 @@ namespace EaseClub.Domain.Memberships
                 var relationshipStr = group.FirstOrDefault(a => a.FieldKey == FamilyMemberField.Relationship)?.Value;
                 var dobStr = group.FirstOrDefault(a => a.FieldKey == FamilyMemberField.DateOfBirth)?.Value;
 
-                var dob  = DateOnly.TryParse(dobStr, out var parsedDob) ? parsedDob : default;
+                var dob = DateOnly.MinValue;
+                if (DateOnly.TryParse(dobStr, out var parsedDob))
+                {
+                    dob = parsedDob;
+                }
+                else if (DateTime.TryParse(dobStr, out var parsedDateTime))
+                {
+                    dob = DateOnly.FromDateTime(parsedDateTime);
+                }
                 var rel  = Enum.TryParse<FamilyRelationship>(relationshipStr, true, out var parsedRel) ? parsedRel : default;
 
                 var member = FamilyMember.Create(membership.Id,fullName, rel, dob);
@@ -450,6 +459,10 @@ namespace EaseClub.Domain.Memberships
 
             return (GetCurrentCycle()?.Period.EndDate - DateTime.UtcNow)?.Days ?? 0;
         }
+
+        public DateTime FarestEndDate => _MembershipCycles.Any()
+            ? _MembershipCycles.Max(c => c.Period.EndDate)
+            : (GetCurrentCycle()?.Period.EndDate ?? CreatedAt);
 
         #endregion
     }

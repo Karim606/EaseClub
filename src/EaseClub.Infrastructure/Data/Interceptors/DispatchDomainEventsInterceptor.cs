@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.Common;
+using EaseClub.Domain.Common;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -8,9 +8,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.DependencyInjection;
+
 namespace EaseClub.Infrastructure.Data.Interceptors
 {
-    public class DispatchDomainEventsInterceptor(IMediator mediator)
+    public class DispatchDomainEventsInterceptor(IServiceProvider serviceProvider)
     : SaveChangesInterceptor
     {
         public override async ValueTask<int> SavedChangesAsync(
@@ -29,7 +31,7 @@ namespace EaseClub.Infrastructure.Data.Interceptors
         private async Task DispatchDomainEvents(DbContext context)
         {
             var entities = context.ChangeTracker
-                .Entries<AuditableEntity>()
+                .Entries<Entity>()
                 .Where(e => e.Entity.DomainEvents.Any())
                 .Select(e => e.Entity);
 
@@ -38,6 +40,8 @@ namespace EaseClub.Infrastructure.Data.Interceptors
                 .ToList();
 
             entities.ToList().ForEach(e => e.ClearDomainEvents());
+
+            var mediator = serviceProvider.GetRequiredService<IMediator>();
 
             foreach (var domainEvent in domainEvents)
             {

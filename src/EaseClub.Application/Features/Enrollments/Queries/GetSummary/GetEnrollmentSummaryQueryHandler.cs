@@ -35,7 +35,9 @@ namespace EaseClub.Application.Features.Enrollments.Queries.GetSummary
                 enrollment.Amount,
                 summaries,
                 enrollment.ExpiresAt,
-                enrollment.Source.ToString());
+                enrollment.Source.ToString(),
+                enrollment.FirstInvoiceId,
+                enrollment.Status.ToString());
         }
     }
 }

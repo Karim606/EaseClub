@@ -21,7 +21,7 @@ namespace EaseClub.Application.Features.Memberships.Queries.GetMembershipsForMem
 
             var memberships = await  membershipRepository.GetByMemberIdAsync(request.userId,request.Status);
 
-            return memberships.Select( x => new MembershipForMemberDto(x.Id,x.MembershipNumber,x.Club.Id,x.Club.Name,x.Status,x.GetCurrentCycle().Period)
+            return memberships.Select( x => new MembershipForMemberDto(x.Id,x.MembershipNumber,x.Club.Id,x.Club.Name,x.Status,x.GetCurrentCycle().Period, x.FarestEndDate)
             ).ToList();
         }
     }

@@ -32,9 +32,10 @@ namespace EaseClub.Application.Features.Clubs.Queries.GetClubById
                 About = club.About,
                 ContactInfo = club.ContactInfo,
                 WorkSchedules = club.WorkSchedules.ToList(),
-                LogoUrl = club.LogoUrl,
-                CoverImageUrl = club.CoverImageUrl
-
+                LogoUrl = club.Logo != null ? fileStorageService.GetFileUrl(club.Logo.FilePath) : string.Empty,
+                CoverImageUrl = club.CoverImage != null ? fileStorageService.GetFileUrl(club.CoverImage.FilePath) : string.Empty,
+                LogoId = club.LogoId,
+                CoverImageId = club.CoverImageId
             };
             return response;
         }

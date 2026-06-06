@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Interfaces;
+using EaseClub.Application.Common.Interfaces;
 using EaseClub.Application.Common.Pagination;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipPlans;
@@ -27,7 +27,7 @@ namespace EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPla
 
         // Pricing & Duration
         public decimal Price { get; set; }
-        public int MaxPaymentPeriod { get; set; }
+        public int MaxPaymentPeriodInDays { get; set; }
         public int SubscriptionValidityInYears { get; set; }
         public int MaxFamilyMembers { get; set; }
 

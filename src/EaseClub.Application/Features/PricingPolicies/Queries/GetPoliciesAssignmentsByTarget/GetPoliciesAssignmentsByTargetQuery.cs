@@ -1,8 +1,9 @@
-﻿using EaseClub.Application.Common;
+using EaseClub.Application.Common;
 using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.ApplicationTemplates;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.PricingPolices;
+using EaseClub.Domain.Events;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -23,6 +24,10 @@ namespace EaseClub.Application.Features.PricingPolicies.Queries.GetPoliciesAssig
                    if (TargetType == PricingPolicyTargetType.ApplicationTemplate)
                    {
                        target = await auth.DoesResourceBelongToClubAsync<ApplicationTemplateDefinition>(TargetId, clubId);
+                   }
+                   else if (TargetType == PricingPolicyTargetType.Event)
+                   {
+                       target = await auth.DoesResourceBelongToClubAsync<Event>(TargetId, clubId);
                    }
                    return target;
                },

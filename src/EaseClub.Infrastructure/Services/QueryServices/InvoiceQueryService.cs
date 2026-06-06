@@ -1,11 +1,14 @@
-﻿using EaseClub.Application.Common.Pagination;
+using EaseClub.Application.Common.Pagination;
 using EaseClub.Application.Features.Payment.Queries;
 using EaseClub.Application.Features.Payment.Queries.GetInvoicesForClub;
+using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.MembershipPlans;
 using EaseClub.Domain.Payment;
 using EaseClub.Domain.Payment.Enums;
 using EaseClub.Infrastructure.Common.QueryServices;
 using EaseClub.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -15,7 +18,6 @@ using System.Threading.Tasks;
 
 namespace EaseClub.Infrastructure.Services.QueryServices
 {
-
     public class InvoiceQueryService : BaseQueryService<Invoice>, IInvoiceQueryService
     {
         public InvoiceQueryService(AppDbContext context, ILogger<InvoiceQueryService> logger)
@@ -71,13 +73,53 @@ namespace EaseClub.Infrastructure.Services.QueryServices
                                 .Where(t => t.Status == PaymentTransactionStatus.Succeeded)
                                 .Select(t => t.Method)
                                 .FirstOrDefault(),
-                    
+                    BillingItemReadableId = i.BillingItemReadableId
                 },
                 orderSelector: i => i.CreatedAt, // default sorting by due date
                 cancellationToken: ct
             );
         }
-    }
 
-   
+        public async Task<Result<PaymentStatsDto>> GetPaymentStatsAsync(Guid clubId, CancellationToken ct)
+        {
+            try
+            {
+                // 1. Total Receivables: Sum of Pending & Overdue installments
+                var totalReceivables = await _context.MembershipInstallments
+                    .Where(i => i.MembershipCycle.Membership.ClubId == clubId &&
+                                (i.Status == InstallmentStatus.Pending || i.Status == InstallmentStatus.Overdue))
+                    .SumAsync(i => (decimal?)i.Amount, ct) ?? 0;
+
+                // 2. Overdue Dues & Count
+                var overdueQuery = _context.MembershipInstallments
+                    .Where(i => i.MembershipCycle.Membership.ClubId == clubId &&
+                                i.Status == InstallmentStatus.Overdue);
+
+                var overdueDues = await overdueQuery.SumAsync(i => (decimal?)i.Amount, ct) ?? 0;
+                var overdueCount = await overdueQuery.CountAsync(ct);
+
+                // 3. Monthly Revenue: Paid Invoices this calendar month
+                var now = DateTime.UtcNow;
+                var startOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+
+                var monthlyRevenue = await _context.Invoices
+                    .Where(i => i.ClubId == clubId && i.Status == InvoiceStatus.Paid)
+                    .Where(i => i.Transactions.Any(t => t.Status == PaymentTransactionStatus.Succeeded && t.CompletedAt >= startOfMonth))
+                    .SumAsync(i => (decimal?)i.Amount, ct) ?? 0;
+
+                return new PaymentStatsDto
+                {
+                    TotalReceivables = totalReceivables,
+                    OverdueDues = overdueDues,
+                    OverdueCount = overdueCount,
+                    MonthlyRevenue = monthlyRevenue
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting payment stats for club {ClubId}", clubId);
+                return Error.Failure("Payment.StatsError", "Failed to retrieve payment statistics.");
+            }
+        }
+    }
 }

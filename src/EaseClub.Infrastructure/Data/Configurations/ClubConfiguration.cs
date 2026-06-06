@@ -21,6 +21,16 @@ namespace EaseClub.Infrastructure.Data.Configurations
         {
             builder.HasKey(c => c.Id);
 
+            builder.HasOne(c => c.Logo)
+                   .WithMany()
+                   .HasForeignKey(c => c.LogoId)
+                   .OnDelete(DeleteBehavior.NoAction);
+
+            builder.HasOne(c => c.CoverImage)
+                   .WithMany()
+                   .HasForeignKey(c => c.CoverImageId)
+                   .OnDelete(DeleteBehavior.NoAction);
+
                   builder
                  .HasMany(c => c.Branches)
                  .WithOne(b => b.Club)

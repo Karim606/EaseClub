@@ -129,8 +129,8 @@ namespace EaseClub.Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("CoverImageUrl")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<Guid?>("CoverImageId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -141,8 +141,8 @@ namespace EaseClub.Infrastructure.Data.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<string>("LogoUrl")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<Guid?>("LogoId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -162,6 +162,10 @@ namespace EaseClub.Infrastructure.Data.Migrations
 
                     b.HasIndex("Code")
                         .IsUnique();
+
+                    b.HasIndex("CoverImageId");
+
+                    b.HasIndex("LogoId");
 
                     b.ToTable("Clubs");
                 });
@@ -198,6 +202,210 @@ namespace EaseClub.Infrastructure.Data.Migrations
                     b.ToTable("Users", (string)null);
 
                     b.UseTptMappingStrategy();
+                });
+
+            modelBuilder.Entity("EaseClub.Domain.Events.Entities.Attendee", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("Age")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("AttendeeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AttendeeName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid>("EventRegistrationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Gender")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid>("TicketTypeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventRegistrationId");
+
+                    b.ToTable("EventAttendees");
+                });
+
+            modelBuilder.Entity("EaseClub.Domain.Events.Entities.EventRegistration", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AppliedPolicies")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("FinalTotal")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<Guid?>("InvoiceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsRegistrantAttending")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ReadableId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("RegistrantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("TotalBasePrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId");
+
+                    b.HasIndex("RegistrantId");
+
+                    b.ToTable("EventRegistrations");
+                });
+
+            modelBuilder.Entity("EaseClub.Domain.Events.Entities.TicketType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("BasePrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("MaxPerMember")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("RequiresMembership")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<int>("SoldQuantity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalQuantity")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId");
+
+                    b.ToTable("TicketTypes");
+                });
+
+            modelBuilder.Entity("EaseClub.Domain.Events.Event", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AccessType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Badge")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Capacity")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ClubId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ImageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("PricingPolicyIds")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Venue")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClubId");
+
+                    b.HasIndex("ImageId");
+
+                    b.ToTable("Events");
                 });
 
             modelBuilder.Entity("EaseClub.Domain.Files.FileResource", b =>
@@ -894,6 +1102,9 @@ namespace EaseClub.Infrastructure.Data.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<string>("MetadataJson")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -1442,6 +1653,16 @@ namespace EaseClub.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("EaseClub.Domain.Clubs.Club", b =>
                 {
+                    b.HasOne("EaseClub.Domain.Files.FileResource", "CoverImage")
+                        .WithMany()
+                        .HasForeignKey("CoverImageId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("EaseClub.Domain.Files.FileResource", "Logo")
+                        .WithMany()
+                        .HasForeignKey("LogoId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.OwnsOne("EaseClub.Domain.Clubs.ValueObjects.ContactInfo", "ContactInfo", b1 =>
                         {
                             b1.Property<Guid>("ClubId")
@@ -1499,6 +1720,10 @@ namespace EaseClub.Infrastructure.Data.Migrations
 
                     b.Navigation("ContactInfo")
                         .IsRequired();
+
+                    b.Navigation("CoverImage");
+
+                    b.Navigation("Logo");
                 });
 
             modelBuilder.Entity("EaseClub.Domain.Common.UserBase", b =>
@@ -1556,6 +1781,59 @@ namespace EaseClub.Infrastructure.Data.Migrations
 
                     b.Navigation("PhoneNumber")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("EaseClub.Domain.Events.Entities.Attendee", b =>
+                {
+                    b.HasOne("EaseClub.Domain.Events.Entities.EventRegistration", null)
+                        .WithMany("Attendees")
+                        .HasForeignKey("EventRegistrationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("EaseClub.Domain.Events.Entities.EventRegistration", b =>
+                {
+                    b.HasOne("EaseClub.Domain.Events.Event", "Event")
+                        .WithMany("Registrations")
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("EaseClub.Infrastructure.Auth.Entities.AuthUser", null)
+                        .WithMany()
+                        .HasForeignKey("RegistrantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Event");
+                });
+
+            modelBuilder.Entity("EaseClub.Domain.Events.Entities.TicketType", b =>
+                {
+                    b.HasOne("EaseClub.Domain.Events.Event", null)
+                        .WithMany("TicketTypes")
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("EaseClub.Domain.Events.Event", b =>
+                {
+                    b.HasOne("EaseClub.Domain.Clubs.Club", "Club")
+                        .WithMany()
+                        .HasForeignKey("ClubId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EaseClub.Domain.Files.FileResource", "Image")
+                        .WithMany()
+                        .HasForeignKey("ImageId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Club");
+
+                    b.Navigation("Image");
                 });
 
             modelBuilder.Entity("EaseClub.Domain.MembershipApplications.ApplicationReview", b =>
@@ -2030,6 +2308,18 @@ namespace EaseClub.Infrastructure.Data.Migrations
                     b.Navigation("ClubAdmins");
 
                     b.Navigation("Memberships");
+                });
+
+            modelBuilder.Entity("EaseClub.Domain.Events.Entities.EventRegistration", b =>
+                {
+                    b.Navigation("Attendees");
+                });
+
+            modelBuilder.Entity("EaseClub.Domain.Events.Event", b =>
+                {
+                    b.Navigation("Registrations");
+
+                    b.Navigation("TicketTypes");
                 });
 
             modelBuilder.Entity("EaseClub.Domain.MembershipApplications.MembershipApplication", b =>

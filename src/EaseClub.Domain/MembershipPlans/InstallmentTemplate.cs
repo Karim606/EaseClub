@@ -14,6 +14,9 @@ namespace EaseClub.Domain.MembershipPlans
 
         public bool IsActive { get; private set; } = true;
 
+        public void Activate() => IsActive = true;
+        public void Deactivate() => IsActive = false;
+
         private readonly List<Installment>_Installments = new();
         public  IReadOnlyList<Installment> Installments => _Installments.AsReadOnly();
 

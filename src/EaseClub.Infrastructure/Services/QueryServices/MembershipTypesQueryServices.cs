@@ -31,9 +31,10 @@ namespace EaseClub.Infrastructure.Services.QueryServices
             }
             if (branchId != null)
             {
-                query = query.Where(p => p.PermittedBranches.Any(b => b.BranchId == branchId));
+                query = query.Where(p => p.AllBranchesPermitted || p.PermittedBranches.Any(b => b.BranchId == branchId));
             }
-            if (allBranchesPermitted != null)
+
+            else if (allBranchesPermitted != null)
             {
                 query = query.Where(p => p.AllBranchesPermitted == allBranchesPermitted);
             }
@@ -60,14 +61,16 @@ namespace EaseClub.Infrastructure.Services.QueryServices
             {
                 query = query.Where(p => p.ClubId == clubId);
             }
+
             if (branchId != null)
             {
-                query = query.Where(p => p.PermittedBranches.Any(b => b.BranchId == branchId));
+                query = query.Where(p =>p.AllBranchesPermitted || p.PermittedBranches.Any(b => b.BranchId == branchId));
             }
-            if (allBranchesPermitted != null)
+            else if (allBranchesPermitted != null)
             {
                 query = query.Where(p => p.AllBranchesPermitted == allBranchesPermitted);
             }
+
             if (isActive != null)
             {
                 query = query.Where(p => p.IsActive == isActive);

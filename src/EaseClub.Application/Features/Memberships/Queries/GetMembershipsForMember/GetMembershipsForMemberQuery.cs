@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common;
+using EaseClub.Application.Common;
 using EaseClub.Application.Common.Interfaces;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.Memberships;
@@ -24,5 +24,5 @@ namespace EaseClub.Application.Features.Memberships.Queries.GetMembershipsForMem
         }
     }
 
-    public record MembershipForMemberDto(Guid Id, string MembershipNumber,Guid ClubId,string ClubName, MembershipStatus Status,MembershipPeriod period);
+    public record MembershipForMemberDto(Guid Id, string MembershipNumber,Guid ClubId,string ClubName, MembershipStatus Status,MembershipPeriod period, DateTime FarestEndDate);
 }

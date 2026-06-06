@@ -8,8 +8,8 @@ using System.Threading.Tasks;
 namespace EaseClub.Domain.MembershipApplications
 {
 
-    public sealed record ApplicationApprovedEvent(Guid ApplicationOwnerId,Guid ApplicationId,Guid ReviewId,string? optionalNotes=null):DomainEvent;
+    public sealed record ApplicationApprovedEvent(Guid ApplicationOwnerId,Guid ApplicationId,string TrackingNumber,Guid ReviewId,string? optionalNotes=null):DomainEvent;
 
-    public sealed record ApplicationRejectedEvent(Guid ApplicationOwnerId, Guid ApplicationId, Guid ReviewId, string RejectionReason):DomainEvent;
+    public sealed record ApplicationRejectedEvent(Guid ApplicationOwnerId, Guid ApplicationId,string TrackingNumber, Guid ReviewId, string RejectionReason):DomainEvent;
 
 }

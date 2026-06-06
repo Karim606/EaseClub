@@ -1,7 +1,8 @@
-﻿using EaseClub.Application.Common.Pagination.Parameters;
+using EaseClub.Application.Common.Pagination.Parameters;
 using EaseClub.Application.Features.Clubs.Commands.UpdateClubDetails;
 using EaseClub.Application.Features.Clubs.Queries.GetClubById;
 using EaseClub.Application.Features.Clubs.Queries.GetClubs;
+using EaseClub.Application.Features.Clubs.Queries.GetAdminDashboard;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -67,6 +68,23 @@ namespace EaseClub.Api.Controllers
         {
             var result = await sender.Send(new GetClubsQuery(parameters));
 
+            return result.Match(
+                (val) => Ok(val),
+                Problem);
+        }
+
+        [Authorize(Roles = "ClubAdmin,SuperAdmin")]
+        [HttpGet("{clubId}/admin-dashboard")]
+        [MapToApiVersion("1.0")]
+        [ProducesResponseType(typeof(ClubAdminDashboardResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+        [EndpointName("GetClubAdminDashboard")]
+        [EndpointSummary("Gets the operational dashboard stats for a club administrator.")]
+        public async Task<IActionResult> GetAdminDashboard(Guid clubId)
+        {
+            var result = await sender.Send(new GetAdminDashboardQuery(clubId));
             return result.Match(
                 (val) => Ok(val),
                 Problem);

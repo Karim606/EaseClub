@@ -1,6 +1,6 @@
-﻿using EaseClub.Application.Features.Branches.Commands.CreateBranch;
-using EaseClub.Application.Features.Branches.Commands.DeleteBranch;
+using EaseClub.Application.Features.Branches.Commands.CreateBranch;
 using EaseClub.Application.Features.Branches.Commands.EditBranch;
+using EaseClub.Application.Features.Branches.Commands.ToggleBranchStatus;
 using EaseClub.Application.Features.Branches.Queries.GetBranchById;
 using EaseClub.Application.Features.Branches.Queries.GetBranchesByClub;
 using EaseClub.Application.Features.Branches.Queries.GetBranchesForAdmins;
@@ -104,17 +104,16 @@ namespace EaseClub.Api.Controllers
         }
 
         [Authorize(Roles = "ClubAdmin,SuperAdmin")]
-        [HttpDelete("{id}")]
+        [HttpPatch("{id}/toggle-status")]
         [MapToApiVersion("1.0")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [EndpointName("DeleteBranch")]
-        [EndpointSummary("Remove a branch from the club.")]
-        public async Task<IActionResult> Delete(Guid id)
+        [EndpointName("ToggleBranchStatus")]
+        [EndpointSummary("Toggles the activation status (Active/Inactive) of a branch.")]
+        public async Task<IActionResult> ToggleStatus(Guid id)
         {
-            var result = await sender.Send(new DeleteBranchCommand(id));
-
+            var result = await sender.Send(new ToggleBranchStatusCommand(id));
             return result.Match(
-                (_) => NoContent(),
+                _ => NoContent(),
                 Problem);
         }
     }

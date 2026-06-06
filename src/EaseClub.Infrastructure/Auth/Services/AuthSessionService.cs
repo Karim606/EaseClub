@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.interfaces;
+using EaseClub.Application.Common.interfaces;
 using EaseClub.Application.Features.Auth.Common.Dtos;
 using EaseClub.Application.Features.Auth.Common.Interfaces;
 using EaseClub.Domain.Common;
@@ -134,7 +134,11 @@ namespace EaseClub.Infrastructure.Auth.Services
             await _refreshRepo.SaveChangesAsync();
 
             var roles = (await _userManager.GetRolesAsync(user)).ToList();
-            var accessToken = _jwtService.GenerateToken(user.UserName!, user.Email!, user.Id, roles).Value;
+            var domainUser = await _context.UsersBase.FirstOrDefaultAsync(ub => ub.Id == user.Id);
+            var fullName = domainUser != null
+                ? $"{domainUser.FirstName} {domainUser.LastName}"
+                : user.UserName!;
+            var accessToken = _jwtService.GenerateToken(fullName, user.Email!, user.Id, roles).Value;
 
             _logger.LogInformation("Refresh token rotated successfully for UserId: {UserId}", user.Id);
             return new AuthTokensDto(accessToken, newRefresh.UnHashedToken,newRefresh.ExpiresAt);

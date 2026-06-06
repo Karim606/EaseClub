@@ -27,6 +27,8 @@ using EaseClub.Domain.Files;
 using EaseClub.Domain.Notifications;
 using EaseClub.Infrastructure.Notifications.UserDevices;
 using EaseClub.Domain.Payment;
+using EaseClub.Domain.Events;
+using EaseClub.Domain.Events.Entities;
 
 namespace EaseClub.Infrastructure.Data
 {
@@ -82,13 +84,37 @@ namespace EaseClub.Infrastructure.Data
             return await base.SaveChangesAsync();
         }
 
+        private static int _inMemorySequence = 1000;
+
         public async Task<int> GetNextMembershipSequenceAsync()
         {
-            var value = await Database
-            .SqlQuery<int>($"SELECT NEXT VALUE FOR MembershipSequence")
-            .SingleAsync();
+            if (!Database.IsSqlServer())
+            {
+                return System.Threading.Interlocked.Increment(ref _inMemorySequence);
+            }
 
-            return value;
+            var connection = Database.GetDbConnection();
+            await using var command = connection.CreateCommand();
+            command.CommandText = "SELECT NEXT VALUE FOR MembershipSequence";
+            
+            bool opened = false;
+            if (connection.State != System.Data.ConnectionState.Open)
+            {
+                await connection.OpenAsync();
+                opened = true;
+            }
+            try
+            {
+                var result = await command.ExecuteScalarAsync();
+                return Convert.ToInt32(result);
+            }
+            finally
+            {
+                if (opened)
+                {
+                    await connection.CloseAsync();
+                }
+            }
         }
 
         public DbSet<AuthUser> AuthUsers => Users;
@@ -126,6 +152,11 @@ namespace EaseClub.Infrastructure.Data
 
         public DbSet<Invoice> Invoices { get; set; }
         public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
+
+        public DbSet<Event> Events { get; set; }
+        public DbSet<TicketType> TicketTypes { get; set; }
+        public DbSet<EventRegistration> EventRegistrations { get; set; }
+        public DbSet<Attendee> EventAttendees { get; set; }
 
     }
 }

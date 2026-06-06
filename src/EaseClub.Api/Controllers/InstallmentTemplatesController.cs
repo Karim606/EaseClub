@@ -1,5 +1,6 @@
 ﻿using EaseClub.Application.Common.Pagination;
 using EaseClub.Application.Features.InstallmentTemplates.Commands.CreateInstallmentTemplate;
+using EaseClub.Application.Features.InstallmentTemplates.Commands.ToggleInstallmentTemplateStatus;
 using EaseClub.Application.Features.InstallmentTemplates.Commands.UpdateTemplateList;
 using EaseClub.Application.Features.InstallmentTemplates.Queries.GetTemplateById;
 using EaseClub.Application.Features.InstallmentTemplates.Queries.GetTemplates;
@@ -77,6 +78,24 @@ namespace EaseClub.Api.Controllers
                 Problem);
         }
 
+        [HttpGet("/api/v{version:ApiVersion}/membership-plans/{planId:guid}/installment-templates")]
+        [MapToApiVersion("1.0")]
+        [ProducesResponseType(typeof(List<TemplatesResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [EndpointName("ListInstallmentTemplatesByPlan")]
+        [EndpointSummary("Retrieves active installment templates assigned to a membership plan.")]
+        public async Task<IActionResult> ListByPlan(Guid planId)
+        {
+            var result = await sender.Send(new GetInstallmentTemplatesByClubQuery(null, planId));
+            return result.Match(
+                (templates) => Ok(templates),
+                Problem);
+        }
+
         [Authorize(Roles = "ClubAdmin,SuperAdmin")]
         [HttpGet("/api/v{version:ApiVersion}/clubs/{clubId}/installment-templates")]
         [MapToApiVersion("1.0")]
@@ -114,6 +133,22 @@ namespace EaseClub.Api.Controllers
             var result = await sender.Send(new UpdateInstallmentListCommand(id, newPercentages));
             return result.Match( _ => NoContent()
                 , Problem);
+        }
+
+        [Authorize(Roles = "ClubAdmin,SuperAdmin")]
+        [HttpPatch("{id}/toggle-status")]
+        [MapToApiVersion("1.0")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [EndpointName("ToggleInstallmentTemplateStatus")]
+        [EndpointSummary("Toggles the activation status (Active/Inactive) of an installment template.")]
+        public async Task<IActionResult> ToggleStatus(Guid id)
+        {
+            var result = await sender.Send(new ToggleInstallmentTemplateStatusCommand(id));
+            return result.Match(_ => NoContent(), Problem);
         }
     }
 }

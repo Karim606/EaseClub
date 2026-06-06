@@ -37,8 +37,11 @@ namespace EaseClub.Infrastructure.Data.Repositories
             {
                 query = query.Where(x => x.Status == status.Value);
             }
-            query = query.Include(m => m.Club);
-            query = query.Include(m => m.MembershipCycles);
+            query = query.Include(m => m.Club)
+            .Include(m => m.Member)
+            .Include(m => m.MembershipCycles)
+            .Include(m => m.FamilyMembers)
+            .AsSplitQuery();
 
             return await query.ToListAsync(ct);
         }

@@ -1,5 +1,6 @@
-﻿using EaseClub.Application.Common.Pagination;
+using EaseClub.Application.Common.Pagination;
 using EaseClub.Domain.Common.Results;
+using EaseClub.Domain.Notifications;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -11,7 +12,7 @@ namespace EaseClub.Application.Features.Notifications.Queries.GetNotifications
 {
   public record GetNotificationsQuery (Guid? UserId,Guid? ClubId,bool? IsRead,PaginationRequest PaginationParameters):IRequest<Result<UnifiedPaginatedResponse<NotificationDto>>>;
 
- public record NotificationDto(Guid Id,Guid? UserId,Guid? ClubId,bool IsRead,string Title,string Message,DateTime CreatedAt);
+ public record NotificationDto(Guid Id,Guid? UserId,Guid? ClubId,bool IsRead,string Title,string Message,DateTime CreatedAt, NotificationType Type, string? MetadataJson);
 
     
 

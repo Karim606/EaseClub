@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.Common;
+using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Results;
 using EaseClub.Domain.MembershipPlans;
 using EaseClub.Domain.Memberships.ValueObjects;
@@ -86,6 +86,7 @@ namespace EaseClub.Domain.Memberships
             foreach (var inst in instBluePrint.Value)
             {
                 var result = MembershipInstallment.Create(
+                    MembershipId,
                     Id,
                     clubId,
                     membershipTypeId,

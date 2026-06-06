@@ -42,7 +42,7 @@ namespace EaseClub.Application.Features.MembershipApplications.EventHandlers
             }
 
             // 2. Get the plan to ensure it exists
-            var plan = await _planRepository.GetByIdAsync(app.MembershipPlanId, ct);
+            var plan = await _planRepository.GetPlanWithDetailsAsync(app.MembershipPlanId, ct);
             if (plan == null)
             {
                 _logger.LogError("Plan {PlanId} not found for approved application {AppId}", app.MembershipPlanId, app.Id);
@@ -61,17 +61,24 @@ namespace EaseClub.Application.Features.MembershipApplications.EventHandlers
 
             if (result.IsError)
             {
-                _logger.LogError("Failed to initialize enrollment for approved application {AppId}: {Error}", 
-                    app.Id, result.TopError.Description);
+                _logger.LogError("Failed to initialize enrollment for approved application {AppId}. ErrorCode: {ErrorCode}, Details: {Error}", 
+                    app.Id, result.TopError.Code, result.TopError.Description);
                 return;
             }
 
             // 4. Notify the user that they can now pay
+            var metadata = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                enrollmentId = result.Value.EnrollmentId,
+                invoiceId = result.Value.InvoiceId
+            });
+
             var notification = Notification.ForUser(
                 app.MemberId,
                 "Application Approved",
-                $"Your application for {plan.Name} has been approved. You can now proceed to payment.",
-                NotificationType.MembershipApplicationApproved);
+                $"Your application {app.TrackingNumber} has been approved. Please pay the first installment to activate your membership within 48 hours, before enrollment expiration.",
+                NotificationType.MembershipApplicationApproved,
+                metadata);
 
             await DispatchNotification(notification, ct);
             

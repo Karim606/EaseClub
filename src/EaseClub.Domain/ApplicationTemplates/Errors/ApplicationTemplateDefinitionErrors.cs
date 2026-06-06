@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.Common;
+using EaseClub.Domain.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -57,6 +57,10 @@ namespace EaseClub.Domain.ApplicationTemplates.Errors
         public static Error DuplicateStepOrder = Error.Validation(
             code: "ApplicationTemplateDefinition.Duplicate.Step.Order",
             description: "Another step exists with same order within template.");
+
+        public static Error MultipleFamilySections = Error.Validation(
+            code: "ApplicationTemplateDefinition.MultipleFamilySections",
+            description: "Only one family section is allowed per template.");
 
     }
 }

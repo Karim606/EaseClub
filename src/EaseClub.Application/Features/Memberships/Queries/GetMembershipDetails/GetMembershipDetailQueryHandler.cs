@@ -36,7 +36,8 @@ namespace EaseClub.Application.Features.Memberships.Queries.GetMembershipDetails
                      fm.FullName,
                      fm.Relationship,
                      fm.DateOfBirth
-                 )).ToList()
+                 )).ToList(),
+                membership.FarestEndDate
             );
             return membershipDetailDto;
         }

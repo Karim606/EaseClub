@@ -16,6 +16,7 @@ namespace EaseClub.Domain.Notifications
         MembershipApplicationRejected = 3,
         MembershipActivated = 4,
         MembershipExpiringSoon = 5,
+        MembershipRenewed = 6,
 
         // Booking / Events
         EventCreated = 10,

@@ -65,7 +65,7 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
                 .ReturnsAsync(template);
 
             _planRepo
-                .Setup(x => x.GetByIdAsync(command.PlanId, CancellationToken.None))
+                .Setup(x => x.GetPlanWithDetailsAsync(command.PlanId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((MembershipPlan?)null);
 
             var result = await _handler.Handle(command, default);
@@ -106,7 +106,7 @@ namespace EaseClub.Application.Tests.Features.MembershipPlans.Commands
                 .ReturnsAsync(template);
 
             _planRepo
-                .Setup(x => x.GetByIdAsync(command.PlanId, CancellationToken.None))
+                .Setup(x => x.GetPlanWithDetailsAsync(command.PlanId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(plan);
 
             var result = await _handler.Handle(command, default);

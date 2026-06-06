@@ -29,8 +29,20 @@ namespace EaseClub.Application.Features.MembershipPlans.Queries.GetMembershipPla
             }
             var temp = await installmentsTemplatesRepository.GetByPlanIdAsync(plan.Id, cancellationToken);
 
-           var dto = new MembershipPlanDetailsDto(plan.Id,plan.Name,plan.Description,plan.MaxPaymentPeriodInDays,plan.TotalPrice,plan.IsActive,
-                temp.Select( x => new InstallmentsTemplateDto(x.Id,x.Name)).ToList());
+           var dto = new MembershipPlanDetailsDto(
+               plan.Id,
+               plan.Name,
+               plan.Description,
+               plan.MaxPaymentPeriodInDays,
+               plan.TotalPrice,
+               plan.IsActive,
+               temp.Select(x => new InstallmentsTemplateDto(x.Id, x.Name)).ToList(),
+               plan.RenewPrice,
+               plan.MembershipTypeId,
+               plan.PaymentMode.ToString(),
+               plan.EnrollmentMode.ToString(),
+               plan.SubscriptionValidityInYears,
+               plan.MaxFamilyMembers);
            
             return dto;
         }

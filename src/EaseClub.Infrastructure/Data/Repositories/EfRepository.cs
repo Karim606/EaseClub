@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.Common;
+using EaseClub.Domain.Common;
 using EaseClub.Domain.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -18,8 +18,8 @@ namespace EaseClub.Infrastructure.Data.Repositories
             _context = context;
         }
 
-        public async Task<T> GetByIdAsync(Guid id,CancellationToken ct = default) =>
-            await _context.Set<T>().FirstOrDefaultAsync(x => x.Id==id);
+        public virtual async Task<T?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
+            await _context.Set<T>().FirstOrDefaultAsync(x => x.Id == id, ct);
 
         public async Task AddAsync(T entity, CancellationToken ct = default) =>
             await _context.Set<T>().AddAsync(entity,ct);

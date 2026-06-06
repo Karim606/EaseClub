@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Features.PricingPolicies.Commands.AssignPolicy;
+using EaseClub.Application.Features.PricingPolicies.Commands.AssignPolicy;
 using EaseClub.Application.Features.PricingPolicies.Commands.CreatePolicy;
 using EaseClub.Application.Features.PricingPolicies.Commands.DeletePolicy;
 using EaseClub.Application.Features.PricingPolicies.Commands.UnAssignPolicy;
@@ -47,11 +47,14 @@ namespace EaseClub.Api.Controllers
         [HttpGet]
         [EndpointName("GetPricingPoliciesByClub")]
         [EndpointSummary("Get all pricing policies for a club.")]
-        [EndpointDescription("Returns all pricing policies associated with a specific club.")]
+        [EndpointDescription("Returns pricing policies for a club. Pass ?compatibleWith=Event or ?compatibleWith=ApplicationTemplate&compatibleWithTargetId={id} to filter by target compatibility.")]
         [ProducesResponseType(typeof(List<PricingPolicyResponse>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetByClub(Guid clubId)
+        public async Task<IActionResult> GetByClub(
+            Guid clubId,
+            [FromQuery] PricingPolicyTargetType? compatibleWith = null,
+            [FromQuery] Guid? compatibleWithTargetId = null)
         {
-            var result = await sender.Send(new GetPricingPoliciesByClubQuery(clubId));
+            var result = await sender.Send(new GetPricingPoliciesByClubQuery(clubId, compatibleWith, compatibleWithTargetId));
             return result.Match(
                 (policies) => Ok(policies),
                 Problem);

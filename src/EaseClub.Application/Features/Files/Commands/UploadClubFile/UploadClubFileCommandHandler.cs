@@ -29,26 +29,19 @@ namespace EaseClub.Application.Features.Files.Commands.UploadClubFile
         public async Task<Result<SecureFileResponse>> Handle(UploadClubFileCommand request, CancellationToken ct)
         {
             if (request.File == null || request.File.Length == 0) { logger.LogError("Validation error in UploadClubFileCommandHandler: {Error}", Error.Validation("File is empty").ToLogObject()); return Error.Validation("File is empty"); }
-            var roles = currentUserService.GetRoles();
 
             var parsingRes = Guid.TryParse(currentUserService.GetId(), out var userId);
             if (!parsingRes) { logger.LogError("Unauthorized error in UploadClubFileCommandHandler: {Error}", Error.Unauthorized().ToLogObject()); return Error.Unauthorized(); }
-            if (roles.Contains("ClubAdmin"))
-            {
-                var admin = await clubAdminUserRepository.GetByIdAsync(userId, ct);
-                if (admin == null) { logger.LogError("Unauthorized error in UploadClubFileCommandHandler: {Error}", Error.Unauthorized().ToLogObject()); return Error.Unauthorized(); }
-            if (admin.ClubId != request.ClubId) { logger.LogError("Forbidden error in UploadClubFileCommandHandler: {Error}", Error.Forbidden().ToLogObject()); return Error.Forbidden(); }
 
-            }
+            var folder = $"clubs/{request.ClubId}/";
 
-            else if (!roles.Contains("SuperAdmin"))
-                return Error.Unauthorized();
+            if(request.Purpose == FilePurpose.EventImage)
+                folder += $"Events/";
 
-
-            var res = await fileStorageService.UploadFileAsync(request.File.OpenReadStream(), request.File.FileName, request.IsPrivate, $"clubs/{request.ClubId}/", cancellationToken: ct);
+            var res = await fileStorageService.UploadFileAsync(request.File.OpenReadStream(), request.File.FileName,false,folder, cancellationToken: ct);
 
             if (res.IsError) { logger.LogError("Error in UploadClubFileCommandHandler: {Error}", res.TopError.ToLogObject()); return res.TopError; }
-            var file = FileResource.Create(Guid.NewGuid(), res.Value.FileName, res.Value.FilePath, request.File.ContentType, res.Value.Size, userId, request.IsPrivate, request.ClubId,request.Purpose, FileOwnerType.Club);
+            var file = FileResource.Create(Guid.NewGuid(), res.Value.FileName, res.Value.FilePath, request.File.ContentType, res.Value.Size, userId,false, request.ClubId,request.Purpose, FileOwnerType.Club);
 
             if (file.IsError) { logger.LogError("Error in UploadClubFileCommandHandler: {Error}", file.TopError.ToLogObject()); return file.TopError; }
             await fileRepository.AddAsync(file.Value, ct);

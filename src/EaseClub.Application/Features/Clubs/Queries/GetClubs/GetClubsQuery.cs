@@ -1,4 +1,4 @@
-﻿using EaseClub.Application.Common.Pagination.Parameters;
+using EaseClub.Application.Common.Pagination.Parameters;
 using EaseClub.Application.Common.Pagination.Results;
 using EaseClub.Domain.Common.Results;
 using MediatR;
@@ -14,13 +14,15 @@ namespace EaseClub.Application.Features.Clubs.Queries.GetClubs
 
     public class ClubsDto
     {
-        public ClubsDto(Guid id, string name, string? logoUrl = null) { 
+        public ClubsDto(Guid id, string name, string? logoUrl = null, string? coverImageUrl = null) { 
             Id = id; 
             Name = name;
             LogoUrl = logoUrl;
+            CoverImageUrl = coverImageUrl;
         }
         public Guid Id { get; set; }
         public string Name { get; set; }
         public string? LogoUrl { get; set; }
+        public string? CoverImageUrl { get; set; }
     }
 }

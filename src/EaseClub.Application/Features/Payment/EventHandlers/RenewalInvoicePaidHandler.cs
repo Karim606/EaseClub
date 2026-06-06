@@ -60,21 +60,41 @@ namespace EaseClub.Application.Features.Payment.EventHandlers
 
             // 1. Mark Enrollment as Completed
             var completeResult = enrollment.MarkCompleted();
-            if (completeResult.IsError) return;
+            if (completeResult.IsError)
+            {
+                _logger.LogError("Failed to mark renewal enrollment {EnrollmentId} as completed: {Error}", enrollment.Id, completeResult.TopError.Description);
+                return;
+            }
 
             // 2. Fetch Existing Membership
-            if (!enrollment.ExistingMembershipId.HasValue) return;
+            if (!enrollment.ExistingMembershipId.HasValue)
+            {
+                _logger.LogError("Renewal enrollment {EnrollmentId} is missing ExistingMembershipId", enrollment.Id);
+                return;
+            }
 
             var membership = await _membershipRepository.GetByIdWithDetailsAsync(enrollment.ExistingMembershipId.Value, ct);
-            if (membership == null) return;
+            if (membership == null)
+            {
+                _logger.LogError("Existing membership {MembershipId} not found for renewal enrollment {EnrollmentId}", enrollment.ExistingMembershipId.Value, enrollment.Id);
+                return;
+            }
 
             // Fetch Plan for Capacity
             var plan = await _planRepository.GetByIdAsync(enrollment.MembershipPlanId, ct);
-            if (plan == null) return;
+            if (plan == null)
+            {
+                _logger.LogError("Membership plan {PlanId} not found for renewal enrollment {EnrollmentId}", enrollment.MembershipPlanId, enrollment.Id);
+                return;
+            }
 
             // 3. Apply Renewal
             var renewalResult = membership.ApplyRenewalFromEnrollment(enrollment, plan.MaxFamilyMembers);
-            if (renewalResult.IsError) return;
+            if (renewalResult.IsError)
+            {
+                _logger.LogError("Failed to apply renewal from enrollment {EnrollmentId} for membership {MembershipId}: {Error}", enrollment.Id, membership.Id, renewalResult.TopError.Description);
+                return;
+            }
 
             // 4. Reconcile Payment
             await ReconcileFirstInstallmentAsync(membership, evt, ct);
@@ -84,7 +104,7 @@ namespace EaseClub.Application.Features.Payment.EventHandlers
                 enrollment.MemberId,
                 "Membership Renewed",
                 "Your membership has been successfully renewed.",
-                NotificationType.MembershipApplicationApproved);
+                NotificationType.MembershipRenewed);
 
             await DispatchNotification(notification, ct);
             await _unitOfWork.SaveChangesAsync(ct);

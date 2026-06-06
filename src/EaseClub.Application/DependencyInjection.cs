@@ -2,12 +2,8 @@ using EaseClub.Application.Common.Behaviors;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using EaseClub.Application.Features.Enrollments.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using EaseClub.Application.Features.Events.Services;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 namespace EaseClub.Application
 {
     public static class DependencyInjection
@@ -25,6 +21,7 @@ namespace EaseClub.Application
             });
 
             services.AddScoped<EnrollmentManager>();
+            services.AddScoped<EventRegistrationService>();
 
             return services;
         }

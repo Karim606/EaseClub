@@ -1,4 +1,4 @@
-﻿using EaseClub.Domain.Memberships;
+using EaseClub.Domain.Memberships;
 using FluentAssertions;
 using System;
 using System.Collections.Generic;
@@ -29,7 +29,7 @@ namespace EaseClub.Domain.Tests.Entities.Memberships
         [Fact]
         public void Create_ShouldFail_WhenFullNameIsEmpty()
         {
-            var result = FamilyMember.Create(Guid.NewGuid(), "", FamilyRelationship.Wife, default);
+            var result = FamilyMember.Create(Guid.NewGuid(), "", FamilyRelationship.Spouse, default);
             result.IsError.Should().BeTrue();
             result.TopError.Code.Should().Be("FamilyMember.InvalidName");
         }

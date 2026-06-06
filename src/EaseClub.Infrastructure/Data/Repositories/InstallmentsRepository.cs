@@ -17,17 +17,27 @@ namespace EaseClub.Infrastructure.Data.Repositories
 
         public async Task<List<InstallmentTemplate>> GetByClubIdAsync(Guid clubId, CancellationToken ct)
         {
-           return await  _context.InstallmentTemplates.Where(x => x.ClubId == clubId).AsNoTracking().ToListAsync();
+           return await  _context.InstallmentTemplates
+               .Include(x => x.Installments)
+               .Where(x => x.ClubId == clubId)
+               .AsNoTracking()
+               .ToListAsync(ct);
         }
 
         public async Task<List<InstallmentTemplate>> GetByPlanIdAsync(Guid planId, CancellationToken ct)
         {
-            return await _context.InstallmentTemplates.Where(x => x.MembershipPlans.Any(mp => mp.MembershipPlanId == planId)).ToListAsync();
+            return await _context.InstallmentTemplates
+                .Include(x => x.Installments)
+                .Where(x => x.MembershipPlans.Any(mp => mp.MembershipPlanId == planId))
+                .AsNoTracking()
+                .ToListAsync(ct);
         }
 
         public Task<List<InstallmentTemplate>> GetTemplatesAsync(Guid? clubId, Guid? planId, bool? isActive, CancellationToken ct)
         { 
-            var query = _context.InstallmentTemplates.AsQueryable();
+            var query = _context.InstallmentTemplates
+                .Include(x => x.Installments)
+                .AsQueryable();
             if (clubId.HasValue) query = query.Where(x => x.ClubId == clubId.Value);
             if (planId.HasValue) query = query.Where(x => x.MembershipPlans.Any(mp => mp.MembershipPlanId == planId.Value));
             if (isActive.HasValue) query = query.Where(x => x.IsActive == isActive.Value);

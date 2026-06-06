@@ -49,5 +49,11 @@ namespace EaseClub.Infrastructure.Data.Repositories
             _context.PricingPolicyAssignments.Remove(assignment);
             return Task.CompletedTask;
         }
+
+        /// <inheritdoc />
+        public async Task AddAssignmentAsync(PricingPolicyAssignment assignment, CancellationToken ct = default)
+        {
+            await _context.PricingPolicyAssignments.AddAsync(assignment, ct);
+        }
     }
 }

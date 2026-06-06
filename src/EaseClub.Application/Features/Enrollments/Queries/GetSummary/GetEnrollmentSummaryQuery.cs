@@ -11,7 +11,9 @@ namespace EaseClub.Application.Features.Enrollments.Queries.GetSummary
         decimal FirstInstallmentAmount,
         List<InstallmentSummaryDto> Installments,
         DateTime ExpiresAt,
-        string Source);
+        string Source,
+        Guid? InvoiceId,
+        string Status);
 
     public record InstallmentSummaryDto(decimal Amount, int DueAfterDays, int Order);
 
